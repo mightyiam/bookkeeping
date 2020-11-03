@@ -1,5 +1,12 @@
+extern crate derive_more;
+use derive_more::Add;
 use rust_decimal::Decimal;
+use std::cmp::{Eq, PartialEq};
+use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
+use std::ops::Add;
 
+#[derive(Add)]
 struct Amount(Decimal);
 
 impl Amount {
@@ -19,6 +26,19 @@ impl<'a> Money<'a> {
     }
 }
 
+/*
+impl<'a> Add for Money<'a> {
+    type Output = Money<'a>;
+    fn add(self, rhs: Money) -> Self::Output {
+        let currency = self.currency();
+        if currency != rhs.currency() {
+            panic!()
+        };
+        currency.of(self.amount + rhs.amount.into())
+    }
+}
+*/
+
 pub struct Currency {
     code: String,
     decimal_places: u32,
@@ -32,6 +52,10 @@ impl Currency {
         }
     }
 
+    pub fn code(&self) -> &str {
+        &self.code[..]
+    }
+
     pub fn of(&self, amount: i64) -> Money {
         Money {
             amount: Amount::new(amount, self.decimal_places),
@@ -40,94 +64,40 @@ impl Currency {
     }
 }
 
-pub struct ExternalAccount {
-    name: String,
-}
-
-impl ExternalAccount {
-    fn new(name: String) -> Self {
-        ExternalAccount { name }
+impl Hash for Currency {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.code().hash(state);
     }
 }
 
-pub struct BudgetAccount {
-    name: String,
-}
-
-impl BudgetAccount {
-    fn name(&self) -> &str {
-        &self.name[..]
+impl PartialEq for Currency {
+    fn eq(&self, other: &Currency) -> bool {
+        self.code() == other.code()
     }
 }
 
-impl BudgetAccount {
-    fn new(name: String) -> Self {
-        BudgetAccount { name }
-    }
-}
+impl Eq for Currency {}
 
-pub enum Transaction_<'a> {
-    Income {
-        from: &'a ExternalAccount,
-        to: &'a BudgetAccount,
-        amount: &'a Money<'a>,
-    },
-}
-
-pub struct Budget<'a> {
-    transactions: Vec<&'a Transaction_<'a>>,
-}
-
-impl<'a> Budget<'a> {
-    pub fn new() -> Self {
-        Budget {
-            transactions: Vec::new(),
-        }
-    }
-
-    pub fn add(&mut self, tx: &'a Transaction_<'a>) {
-        self.transactions.push(tx);
-    }
-
-    pub fn budget_accounts(&self) -> Vec<&BudgetAccount> {
-        Vec::new()
-    }
-}
-
-pub enum Change<'a> {
-    /*CreateCurrency {
-        code: String,
-        decimal_places: i8,
-    },*/
-    CreateBudgetAccount {
-        account: &'a BudgetAccount,
-    },
-    CreateExternalAccount {},
-    CreateMove {
-        //date: // some date,
-        amount: &'a Money<'a>,
-        notes: String,
-    },
-    CreateTransferMove {},
-    CreateIncomeMove {
-        from: &'a ExternalAccount,
-        to: &'a BudgetAccount,
-        amount: &'a Money<'a>,
-    },
-}
-
-struct Book<'a> {
+pub struct Book<'a> {
     accounts: Vec<&'a Account>,
+    transactions: Vec<&'a Transaction<'a>>,
 }
 
-struct Account {
+pub struct Account {
     name: String,
+}
+
+impl Account {
+    fn new(name: String) -> Self {
+        Account { name }
+    }
 }
 
 impl<'a> Book<'a> {
     fn new() -> Self {
         Book {
             accounts: Vec::new(),
+            transactions: Vec::new(),
         }
     }
 
@@ -135,9 +105,9 @@ impl<'a> Book<'a> {
         self.accounts.push(account);
     }
 
-    fn add_transaction(&mut self, tx: &Transaction) -> Result<(),Error> {
+    fn add_transaction(&mut self, transaction: &'a Transaction<'a>) {
         // validate accounts are in book
-        // adds transactions
+        self.transactions.push(transaction)
     }
 
     fn accounts(&self) -> &[&Account] {
@@ -145,21 +115,47 @@ impl<'a> Book<'a> {
     }
 }
 
-pub struct Transaction<'a>(Vec<TransactionItem<'a>>);
+pub struct Transaction<'a>(Vec<Move<'a>>);
 
-pub struct TransactionItem<'a> {
+pub struct Move<'a> {
     account: &'a Account,
-    amount: Amount,
+    money: Money<'a>,
 }
 
-pub struct DraftTransaction<'a>(Transaction<'a>);
+impl<'a> Move<'a> {
+    fn new(account: &'a Account, money: Money<'a>) -> Self {
+        Move {
+            account,
+            money: money,
+        }
+    }
+    fn money(&self) -> &Money<'a> {
+        &self.money
+    }
+}
 
-impl<'a> DraftTransaction<'a> {
+pub struct TransactionDraft<'a> {
+    moves: Vec<Move<'a>>,
+}
+
+impl<'a> TransactionDraft<'a> {
     fn new() -> Self {
-        DraftTransaction(Transaction(Vec::new()))
+        TransactionDraft { moves: Vec::new() }
     }
 
-    // TODO fn add
+    fn add_move(&mut self, mov: Move<'a>) {
+        self.moves.push(mov);
+    }
+
+    fn balances(&self) -> HashMap<Currency, Money<'a>> {
+        self.moves.iter().fold(HashMap::new(), |mut hm, mov| {
+            let money = mov.money();
+            let currency = money.currency();
+            let mut balance = hm.get_mut(currency);
+            balance = balance.map_or(Some(&mut currency.of(0)), |acc| acc + money);
+            hm
+        })
+    }
 }
 
 #[cfg(test)]
@@ -167,21 +163,18 @@ mod tests {
     use crate::*;
     #[test]
     fn inner_works() {
-        let mut budget = Budget::new();
-        let employer = ExternalAccount::new("boss".to_string());
-        let wallet = BudgetAccount::new("wallet".to_string());
+        let mut book = Book::new();
+        let employer = Account::new("boss".to_string());
+        let wallet = Account::new("wallet".to_string());
 
         let baht = Currency::new("THB".to_string(), 2);
         let _500_baht = baht.of(50000);
 
-        let earn_500_baht = Transaction_::Income {
-            // date:
-            from: &employer,
-            to: &wallet,
-            amount: &_500_baht,
-        };
+        let mut earn_500_baht = TransactionDraft::new();
+        earn_500_baht.add_move(Move::new(&employer, baht.of(50000)));
+        earn_500_baht.add_move(Move::new(&wallet, baht.of(50000)));
 
-        budget.add(&earn_500_baht);
+        book.add_transaction(&earn_500_baht.finalize());
 
         let wallet_balances_at_some_date: Vec<&Money> =
             buget.balances_at_date(&wallet, at_some_date);

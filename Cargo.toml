@@ -11,3 +11,4 @@ edition = "2018"
 
 [dependencies]
 rust_decimal = "1.8.1"
+derive_more = "0.99.0"
