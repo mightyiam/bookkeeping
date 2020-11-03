@@ -1,3 +1,45 @@
+use rust_decimal::Decimal;
+
+struct Amount(Decimal);
+
+impl Amount {
+    fn new(num: i64, scale: u32) -> Self {
+        Amount(Decimal::new(num, scale))
+    }
+}
+
+pub struct Money<'a> {
+    amount: Amount,
+    currency: &'a Currency,
+}
+
+impl<'a> Money<'a> {
+    fn currency(&self) -> &Currency {
+        self.currency
+    }
+}
+
+pub struct Currency {
+    code: String,
+    decimal_places: u32,
+}
+
+impl Currency {
+    pub fn new(code: String, decimal_places: u32) -> Self {
+        Currency {
+            code,
+            decimal_places,
+        }
+    }
+
+    pub fn of(&self, amount: i64) -> Money {
+        Money {
+            amount: Amount::new(amount, self.decimal_places),
+            currency: self,
+        }
+    }
+}
+
 pub struct ExternalAccount {
     name: String,
 }
@@ -24,24 +66,39 @@ impl BudgetAccount {
     }
 }
 
-pub struct Budget {}
+pub enum Transaction_<'a> {
+    Income {
+        from: &'a ExternalAccount,
+        to: &'a BudgetAccount,
+        amount: &'a Money<'a>,
+    },
+}
 
-impl Budget {
+pub struct Budget<'a> {
+    transactions: Vec<&'a Transaction_<'a>>,
+}
+
+impl<'a> Budget<'a> {
     pub fn new() -> Self {
-        Budget {}
+        Budget {
+            transactions: Vec::new(),
+        }
     }
-    pub fn apply_change(&mut self, change: &Change) {}
+
+    pub fn add(&mut self, tx: &'a Transaction_<'a>) {
+        self.transactions.push(tx);
+    }
 
     pub fn budget_accounts(&self) -> Vec<&BudgetAccount> {
-        self.budget_accounts.clone()
+        Vec::new()
     }
 }
 
 pub enum Change<'a> {
-    CreateCurrency {
+    /*CreateCurrency {
         code: String,
         decimal_places: i8,
-    },
+    },*/
     CreateBudgetAccount {
         account: &'a BudgetAccount,
     },
@@ -59,56 +116,76 @@ pub enum Change<'a> {
     },
 }
 
-pub struct Money<'a> {
-    amount: f64,
-    currency: &'a Currency,
+struct Book<'a> {
+    accounts: Vec<&'a Account>,
 }
 
-pub struct Currency {
-    code: String,
-    decimal_places: i8,
+struct Account {
+    name: String,
 }
 
-impl Currency {
-    pub fn new(code: String, decimal_places: i8) -> Self {
-        Currency {
-            code,
-            decimal_places,
+impl<'a> Book<'a> {
+    fn new() -> Self {
+        Book {
+            accounts: Vec::new(),
         }
     }
 
-    pub fn of(&self, amount: f64) -> Money {
-        Money {
-            amount,
-            currency: self,
-        }
+    fn add_account(&mut self, account: &'a Account) {
+        self.accounts.push(account);
     }
+
+    fn add_transaction(&mut self, tx: &Transaction) -> Result<(),Error> {
+        // validate accounts are in book
+        // adds transactions
+    }
+
+    fn accounts(&self) -> &[&Account] {
+        &self.accounts[..]
+    }
+}
+
+pub struct Transaction<'a>(Vec<TransactionItem<'a>>);
+
+pub struct TransactionItem<'a> {
+    account: &'a Account,
+    amount: Amount,
+}
+
+pub struct DraftTransaction<'a>(Transaction<'a>);
+
+impl<'a> DraftTransaction<'a> {
+    fn new() -> Self {
+        DraftTransaction(Transaction(Vec::new()))
+    }
+
+    // TODO fn add
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{Budget, BudgetAccount, Change, Currency, ExternalAccount, Money};
+    use crate::*;
     #[test]
-    fn it_works() {
+    fn inner_works() {
         let mut budget = Budget::new();
         let employer = ExternalAccount::new("boss".to_string());
         let wallet = BudgetAccount::new("wallet".to_string());
-        let create_wallet = Change::CreateBudgetAccount { account: &wallet };
-        budget.apply_change(&create_wallet);
+
         let baht = Currency::new("THB".to_string(), 2);
-        let _500_baht = baht.of(500.00);
-        let put_500baht_in_wallet = Change::CreateIncomeMove {
+        let _500_baht = baht.of(50000);
+
+        let earn_500_baht = Transaction_::Income {
+            // date:
             from: &employer,
             to: &wallet,
             amount: &_500_baht,
         };
-        budget.apply_change(&put_500baht_in_wallet);
-        let budget_accounts: Vec<&BudgetAccount> = budget.budget_accounts();
-        let firstBudgetAccount = budget_accounts.first().unwrap();
-        let firstBudgetAccountName = firstBudgetAccount.name();
-        let firstBudgetAccountBalances: Vec<&Money> = firstBudgetAccount.balances();
-        let firstBudgetAccountFirstBalance: &Money = firstBudgetAccountBalances.first().unwrap();
-        let firstBudgetAccountFirstBalanceCurrency = firstBudgetAccountFirstBalance.currency();
-        let firstBudgetAccountFirstBalanceAmount = firstBudgetAccountFirstBalance.amount();
+
+        budget.add(&earn_500_baht);
+
+        let wallet_balances_at_some_date: Vec<&Money> =
+            buget.balances_at_date(&wallet, at_some_date);
+        let wallet_balances_after_transaction =
+            budget.balances_after_transaction(&wallet, &transaction);
     }
 }
