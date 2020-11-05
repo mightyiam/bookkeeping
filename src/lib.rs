@@ -34,63 +34,74 @@ mod entities {
         }
     }
 }
+
 mod changes {
-    pub enum Change {
-        Currency(currency::Change),
-        Account(account::Change),
+    use crate::book::{Book, ChangeApplicationFailure};
+    pub trait BookChange {
+        fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure>;
     }
     pub mod currency {
-        pub enum Change {
-            Add(add::Payload),
-        }
         pub mod add {
+            use super::super::BookChange;
+            use crate::book::{Book, ChangeApplicationFailure};
             use rusty_money::Currency;
             pub struct Input {
                 pub currency: &'static Currency,
             }
-            pub struct Payload {
+            pub struct Change {
                 pub(crate) currency: &'static Currency,
             }
-            impl Payload {
+            impl Change {
                 pub fn new(input: Input) -> Self {
                     Self {
                         currency: input.currency,
                     }
                 }
             }
+            impl BookChange for Change {
+                fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure> {
+                    if book.currencies.contains_key(self.currency.iso_alpha_code) {
+                        Err(ChangeApplicationFailure::CurrencyAlreadyExists(
+                            self.currency.iso_alpha_code.to_string(),
+                        ))
+                    } else {
+                        book.currencies
+                            .insert(self.currency.iso_alpha_code, self.currency);
+                        Ok(())
+                    }
+                }
+            }
         }
     }
     pub mod account {
-        pub enum Change {
-            Add(add::Payload),
-        }
-        /*pub struct Change(Change_);
-
-        impl Change {
-            pub fn add(name: String) -> Change {
-                Change(Change_::Add(name))
-            }
-        }*/
         pub mod add {
+            use super::super::{BookChange, ChangeApplicationFailure};
+            use crate::book::Book;
             use crate::entities;
             pub struct Input {
                 pub account: entities::account::Entity,
             }
-            pub struct Payload {
+            pub struct Change {
                 pub(crate) account: entities::account::Entity,
             }
-            impl Payload {
+            impl Change {
                 pub fn new(input: Input) -> Self {
                     Self {
                         account: input.account,
                     }
                 }
             }
+            impl BookChange for Change {
+                fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure> {
+                    book.accounts.insert(self.account);
+                    Ok(())
+                }
+            }
         }
     }
 }
 pub mod book {
-    use crate::changes;
+    use crate::changes::BookChange;
     use crate::entities;
     use rusty_money::Currency;
     use slotmap::{new_key_type, DenseSlotMap};
@@ -117,31 +128,8 @@ pub mod book {
                 accounts: DenseSlotMap::with_key(),
             }
         }
-        pub fn apply(&mut self, change: changes::Change) -> Result<(), ChangeApplicationFailure> {
-            match change {
-                changes::Change::Currency(change) => match change {
-                    changes::currency::Change::Add(payload) => {
-                        if self
-                            .currencies
-                            .contains_key(payload.currency.iso_alpha_code)
-                        {
-                            Err(ChangeApplicationFailure::CurrencyAlreadyExists(
-                                payload.currency.iso_alpha_code.to_string(),
-                            ))
-                        } else {
-                            self.currencies
-                                .insert(payload.currency.iso_alpha_code, payload.currency);
-                            Ok(())
-                        }
-                    }
-                },
-                changes::Change::Account(change) => match change {
-                    changes::account::Change::Add(payload) => {
-                        self.accounts.insert(payload.account);
-                        Ok(())
-                    }
-                },
-            }
+        pub fn apply(&mut self, change: impl BookChange) -> Result<(), ChangeApplicationFailure> {
+            change.apply(self)
         }
     }
     pub enum ChangeApplicationFailure {
@@ -166,11 +154,11 @@ pub mod book {
             #[test]
             fn change_add_currency() {
                 let mut book = Book::new();
-                book.apply(changes::Change::Currency(changes::currency::Change::Add(
-                    changes::currency::add::Payload::new(changes::currency::add::Input {
+                book.apply(changes::currency::add::Change::new(
+                    changes::currency::add::Input {
                         currency: Currency::get(Iso::THB),
-                    }),
-                )));
+                    },
+                ));
                 assert_eq!(book.currencies.len(), 1);
                 assert_eq!(
                     *book.currencies.get("THB").unwrap(),
@@ -183,9 +171,9 @@ pub mod book {
                 let account = entities::account::Entity::new(entities::account::Input {
                     name: String::from("Wallet"),
                 });
-                book.apply(changes::Change::Account(changes::account::Change::Add(
-                    changes::account::add::Payload::new(changes::account::add::Input { account }),
-                )));
+                book.apply(changes::account::add::Change::new(
+                    changes::account::add::Input { account },
+                ));
                 assert_eq!(book.accounts.len(), 1);
                 assert_eq!(
                     *book.accounts.iter().next().unwrap().1,
