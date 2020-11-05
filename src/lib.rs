@@ -1,24 +1,37 @@
-use rust_decimal::Decimal;
-use rusty_money::{Currency, Iso, Money, MoneyError};
-use std::cmp::{Eq, PartialEq};
-use std::collections::HashMap;
-use std::hash::{Hash, Hasher};
-
 mod entities {
-    use crate::book::AccountKey;
-    use rusty_money::Money;
-    pub struct Move {
-        account_key: AccountKey,
-        money: Money,
+    pub mod move_ {
+        use crate::book::AccountKey;
+        use rusty_money::Money;
+        pub struct Entity {
+            account_key: AccountKey,
+            money: Money,
+        }
     }
-    pub struct TransactionDraft {
-        moves: Vec<Move>,
+    pub mod transaction_draft {
+        use super::move_::Entity as Move;
+        pub struct Entity {
+            moves: Vec<Move>,
+        }
     }
-    pub struct Transaction {
-        moves: Vec<Move>,
+    pub mod transaction {
+        use super::move_::Entity as Move;
+        pub struct Entity {
+            moves: Vec<Move>,
+        }
     }
-    pub struct Account {
-        name: String,
+    pub mod account {
+        #[derive(PartialEq, Debug)]
+        pub struct Entity {
+            name: String,
+        }
+        pub struct Input {
+            pub name: String,
+        }
+        impl Entity {
+            pub fn new(input: Input) -> Self {
+                Self { name: input.name }
+            }
+        }
     }
 }
 mod changes {
@@ -31,9 +44,9 @@ mod changes {
             Add(add::Payload),
         }
         pub mod add {
-            use rusty_money::{Currency, Iso};
+            use rusty_money::Currency;
             pub struct Input {
-                pub code: Iso,
+                pub currency: &'static Currency,
             }
             pub struct Payload {
                 pub(crate) currency: &'static Currency,
@@ -41,7 +54,7 @@ mod changes {
             impl Payload {
                 pub fn new(input: Input) -> Self {
                     Self {
-                        currency: Currency::get(input.code),
+                        currency: input.currency,
                     }
                 }
             }
@@ -58,16 +71,19 @@ mod changes {
                 Change(Change_::Add(name))
             }
         }*/
-        mod add {
+        pub mod add {
+            use crate::entities;
             pub struct Input {
-                pub name: String,
+                pub account: entities::account::Entity,
             }
             pub struct Payload {
-                name: String,
+                pub(crate) account: entities::account::Entity,
             }
             impl Payload {
-                fn new(input: Input) -> Self {
-                    Self { name: input.name }
+                pub fn new(input: Input) -> Self {
+                    Self {
+                        account: input.account,
+                    }
                 }
             }
         }
@@ -88,9 +104,9 @@ pub mod book {
     pub struct Book {
         pub(crate) currencies: HashMap<&'static str, &'static Currency>,
         pub(crate) transaction_drafts:
-            DenseSlotMap<TransactionDraftKey, entities::TransactionDraft>,
-        pub(crate) transactions: DenseSlotMap<TransactionKey, entities::Transaction>,
-        pub(crate) accounts: DenseSlotMap<AccountKey, entities::Account>,
+            DenseSlotMap<TransactionDraftKey, entities::transaction_draft::Entity>,
+        pub(crate) transactions: DenseSlotMap<TransactionKey, entities::transaction::Entity>,
+        pub(crate) accounts: DenseSlotMap<AccountKey, entities::account::Entity>,
     }
     impl Book {
         pub fn new() -> Self {
@@ -105,7 +121,10 @@ pub mod book {
             match change {
                 changes::Change::Currency(change) => match change {
                     changes::currency::Change::Add(payload) => {
-                        if self.currencies.contains_key(payload.currency.iso_alpha_code) {
+                        if self
+                            .currencies
+                            .contains_key(payload.currency.iso_alpha_code)
+                        {
                             Err(ChangeApplicationFailure::CurrencyAlreadyExists(
                                 payload.currency.iso_alpha_code.to_string(),
                             ))
@@ -118,8 +137,8 @@ pub mod book {
                 },
                 changes::Change::Account(change) => match change {
                     changes::account::Change::Add(payload) => {
-                        let account = 
-                        self.accounts.insert(account)
+                        self.accounts.insert(payload.account);
+                        Ok(())
                     }
                 },
             }
@@ -128,63 +147,53 @@ pub mod book {
     pub enum ChangeApplicationFailure {
         CurrencyAlreadyExists(String),
     }
-}
-pub enum View {}
-pub struct CurrencyView {
-    code: String,
-    decimal_places: u32,
-}
-pub type CurrenciesView = HashMap<String, Currency>;
-#[cfg(test)]
-mod tests {
-    use crate::{book, changes, Currency, View};
-    use rusty_money::Iso;
-    use std::collections::HashMap;
-    #[test]
-    fn initial_state() {
-        let book = book::Book::new();
-        assert_eq!(book.currencies.len(), 0);
-        assert_eq!(book.accounts.len(), 0);
-        assert_eq!(book.transaction_drafts.len(), 0);
-        assert_eq!(book.transactions.len(), 0);
-    }
-    #[test]
-    fn struct_add_currency_change_new_errs_on_unknown_currency() {
-        let unknown_currency = AddCurrencyChange::new(String::from("FOO"));
-        if let Ok(_) = unknown_currency {
-            panic!()
+    #[cfg(test)]
+    mod tests {
+        use crate::book::Book;
+        #[test]
+        fn initial_state() {
+            let book = Book::new();
+            assert_eq!(book.currencies.len(), 0);
+            assert_eq!(book.accounts.len(), 0);
+            assert_eq!(book.transaction_drafts.len(), 0);
+            assert_eq!(book.transactions.len(), 0);
         }
-    }
-    #[test]
-    fn change_add_currency() {
-        let mut book = book::Book::new();
-        book.apply(changes::Change::Currency(changes::currency::Change::Add(
-            changes::currency::add::Payload::new(changes::currency::add::Input { currency: Currency::get(Iso::THB) }),
-        )));
-        assert_eq!(book.currencies.len(), 1);
-        assert_eq!(
-            *book.currencies.get("THB").unwrap(),
-            Currency::find_by_alpha_iso(String::from("THB")).unwrap(),
-        );
-    }
-    #[test]
-    fn change_add_account() {
-        let mut book = Book::new();
-        book.apply(Change::AddAccount());
-        assert_eq!()
-    }
-    fn inner_works() {
-        let employer = Account::new("boss".to_string());
-        let wallet = Account::new("wallet".to_string());
-        let baht = Currency::new("THB".to_string(), 2);
-        let _500_baht = baht.of(50000);
-        let mut earn_500_baht = TransactionDraft::new();
-        earn_500_baht.add_move(Move::new(&employer, baht.of(50000)));
-        earn_500_baht.add_move(Move::new(&wallet, baht.of(50000)));
-        book.add_transaction(&earn_500_baht.finalize());
-        let wallet_balances_at_some_date: Vec<&Money> =
-            buget.balances_at_date(&wallet, at_some_date);
-        let wallet_balances_after_transaction =
-            budget.balances_after_transaction(&wallet, &transaction);
+        mod changes {
+            use crate::book::Book;
+            use crate::changes;
+            use crate::entities;
+            use rusty_money::{Currency, Iso};
+            #[test]
+            fn change_add_currency() {
+                let mut book = Book::new();
+                book.apply(changes::Change::Currency(changes::currency::Change::Add(
+                    changes::currency::add::Payload::new(changes::currency::add::Input {
+                        currency: Currency::get(Iso::THB),
+                    }),
+                )));
+                assert_eq!(book.currencies.len(), 1);
+                assert_eq!(
+                    *book.currencies.get("THB").unwrap(),
+                    Currency::find_by_alpha_iso(String::from("THB")).unwrap(),
+                );
+            }
+            #[test]
+            fn change_add_account() {
+                let mut book = Book::new();
+                let account = entities::account::Entity::new(entities::account::Input {
+                    name: String::from("Wallet"),
+                });
+                book.apply(changes::Change::Account(changes::account::Change::Add(
+                    changes::account::add::Payload::new(changes::account::add::Input { account }),
+                )));
+                assert_eq!(book.accounts.len(), 1);
+                assert_eq!(
+                    *book.accounts.iter().next().unwrap().1,
+                    entities::account::Entity::new(entities::account::Input {
+                        name: String::from("Wallet"),
+                    })
+                )
+            }
+        }
     }
 }
