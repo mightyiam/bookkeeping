@@ -1,10 +1,37 @@
-mod entities {
+/// The various entities involved in accounting
+///
+/// Each entity is in its own submodule.
+/// Each submodule includes:
+/// - `Entity`: a struct that represents the entity.
+/// - `Input`: a struct that serves as input for the `new` method of the `Entity` struct.
+///
+/// ## Example:
+/// ```
+/// use envelope_system::entities::account;
+/// let wallet = account::Entity::new(account::Input{ name: String::from("Wallet") });
+/// ```
+pub mod entities {
+    /// Represents money either taken out of or put into an account.
+    ///
+    /// A group of multiple moves can make up a [transaction](crate::entities::transaction).
+    ///
+    /// The purpose of the trailing underscore is to refrain from using the keyword [`move`](https://doc.rust-lang.org/std/keyword.move.html).
     pub mod move_ {
         use crate::book::AccountKey;
         use rusty_money::Money;
         pub struct Entity {
             account_key: AccountKey,
             money: Money,
+        }
+        pub struct Input {
+            pub account_key: AccountKey,
+            pub money: Money,
+        }
+        impl Entity {
+            pub fn new(input: Input) -> Self {
+                let Input { account_key, money } = input;
+                Self { account_key, money }
+            }
         }
     }
     pub mod transaction_draft {
@@ -13,6 +40,10 @@ mod entities {
             moves: Vec<Move>,
         }
     }
+    /// A group of related [move](crate::entities::move_)s that all occur at some time.
+    ///
+    /// Transactions cannot be created directly.
+    /// They start as [draft](crate::entities::transaction_draft)s.
     pub mod transaction {
         use super::move_::Entity as Move;
         pub struct Entity {
@@ -28,74 +59,69 @@ mod entities {
             pub name: String,
         }
         impl Entity {
-            pub fn new(input: Input) -> Self {
+            pub(crate) fn new(input: Input) -> Self {
                 Self { name: input.name }
             }
         }
     }
 }
-
 mod changes {
     use crate::book::{Book, ChangeApplicationFailure};
     pub trait BookChange {
         fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure>;
     }
-    pub mod currency {
-        pub mod add {
-            use super::super::BookChange;
-            use crate::book::{Book, ChangeApplicationFailure};
-            use rusty_money::Currency;
-            pub struct Input {
-                pub currency: &'static Currency,
-            }
-            pub struct Change {
-                pub(crate) currency: &'static Currency,
-            }
-            impl Change {
-                pub fn new(input: Input) -> Self {
-                    Self {
-                        currency: input.currency,
-                    }
+    pub mod add_currency {
+        use super::BookChange;
+        use crate::book::{Book, ChangeApplicationFailure};
+        use rusty_money::Currency;
+        pub struct Input {
+            pub currency: &'static Currency,
+        }
+        pub struct Change {
+            pub(crate) currency: &'static Currency,
+        }
+        impl Change {
+            pub fn new(input: Input) -> Self {
+                Self {
+                    currency: input.currency,
                 }
             }
-            impl BookChange for Change {
-                fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure> {
-                    if book.currencies.contains_key(self.currency.iso_alpha_code) {
-                        Err(ChangeApplicationFailure::CurrencyAlreadyExists(
-                            self.currency.iso_alpha_code.to_string(),
-                        ))
-                    } else {
-                        book.currencies
-                            .insert(self.currency.iso_alpha_code, self.currency);
-                        Ok(())
-                    }
+        }
+        impl BookChange for Change {
+            fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure> {
+                if book.currencies.contains_key(self.currency.iso_alpha_code) {
+                    Err(ChangeApplicationFailure::CurrencyAlreadyExists(
+                        self.currency.iso_alpha_code.to_string(),
+                    ))
+                } else {
+                    book.currencies
+                        .insert(self.currency.iso_alpha_code, self.currency);
+                    Ok(())
                 }
             }
         }
     }
-    pub mod account {
-        pub mod add {
-            use super::super::{BookChange, ChangeApplicationFailure};
-            use crate::book::Book;
-            use crate::entities;
-            pub struct Input {
-                pub account: entities::account::Entity,
-            }
-            pub struct Change {
-                pub(crate) account: entities::account::Entity,
-            }
-            impl Change {
-                pub fn new(input: Input) -> Self {
-                    Self {
-                        account: input.account,
-                    }
+    pub mod add {
+        use super::{BookChange, ChangeApplicationFailure};
+        use crate::book::Book;
+        use crate::entities;
+        pub struct Input {
+            pub account: entities::account::Entity,
+        }
+        pub struct Change {
+            pub(crate) account: entities::account::Entity,
+        }
+        impl Change {
+            pub fn new(input: Input) -> Self {
+                Self {
+                    account: input.account,
                 }
             }
-            impl BookChange for Change {
-                fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure> {
-                    book.accounts.insert(self.account);
-                    Ok(())
-                }
+        }
+        impl BookChange for Change {
+            fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure> {
+                book.accounts.insert(self.account);
+                Ok(())
             }
         }
     }
@@ -154,8 +180,8 @@ pub mod book {
             #[test]
             fn change_add_currency() {
                 let mut book = Book::new();
-                book.apply(changes::currency::add::Change::new(
-                    changes::currency::add::Input {
+                book.apply(changes::add_currency::Change::new(
+                    changes::add_currency::Input {
                         currency: Currency::get(Iso::THB),
                     },
                 ));
@@ -171,9 +197,7 @@ pub mod book {
                 let account = entities::account::Entity::new(entities::account::Input {
                     name: String::from("Wallet"),
                 });
-                book.apply(changes::account::add::Change::new(
-                    changes::account::add::Input { account },
-                ));
+                book.apply(changes::add::Change::new(changes::add::Input { account }));
                 assert_eq!(book.accounts.len(), 1);
                 assert_eq!(
                     *book.accounts.iter().next().unwrap().1,
