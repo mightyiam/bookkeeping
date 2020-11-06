@@ -59,7 +59,7 @@ mod changes {
     use crate::book::{Book, ChangeApplicationFailure};
     use crate::entities;
     use rusty_money::Currency;
-    pub trait BookChange {
+    pub trait Change {
         fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure>;
     }
     pub struct NewAddCurrency {
@@ -75,7 +75,7 @@ mod changes {
             }
         }
     }
-    impl BookChange for AddCurrency {
+    impl Change for AddCurrency {
         fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure> {
             if book.currencies.contains_key(self.currency.iso_alpha_code) {
                 Err(ChangeApplicationFailure::CurrencyAlreadyExists(
@@ -101,7 +101,7 @@ mod changes {
             }
         }
     }
-    impl BookChange for AddAccount {
+    impl Change for AddAccount {
         fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure> {
             book.accounts.insert(self.account);
             Ok(())
@@ -109,7 +109,7 @@ mod changes {
     }
 }
 pub mod book {
-    use crate::changes::BookChange;
+    use crate::changes::Change;
     use crate::entities;
     use rusty_money::Currency;
     use slotmap::{new_key_type, DenseSlotMap};
@@ -136,7 +136,7 @@ pub mod book {
                 accounts: DenseSlotMap::with_key(),
             }
         }
-        pub fn apply(&mut self, change: impl BookChange) -> Result<(), ChangeApplicationFailure> {
+        pub fn apply(&mut self, change: impl Change) -> Result<(), ChangeApplicationFailure> {
             change.apply(self)
         }
     }
