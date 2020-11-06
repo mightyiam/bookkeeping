@@ -6,25 +6,53 @@ pub mod entities {
     /// Represents money either taken out of or put into an account.
     ///
     /// A group of multiple moves can make up a [transaction](crate::entities::Transaction).
-    ///
-    /// The purpose of the trailing underscore is to refrain from using the keyword [`move`](https://doc.rust-lang.org/std/keyword.move.html).
     pub struct Move {
         account_key: AccountKey,
         money: Money,
     }
     impl Move {
+        /// Creates a new move.
+        ///
+        /// ```
+        /// use envelope_system::entities::{ Move, MoveInput };
+        /// use envelope_system::{ Currency, Money, Iso };
+        /// use envelope_system::book::{ AccountKey };
+        /// // Imagine that you got this key from a `Book`
+        /// let account_key = AccountKey::default();
+        /// let money = Money::new(10, Currency::get(Iso::THB));
+        /// let move_ = Move::new(MoveInput{ account_key, money });
+        /// ```
         pub fn new(input: MoveInput) -> Self {
             let MoveInput { account_key, money } = input;
             Self { account_key, money }
         }
     }
+    /// Input for creating a new move.
     pub struct MoveInput {
+        /// Used to reference an [account](Account) in the [book](crate::book::Book).
         pub account_key: AccountKey,
+        /// Specifies the money moved.
         pub money: Money,
     }
     /// Represents an incomplete transaction that may yet be imbalanced.
     ///
     /// Entities of this type may be finalized into [transaction](Transaction)s using [TransactionDraft::finalize].
+    ///
+    /// ```
+    /// use envelope_system::entities::{TransactionDraft, TransactionDraftInput, Move, MoveInput};
+    /// use envelope_system::book::{AccountKey};
+    /// use envelope_system::{ Currency, Money, Iso };
+    /// let mut draft = TransactionDraft::new(TransactionDraftInput{});
+    /// // Imagine you got this key from a `Book`.
+    /// let atm = AccountKey::default();
+    /// let money = Money::new(-10, Currency::get(Iso::THB));
+    /// draft.add_move(Move::new(MoveInput{account_key: atm, money }));
+    /// // Imagine you got this key from a `Book`, as well.
+    /// let wallet = AccountKey::default();
+    /// let money = Money::new(10, Currency::get(Iso::THB));
+    /// draft.add_move(Move::new(MoveInput{account_key: wallet, money }));
+    /// assert!(draft.finalize().is_ok());
+    /// ```
     pub struct TransactionDraft {
         moves: Vec<Move>,
     }
@@ -91,6 +119,7 @@ pub mod entities {
     /// There is only one reason for failure, currently.
     /// And that is imbalance.
     pub struct TransactionFinalizeError {}
+    /// Input for creating a new transaction draft.
     pub struct TransactionDraftInput {}
     /// A group of related [move](crate::entities::Move)s that all occur at some time.
     ///
@@ -103,17 +132,20 @@ pub mod entities {
     ///
     /// ## Example:
     /// ```
-    /// use envelope_system::entities::*;
+    /// use envelope_system::entities::{Account, AccountInput};
     /// let wallet = Account::new(AccountInput{ name: String::from("Wallet") });
     /// ```
     #[derive(PartialEq, Debug)]
     pub struct Account {
         name: String,
     }
+    /// Input for creating a new account.
     pub struct AccountInput {
+        /// The name of the account.
         pub name: String,
     }
     impl Account {
+        /// Creates a new account.
         pub fn new(input: AccountInput) -> Self {
             Self { name: input.name }
         }
@@ -255,3 +287,5 @@ pub mod book {
         }
     }
 }
+
+pub use rusty_money::{Currency, Iso, Money};
