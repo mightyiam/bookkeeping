@@ -15,7 +15,7 @@ pub mod entities {
     use rusty_money::Money;
     /// Represents money either taken out of or put into an account.
     ///
-    /// A group of multiple moves can make up a [transaction](crate::entities::transaction).
+    /// A group of multiple moves can make up a [transaction](crate::entities::Transaction).
     ///
     /// The purpose of the trailing underscore is to refrain from using the keyword [`move`](https://doc.rust-lang.org/std/keyword.move.html).
     pub struct Move {
@@ -35,10 +35,10 @@ pub mod entities {
     pub struct TransactionDraft {
         moves: Vec<Move>,
     }
-    /// A group of related [move](crate::entities::move_)s that all occur at some time.
+    /// A group of related [move](crate::entities::Move)s that all occur at some time.
     ///
     /// Transactions cannot be created directly.
-    /// They start as [draft](crate::entities::transaction_draft)s.
+    /// They start as [draft](crate::entities::TransactionDraft)s.
     pub struct Transaction {
         moves: Vec<Move>,
     }
