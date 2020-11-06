@@ -101,7 +101,7 @@ mod changes {
             }
         }
     }
-    pub mod add {
+    pub mod add_account {
         use super::{BookChange, ChangeApplicationFailure};
         use crate::book::Book;
         use crate::entities;
@@ -197,7 +197,9 @@ pub mod book {
                 let account = entities::account::Entity::new(entities::account::Input {
                     name: String::from("Wallet"),
                 });
-                book.apply(changes::add::Change::new(changes::add::Input { account }));
+                book.apply(changes::add_account::Change::new(
+                    changes::add_account::Input { account },
+                ));
                 assert_eq!(book.accounts.len(), 1);
                 assert_eq!(
                     *book.accounts.iter().next().unwrap().1,
