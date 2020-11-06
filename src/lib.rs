@@ -13,12 +13,12 @@ pub mod entities {
         money: Money,
     }
     impl Move {
-        pub fn new(input: NewMove) -> Self {
-            let NewMove { account_key, money } = input;
+        pub fn new(input: MoveInput) -> Self {
+            let MoveInput { account_key, money } = input;
             Self { account_key, money }
         }
     }
-    pub struct NewMove {
+    pub struct MoveInput {
         pub account_key: AccountKey,
         pub money: Money,
     }
@@ -32,7 +32,7 @@ pub mod entities {
     impl TransactionDraft {
         /// New transaction drafts start with no moves.
         /// Moves are to be added using [TransactionDraft::add_move].
-        pub fn new(input: NewTransactionDraft) -> Self {
+        pub fn new(input: TransactionDraftInput) -> Self {
             // TODO: return Result
             Self { moves: Vec::new() }
         }
@@ -91,7 +91,7 @@ pub mod entities {
     /// There is only one reason for failure, currently.
     /// And that is imbalance.
     pub struct TransactionFinalizeError {}
-    pub struct NewTransactionDraft {}
+    pub struct TransactionDraftInput {}
     /// A group of related [move](crate::entities::Move)s that all occur at some time.
     ///
     /// Transactions cannot be created directly.
@@ -104,17 +104,17 @@ pub mod entities {
     /// ## Example:
     /// ```
     /// use envelope_system::entities::*;
-    /// let wallet = Account::new(NewAccount{ name: String::from("Wallet") });
+    /// let wallet = Account::new(AccountInput{ name: String::from("Wallet") });
     /// ```
     #[derive(PartialEq, Debug)]
     pub struct Account {
         name: String,
     }
-    pub struct NewAccount {
+    pub struct AccountInput {
         pub name: String,
     }
     impl Account {
-        pub fn new(input: NewAccount) -> Self {
+        pub fn new(input: AccountInput) -> Self {
             Self { name: input.name }
         }
     }
@@ -126,16 +126,16 @@ mod changes {
     pub trait Change {
         fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure>;
     }
-    pub struct NewAddCurrency {
+    pub struct AddCurrencyInput {
         pub currency: &'static Currency,
     }
     pub struct AddCurrency {
         pub(crate) currency: &'static Currency,
     }
     impl AddCurrency {
-        pub fn new(payload: NewAddCurrency) -> Self {
+        pub fn new(input: AddCurrencyInput) -> Self {
             Self {
-                currency: payload.currency,
+                currency: input.currency,
             }
         }
     }
@@ -152,14 +152,14 @@ mod changes {
             }
         }
     }
-    pub struct NewAddAccount {
+    pub struct AddAccountInput {
         pub account: entities::Account,
     }
     pub struct AddAccount {
         pub(crate) account: entities::Account,
     }
     impl AddAccount {
-        pub fn new(input: NewAddAccount) -> Self {
+        pub fn new(input: AddAccountInput) -> Self {
             Self {
                 account: input.account,
             }
@@ -226,7 +226,7 @@ pub mod book {
             #[test]
             fn change_add_currency() {
                 let mut book = Book::new();
-                book.apply(changes::AddCurrency::new(changes::NewAddCurrency {
+                book.apply(changes::AddCurrency::new(changes::AddCurrencyInput {
                     currency: Currency::get(Iso::THB),
                 }));
                 assert_eq!(book.currencies.len(), 1);
@@ -238,14 +238,16 @@ pub mod book {
             #[test]
             fn change_add_account() {
                 let mut book = Book::new();
-                let account = entities::Account::new(entities::NewAccount {
+                let account = entities::Account::new(entities::AccountInput {
                     name: String::from("Wallet"),
                 });
-                book.apply(changes::AddAccount::new(changes::NewAddAccount { account }));
+                book.apply(changes::AddAccount::new(changes::AddAccountInput {
+                    account,
+                }));
                 assert_eq!(book.accounts.len(), 1);
                 assert_eq!(
                     *book.accounts.iter().next().unwrap().1,
-                    entities::Account::new(entities::NewAccount {
+                    entities::Account::new(entities::AccountInput {
                         name: String::from("Wallet"),
                     })
                 )
