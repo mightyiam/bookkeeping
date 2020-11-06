@@ -59,7 +59,7 @@ pub mod entities {
             pub name: String,
         }
         impl Entity {
-            pub(crate) fn new(input: Input) -> Self {
+            pub fn new(input: Input) -> Self {
                 Self { name: input.name }
             }
         }
