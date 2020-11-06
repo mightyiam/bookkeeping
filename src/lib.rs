@@ -8,7 +8,7 @@
 /// ## Example:
 /// ```
 /// use envelope_system::entities::*;
-/// let wallet = Account::new(NewAccountArgs{ name: String::from("Wallet") });
+/// let wallet = Account::new(NewAccount{ name: String::from("Wallet") });
 /// ```
 pub mod entities {
     use crate::book::AccountKey;
@@ -23,12 +23,12 @@ pub mod entities {
         money: Money,
     }
     impl Move {
-        pub fn new(input: NewMoveArgs) -> Self {
-            let NewMoveArgs { account_key, money } = input;
+        pub fn new(input: NewMove) -> Self {
+            let NewMove { account_key, money } = input;
             Self { account_key, money }
         }
     }
-    pub struct NewMoveArgs {
+    pub struct NewMove {
         pub account_key: AccountKey,
         pub money: Money,
     }
@@ -46,73 +46,65 @@ pub mod entities {
     pub struct Account {
         name: String,
     }
-    pub struct NewAccountArgs {
+    pub struct NewAccount {
         pub name: String,
     }
     impl Account {
-        pub fn new(input: NewAccountArgs) -> Self {
+        pub fn new(input: NewAccount) -> Self {
             Self { name: input.name }
         }
     }
 }
 mod changes {
     use crate::book::{Book, ChangeApplicationFailure};
+    use crate::entities;
+    use rusty_money::Currency;
     pub trait BookChange {
         fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure>;
     }
-    pub mod add_currency {
-        use super::BookChange;
-        use crate::book::{Book, ChangeApplicationFailure};
-        use rusty_money::Currency;
-        pub struct Input {
-            pub currency: &'static Currency,
-        }
-        pub struct Change {
-            pub(crate) currency: &'static Currency,
-        }
-        impl Change {
-            pub fn new(input: Input) -> Self {
-                Self {
-                    currency: input.currency,
-                }
-            }
-        }
-        impl BookChange for Change {
-            fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure> {
-                if book.currencies.contains_key(self.currency.iso_alpha_code) {
-                    Err(ChangeApplicationFailure::CurrencyAlreadyExists(
-                        self.currency.iso_alpha_code.to_string(),
-                    ))
-                } else {
-                    book.currencies
-                        .insert(self.currency.iso_alpha_code, self.currency);
-                    Ok(())
-                }
+    pub struct NewAddCurrency {
+        pub currency: &'static Currency,
+    }
+    pub struct AddCurrency {
+        pub(crate) currency: &'static Currency,
+    }
+    impl AddCurrency {
+        pub fn new(payload: NewAddCurrency) -> Self {
+            Self {
+                currency: payload.currency,
             }
         }
     }
-    pub mod add_account {
-        use super::{BookChange, ChangeApplicationFailure};
-        use crate::book::Book;
-        use crate::entities;
-        pub struct Input {
-            pub account: entities::Account,
-        }
-        pub struct Change {
-            pub(crate) account: entities::Account,
-        }
-        impl Change {
-            pub fn new(input: Input) -> Self {
-                Self {
-                    account: input.account,
-                }
-            }
-        }
-        impl BookChange for Change {
-            fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure> {
-                book.accounts.insert(self.account);
+    impl BookChange for AddCurrency {
+        fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure> {
+            if book.currencies.contains_key(self.currency.iso_alpha_code) {
+                Err(ChangeApplicationFailure::CurrencyAlreadyExists(
+                    self.currency.iso_alpha_code.to_string(),
+                ))
+            } else {
+                book.currencies
+                    .insert(self.currency.iso_alpha_code, self.currency);
                 Ok(())
             }
+        }
+    }
+    pub struct NewAddAccount {
+        pub account: entities::Account,
+    }
+    pub struct AddAccount {
+        pub(crate) account: entities::Account,
+    }
+    impl AddAccount {
+        pub fn new(input: NewAddAccount) -> Self {
+            Self {
+                account: input.account,
+            }
+        }
+    }
+    impl BookChange for AddAccount {
+        fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure> {
+            book.accounts.insert(self.account);
+            Ok(())
         }
     }
 }
@@ -170,11 +162,9 @@ pub mod book {
             #[test]
             fn change_add_currency() {
                 let mut book = Book::new();
-                book.apply(changes::add_currency::Change::new(
-                    changes::add_currency::Input {
-                        currency: Currency::get(Iso::THB),
-                    },
-                ));
+                book.apply(changes::AddCurrency::new(changes::NewAddCurrency {
+                    currency: Currency::get(Iso::THB),
+                }));
                 assert_eq!(book.currencies.len(), 1);
                 assert_eq!(
                     *book.currencies.get("THB").unwrap(),
@@ -184,16 +174,14 @@ pub mod book {
             #[test]
             fn change_add_account() {
                 let mut book = Book::new();
-                let account = entities::Account::new(entities::NewAccountArgs {
+                let account = entities::Account::new(entities::NewAccount {
                     name: String::from("Wallet"),
                 });
-                book.apply(changes::add_account::Change::new(
-                    changes::add_account::Input { account },
-                ));
+                book.apply(changes::AddAccount::new(changes::NewAddAccount { account }));
                 assert_eq!(book.accounts.len(), 1);
                 assert_eq!(
                     *book.accounts.iter().next().unwrap().1,
-                    entities::Account::new(entities::NewAccountArgs {
+                    entities::Account::new(entities::NewAccount {
                         name: String::from("Wallet"),
                     })
                 )
