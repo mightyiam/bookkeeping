@@ -1,18 +1,8 @@
 /// The various entities involved in accounting
-///
-/// Each entity is in its own submodule.
-/// Each submodule includes:
-/// - `Entity`: a struct that represents the entity.
-/// - `Input`: a struct that serves as input for the `new` method of the `Entity` struct.
-///
-/// ## Example:
-/// ```
-/// use envelope_system::entities::*;
-/// let wallet = Account::new(NewAccount{ name: String::from("Wallet") });
-/// ```
 pub mod entities {
     use crate::book::AccountKey;
-    use rusty_money::Money;
+    use rusty_money::{Currency, Money};
+    use std::collections::HashMap;
     /// Represents money either taken out of or put into an account.
     ///
     /// A group of multiple moves can make up a [transaction](crate::entities::Transaction).
@@ -32,9 +22,76 @@ pub mod entities {
         pub account_key: AccountKey,
         pub money: Money,
     }
+    /// Represents an incomplete transaction that may yet be imbalanced.
+    ///
+    /// Entities of this type may be finalized into [transaction](Transaction)s using [TransactionDraft::finalize].
     pub struct TransactionDraft {
         moves: Vec<Move>,
     }
+
+    impl TransactionDraft {
+        /// New transaction drafts start with no moves.
+        /// Moves are to be added using [TransactionDraft::add_move].
+        pub fn new(input: NewTransactionDraft) -> Self {
+            // TODO: return Result
+            Self { moves: Vec::new() }
+        }
+        /// Adds a move to the transaction draft.
+        pub fn add_move(&mut self, move_: Move) {
+            self.moves.push(move_);
+        }
+        /*
+        fn finalize_(self) -> Result<Transaction, TransactionFinalizeError> {
+            use itertools::Itertools;
+            use rust_decimal::Decimal;
+            use std::iter::Sum;
+            //use std::collections::HashMap;
+            if self
+                .moves
+                .iter()
+                .map(|mv| (mv.money.currency().iso_alpha_code, mv.money.clone()))
+                .into_group_map()
+                .into_iter()
+                .all(|(_, amounts)| amounts.into_iter().sum::<Money>().is_zero())
+            {
+                Ok(Transaction { moves: self.moves })
+            } else {
+                Err(TransactionFinalizeError {})
+            }
+        }
+        */
+        /// Calculates the balances from the moves of the dransaction draft, one balance per currency.
+        // TODO: the key should be `Currency`
+        pub fn balances(&self) -> HashMap<String, Money> {
+            self.moves.iter().fold(HashMap::new(), |mut acc, curr| {
+                let money = &curr.money;
+                let currency = money.currency();
+                let code = currency.iso_alpha_code;
+                let new_balance = acc.get(code).map_or(Money::new(0, currency), |balance| {
+                    balance.clone() + money.clone()
+                });
+                acc.insert(code.into(), new_balance);
+                acc
+            })
+        }
+        /// Figures out whether all of the balances are zero.
+        pub fn are_balanced(balances: HashMap<String, Money>) -> bool {
+            balances.iter().all(|(_, balance)| balance.is_zero())
+        }
+        /// If all of the balances are found to be zero, the draft will be finalized.
+        pub fn finalize(self) -> Result<Transaction, TransactionFinalizeError> {
+            if Self::are_balanced(self.balances()) {
+                Ok(Transaction { moves: self.moves })
+            } else {
+                Err(TransactionFinalizeError {})
+            }
+        }
+    }
+    /// Not sure whether this should provide any information.
+    /// There is only one reason for failure, currently.
+    /// And that is imbalance.
+    pub struct TransactionFinalizeError {}
+    pub struct NewTransactionDraft {}
     /// A group of related [move](crate::entities::Move)s that all occur at some time.
     ///
     /// Transactions cannot be created directly.
@@ -42,6 +99,13 @@ pub mod entities {
     pub struct Transaction {
         moves: Vec<Move>,
     }
+    /// Represents an account. For example, a bank account or a wallet.
+    ///
+    /// ## Example:
+    /// ```
+    /// use envelope_system::entities::*;
+    /// let wallet = Account::new(NewAccount{ name: String::from("Wallet") });
+    /// ```
     #[derive(PartialEq, Debug)]
     pub struct Account {
         name: String,
