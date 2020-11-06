@@ -7,61 +7,51 @@
 ///
 /// ## Example:
 /// ```
-/// use envelope_system::entities::account;
-/// let wallet = account::Entity::new(account::Input{ name: String::from("Wallet") });
+/// use envelope_system::entities::*;
+/// let wallet = Account::new(NewAccountArgs{ name: String::from("Wallet") });
 /// ```
 pub mod entities {
+    use crate::book::AccountKey;
+    use rusty_money::Money;
     /// Represents money either taken out of or put into an account.
     ///
     /// A group of multiple moves can make up a [transaction](crate::entities::transaction).
     ///
     /// The purpose of the trailing underscore is to refrain from using the keyword [`move`](https://doc.rust-lang.org/std/keyword.move.html).
-    pub mod move_ {
-        use crate::book::AccountKey;
-        use rusty_money::Money;
-        pub struct Entity {
-            account_key: AccountKey,
-            money: Money,
-        }
-        pub struct Input {
-            pub account_key: AccountKey,
-            pub money: Money,
-        }
-        impl Entity {
-            pub fn new(input: Input) -> Self {
-                let Input { account_key, money } = input;
-                Self { account_key, money }
-            }
+    pub struct Move {
+        account_key: AccountKey,
+        money: Money,
+    }
+    impl Move {
+        pub fn new(input: NewMoveArgs) -> Self {
+            let NewMoveArgs { account_key, money } = input;
+            Self { account_key, money }
         }
     }
-    pub mod transaction_draft {
-        use super::move_::Entity as Move;
-        pub struct Entity {
-            moves: Vec<Move>,
-        }
+    pub struct NewMoveArgs {
+        pub account_key: AccountKey,
+        pub money: Money,
+    }
+    pub struct TransactionDraft {
+        moves: Vec<Move>,
     }
     /// A group of related [move](crate::entities::move_)s that all occur at some time.
     ///
     /// Transactions cannot be created directly.
     /// They start as [draft](crate::entities::transaction_draft)s.
-    pub mod transaction {
-        use super::move_::Entity as Move;
-        pub struct Entity {
-            moves: Vec<Move>,
-        }
+    pub struct Transaction {
+        moves: Vec<Move>,
     }
-    pub mod account {
-        #[derive(PartialEq, Debug)]
-        pub struct Entity {
-            name: String,
-        }
-        pub struct Input {
-            pub name: String,
-        }
-        impl Entity {
-            pub fn new(input: Input) -> Self {
-                Self { name: input.name }
-            }
+    #[derive(PartialEq, Debug)]
+    pub struct Account {
+        name: String,
+    }
+    pub struct NewAccountArgs {
+        pub name: String,
+    }
+    impl Account {
+        pub fn new(input: NewAccountArgs) -> Self {
+            Self { name: input.name }
         }
     }
 }
@@ -106,10 +96,10 @@ mod changes {
         use crate::book::Book;
         use crate::entities;
         pub struct Input {
-            pub account: entities::account::Entity,
+            pub account: entities::Account,
         }
         pub struct Change {
-            pub(crate) account: entities::account::Entity,
+            pub(crate) account: entities::Account,
         }
         impl Change {
             pub fn new(input: Input) -> Self {
@@ -141,9 +131,9 @@ pub mod book {
     pub struct Book {
         pub(crate) currencies: HashMap<&'static str, &'static Currency>,
         pub(crate) transaction_drafts:
-            DenseSlotMap<TransactionDraftKey, entities::transaction_draft::Entity>,
-        pub(crate) transactions: DenseSlotMap<TransactionKey, entities::transaction::Entity>,
-        pub(crate) accounts: DenseSlotMap<AccountKey, entities::account::Entity>,
+            DenseSlotMap<TransactionDraftKey, entities::TransactionDraft>,
+        pub(crate) transactions: DenseSlotMap<TransactionKey, entities::Transaction>,
+        pub(crate) accounts: DenseSlotMap<AccountKey, entities::Account>,
     }
     impl Book {
         pub fn new() -> Self {
@@ -194,7 +184,7 @@ pub mod book {
             #[test]
             fn change_add_account() {
                 let mut book = Book::new();
-                let account = entities::account::Entity::new(entities::account::Input {
+                let account = entities::Account::new(entities::NewAccountArgs {
                     name: String::from("Wallet"),
                 });
                 book.apply(changes::add_account::Change::new(
@@ -203,7 +193,7 @@ pub mod book {
                 assert_eq!(book.accounts.len(), 1);
                 assert_eq!(
                     *book.accounts.iter().next().unwrap().1,
-                    entities::account::Entity::new(entities::account::Input {
+                    entities::Account::new(entities::NewAccountArgs {
                         name: String::from("Wallet"),
                     })
                 )
