@@ -1,4 +1,4 @@
-use envelope_system::{Account, Book};
+use envelope_system::{money, Account, Book};
 
 #[test]
 fn adding_one_account() {
@@ -16,9 +16,10 @@ fn transfer_between_two_accounts() {
     let mut book = Book::new();
     let bank = book.new_account("bank");
     let wallet = book.new_account("wallet");
-    let _500_baht = currency::THB.of(50000);
+    let _500_baht = money::THB().of(50000);
     let take_500_baht_out_of_bank = book.transfer(bank, wallet, _500_baht);
     let balances = book.account_balances();
-    assert_eq!(balances.get(bank).unwrap(), currency::THB.of(-50000));
-    assert_eq!(balances.get(wallet).unwrap(), currency::THB.of(50000));
+    let bank_balances = balances.get(bank).unwrap();
+    assert_eq!(balances.get(bank).unwrap(), money::THB().of(-50000));
+    assert_eq!(balances.get(wallet).unwrap(), money::THB().of(50000));
 }
