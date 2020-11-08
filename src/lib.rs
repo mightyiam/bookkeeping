@@ -1,11 +1,14 @@
+#[macro_use]
+extern crate maplit;
 /// The various entities involved in accounting
 pub mod entities {
     use crate::book::AccountKey;
-    use rusty_money::{Currency, Money};
+    use rusty_money::{Currency, Iso, Money};
     use std::collections::HashMap;
     /// Represents money either taken out of or put into an account.
     ///
     /// A group of multiple moves can make up a [transaction](crate::entities::Transaction).
+    #[derive(Eq, PartialEq, Debug, Clone)]
     pub struct Move {
         account_key: AccountKey,
         money: Money,
@@ -45,16 +48,28 @@ pub mod entities {
     /// let mut draft = TransactionDraft::new(TransactionDraftInput{});
     /// // Imagine you got this key from a `Book`.
     /// let atm = AccountKey::default();
-    /// let money = Money::new(-10, Currency::get(Iso::THB));
+    /// let money = Money::new(-1000, Currency::get(Iso::THB));
     /// draft.add_move(Move::new(MoveInput{account_key: atm, money }));
     /// // Imagine you got this key from a `Book`, as well.
     /// let wallet = AccountKey::default();
-    /// let money = Money::new(10, Currency::get(Iso::THB));
+    /// let money = Money::new(1000, Currency::get(Iso::THB));
     /// draft.add_move(Move::new(MoveInput{account_key: wallet, money }));
     /// assert!(draft.finalize().is_ok());
     /// ```
     pub struct TransactionDraft {
         moves: Vec<Move>,
+    }
+
+    #[test]
+    fn move_new() {
+        let money = Money::new(2000, Currency::get(Iso::THB));
+        let money_clone = money.clone();
+        let move_ = Move::new(MoveInput {
+            money,
+            account_key: AccountKey::default(),
+        });
+        assert_eq!(move_.money, money_clone);
+        assert_eq!(move_.account_key, AccountKey::default());
     }
 
     impl TransactionDraft {
@@ -95,25 +110,106 @@ pub mod entities {
                 let money = &curr.money;
                 let currency = money.currency();
                 let code = currency.iso_alpha_code;
-                let new_balance = acc.get(code).map_or(Money::new(0, currency), |balance| {
-                    balance.clone() + money.clone()
-                });
+                let new_balance = acc
+                    .get(code)
+                    .map_or(money.clone(), |balance| balance.clone() + money.clone());
                 acc.insert(code.into(), new_balance);
                 acc
             })
         }
         /// Figures out whether all of the balances are zero.
-        pub fn are_balanced(balances: HashMap<String, Money>) -> bool {
+        pub fn are_balanced(balances: &HashMap<String, Money>) -> bool {
             balances.iter().all(|(_, balance)| balance.is_zero())
         }
         /// If all of the balances are found to be zero, the draft will be finalized.
         pub fn finalize(self) -> Result<Transaction, TransactionFinalizeError> {
-            if Self::are_balanced(self.balances()) {
+            if Self::are_balanced(&self.balances()) {
                 Ok(Transaction { moves: self.moves })
             } else {
                 Err(TransactionFinalizeError {})
             }
         }
+    }
+    #[test]
+    fn transaction_draft_new() {
+        let draft = TransactionDraft::new(TransactionDraftInput {});
+        assert_eq!(draft.moves.len(), 0);
+    }
+    #[test]
+    fn transaction_draft_add_move() {
+        let mut draft = TransactionDraft::new(TransactionDraftInput {});
+        let move_ = Move::new(MoveInput {
+            money: Money::new(-1000, Currency::get(Iso::THB)),
+            account_key: AccountKey::default(),
+        });
+        let move_clone = move_.clone();
+        draft.add_move(move_);
+        assert_eq!(draft.moves.len(), 1);
+        assert_eq!(draft.moves[0], move_clone);
+        let move_ = Move::new(MoveInput {
+            money: Money::new(1000, Currency::get(Iso::THB)),
+            account_key: AccountKey::default(),
+        });
+        let move_clone = move_.clone();
+        draft.add_move(move_);
+        assert_eq!(draft.moves.len(), 2);
+        assert_eq!(draft.moves[1], move_clone);
+    }
+    #[test]
+    fn transaction_draft_balances() {
+        let mut draft = TransactionDraft::new(TransactionDraftInput {});
+        let move_ = Move::new(MoveInput {
+            money: Money::new(-1000, Currency::get(Iso::THB)),
+            account_key: AccountKey::default(),
+        });
+        draft.add_move(move_);
+        let balances = draft.balances();
+        assert_eq!(balances.len(), 1);
+        assert_eq!(balances["THB"], Money::new(-1000, Currency::get(Iso::THB)));
+        let move_ = Move::new(MoveInput {
+            money: Money::new(1000, Currency::get(Iso::THB)),
+            account_key: AccountKey::default(),
+        });
+        draft.add_move(move_);
+        let balances = draft.balances();
+        assert_eq!(balances.len(), 1);
+        assert_eq!(balances["THB"], Money::new(0, Currency::get(Iso::THB)));
+        let move_ = Move::new(MoveInput {
+            money: Money::new(2000, Currency::get(Iso::ILS)),
+            account_key: AccountKey::default(),
+        });
+        draft.add_move(move_);
+        let balances = draft.balances();
+        assert_eq!(balances.len(), 2);
+        assert_eq!(balances["THB"], Money::new(0, Currency::get(Iso::THB)));
+        assert_eq!(balances["ILS"], Money::new(2000, Currency::get(Iso::ILS)));
+    }
+    #[test]
+    fn transaction_draft_are_balanced() {
+        let balances = hashmap! {};
+        assert_eq!(TransactionDraft::are_balanced(&balances), true);
+        let balances = hashmap! {
+            String::from("THB") => Money::new(0, Currency::get(Iso::THB)),
+        };
+        assert_eq!(TransactionDraft::are_balanced(&balances), true);
+        let balances = hashmap! {
+            String::from("THB") => Money::new(1, Currency::get(Iso::THB)),
+        };
+        assert_eq!(TransactionDraft::are_balanced(&balances), false);
+        let balances = hashmap! {
+            String::from("THB") => Money::new(-1, Currency::get(Iso::THB)),
+        };
+        assert_eq!(TransactionDraft::are_balanced(&balances), false);
+        let balances = hashmap! {
+            String::from("THB") => Money::new(0, Currency::get(Iso::THB)),
+            String::from("ILS") => Money::new(2, Currency::get(Iso::ILS)),
+        };
+        assert_eq!(TransactionDraft::are_balanced(&balances), false);
+        let balances = hashmap! {
+            String::from("THB") => Money::new(0, Currency::get(Iso::THB)),
+            String::from("ILS") => Money::new(0, Currency::get(Iso::ILS)),
+        };
+        assert_eq!(TransactionDraft::are_balanced(&balances), true);
     }
     /// Not sure whether this should provide any information.
     /// There is only one reason for failure, currently.
