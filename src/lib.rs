@@ -76,7 +76,6 @@ pub mod entities {
         /// New transaction drafts start with no moves.
         /// Moves are to be added using [TransactionDraft::add_move].
         pub fn new(input: TransactionDraftInput) -> Self {
-            // TODO: return Result
             Self { moves: Vec::new() }
         }
         /// Adds a move to the transaction draft.
