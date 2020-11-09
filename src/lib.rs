@@ -108,7 +108,7 @@ pub mod entities {
             if Self::are_balanced(&self.balances()) {
                 Transaction { moves: self.moves }
             } else {
-                panic!();
+                panic!("Transaction draft not balanced.");
             }
         }
     }
@@ -192,6 +192,31 @@ pub mod entities {
             String::from("ILS") => Money::new(0, Currency::get(Iso::ILS)),
         };
         assert_eq!(TransactionDraft::are_balanced(&balances), true);
+    }
+    #[test]
+    #[should_panic(expected = "Transaction draft not balanced.")]
+    fn finalize_unbalanced_transaction_draft() {
+        let mut draft = TransactionDraft::new(TransactionDraftInput {});
+        draft.add_move(Move::new(MoveInput {
+            money: Money::new(100, Currency::get(Iso::GBP)),
+            account_key: AccountKey::default(),
+        }));
+        draft.finalize();
+    }
+    #[test]
+    fn finalize_balanced_transaction_draft() {
+        let draft = TransactionDraft::new(TransactionDraftInput {});
+        let _transaction: Transaction = draft.finalize();
+        let mut draft = TransactionDraft::new(TransactionDraftInput {});
+        draft.add_move(Move::new(MoveInput {
+            money: Money::new(100, Currency::get(Iso::GBP)),
+            account_key: AccountKey::default(),
+        }));
+        draft.add_move(Move::new(MoveInput {
+            money: Money::new(-100, Currency::get(Iso::GBP)),
+            account_key: AccountKey::default(),
+        }));
+        let _transaction: Transaction = draft.finalize();
     }
     /// Input for creating a new transaction draft.
     pub struct TransactionDraftInput {}
