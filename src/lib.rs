@@ -42,7 +42,7 @@ pub mod entities {
     /// Entities of this type may be finalized into [transaction](Transaction)s using [TransactionDraft::finalize].
     ///
     /// ```
-    /// use envelope_system::entities::{TransactionDraft, TransactionDraftInput, Move, MoveInput};
+    /// use envelope_system::entities::{TransactionDraft, TransactionDraftInput, Move, MoveInput, Transaction};
     /// use envelope_system::book::{AccountKey};
     /// use envelope_system::{ Currency, Money, Iso };
     /// let mut draft = TransactionDraft::new(TransactionDraftInput{});
@@ -54,7 +54,7 @@ pub mod entities {
     /// let wallet = AccountKey::default();
     /// let money = Money::new(1000, Currency::get(Iso::THB));
     /// draft.add_move(Move::new(MoveInput{account_key: wallet, money }));
-    /// assert!(draft.finalize().is_ok());
+    /// let transaction: Transaction = draft.finalize();
     /// ```
     pub struct TransactionDraft {
         moves: Vec<Move>,
@@ -121,11 +121,14 @@ pub mod entities {
             balances.iter().all(|(_, balance)| balance.is_zero())
         }
         /// If all of the balances are found to be zero, the draft will be finalized.
-        pub fn finalize(self) -> Result<Transaction, TransactionFinalizeError> {
+        ///
+        /// ## Panics
+        /// If any of the balances are not zero.
+        pub fn finalize(self) -> Transaction {
             if Self::are_balanced(&self.balances()) {
-                Ok(Transaction { moves: self.moves })
+                Transaction { moves: self.moves }
             } else {
-                Err(TransactionFinalizeError {})
+                panic!();
             }
         }
     }
@@ -210,10 +213,6 @@ pub mod entities {
         };
         assert_eq!(TransactionDraft::are_balanced(&balances), true);
     }
-    /// Not sure whether this should provide any information.
-    /// There is only one reason for failure, currently.
-    /// And that is imbalance.
-    pub struct TransactionFinalizeError {}
     /// Input for creating a new transaction draft.
     pub struct TransactionDraftInput {}
     /// A group of related [move](crate::entities::Move)s that all occur at some time.
