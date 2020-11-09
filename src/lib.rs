@@ -3,8 +3,8 @@ extern crate maplit;
 /// The various entities involved in accounting
 pub mod entities {
     use crate::book::AccountKey;
-    use rusty_money::{Currency, Iso, Money};
     use std::collections::HashMap;
+    use steel_cent::{currency, currency::Currency, Money};
     /// Represents money either taken out of or put into an account.
     ///
     /// A group of multiple moves can make up a [transaction](crate::entities::Transaction).
@@ -18,11 +18,11 @@ pub mod entities {
         ///
         /// ```
         /// use envelope_system::entities::{ Move, MoveInput };
-        /// use envelope_system::{ Currency, Money, Iso };
+        /// use envelope_system::{ currency, Money };
         /// use envelope_system::book::{ AccountKey };
         /// // Imagine that you got this key from a `Book`
         /// let account_key = AccountKey::default();
-        /// let money = Money::new(10, Currency::get(Iso::THB));
+        /// let money = Money::of_major(currency::THB, 10);
         /// let move_ = Move::new(MoveInput{ account_key, money });
         /// ```
         pub fn new(input: MoveInput) -> Self {
@@ -44,15 +44,15 @@ pub mod entities {
     /// ```
     /// use envelope_system::entities::{TransactionDraft, TransactionDraftInput, Move, MoveInput, Transaction};
     /// use envelope_system::book::{AccountKey};
-    /// use envelope_system::{ Currency, Money, Iso };
+    /// use envelope_system::{ currency, Money };
     /// let mut draft = TransactionDraft::new(TransactionDraftInput{});
     /// // Imagine you got this key from a `Book`.
     /// let atm = AccountKey::default();
-    /// let money = Money::new(-1000, Currency::get(Iso::THB));
+    /// let money = Money::of_major(currency::THB, -10);
     /// draft.add_move(Move::new(MoveInput{account_key: atm, money }));
     /// // Imagine you got this key from a `Book`, as well.
     /// let wallet = AccountKey::default();
-    /// let money = Money::new(1000, Currency::get(Iso::THB));
+    /// let money = Money::of_major(currency::THB, 10);
     /// draft.add_move(Move::new(MoveInput{account_key: wallet, money }));
     /// let transaction: Transaction = draft.finalize();
     /// ```
@@ -62,7 +62,7 @@ pub mod entities {
 
     #[test]
     fn move_new() {
-        let money = Money::new(2000, Currency::get(Iso::THB));
+        let money = Money::of_major(currency::THB, 20);
         let money_clone = money.clone();
         let move_ = Move::new(MoveInput {
             money,
@@ -84,21 +84,21 @@ pub mod entities {
         }
         /// Calculates the balances from the moves of the dransaction draft, one balance per currency.
         // TODO: the key should be `Currency`
-        pub fn balances(&self) -> HashMap<String, Money> {
+        pub fn balances(&self) -> HashMap<&Currency, Money> {
             self.moves.iter().fold(HashMap::new(), |mut acc, curr| {
                 let money = &curr.money;
-                let currency = money.currency();
-                let code = currency.iso_alpha_code;
                 let new_balance = acc
-                    .get(code)
+                    .get(&money.currency)
                     .map_or(money.clone(), |balance| balance.clone() + money.clone());
-                acc.insert(code.into(), new_balance);
+                acc.insert(&money.currency, new_balance);
                 acc
             })
         }
         /// Figures out whether all of the balances are zero.
-        pub fn are_balanced(balances: &HashMap<String, Money>) -> bool {
-            balances.iter().all(|(_, balance)| balance.is_zero())
+        pub fn are_balanced(balances: &HashMap<&Currency, Money>) -> bool {
+            balances
+                .iter()
+                .all(|(_, balance)| balance == &Money::zero(balance.currency))
         }
         /// If all of the balances are found to be zero, the draft will be finalized.
         ///
@@ -121,7 +121,7 @@ pub mod entities {
     fn transaction_draft_add_move() {
         let mut draft = TransactionDraft::new(TransactionDraftInput {});
         let move_ = Move::new(MoveInput {
-            money: Money::new(-1000, Currency::get(Iso::THB)),
+            money: Money::of_major(currency::THB, -10),
             account_key: AccountKey::default(),
         });
         let move_clone = move_.clone();
@@ -129,7 +129,7 @@ pub mod entities {
         assert_eq!(draft.moves.len(), 1);
         assert_eq!(draft.moves[0], move_clone);
         let move_ = Move::new(MoveInput {
-            money: Money::new(1000, Currency::get(Iso::THB)),
+            money: Money::of_major(currency::THB, 10),
             account_key: AccountKey::default(),
         });
         let move_clone = move_.clone();
@@ -141,55 +141,58 @@ pub mod entities {
     fn transaction_draft_balances() {
         let mut draft = TransactionDraft::new(TransactionDraftInput {});
         let move_ = Move::new(MoveInput {
-            money: Money::new(-1000, Currency::get(Iso::THB)),
+            money: Money::of_major(currency::THB, -10),
             account_key: AccountKey::default(),
         });
         draft.add_move(move_);
         let balances = draft.balances();
         assert_eq!(balances.len(), 1);
-        assert_eq!(balances["THB"], Money::new(-1000, Currency::get(Iso::THB)));
+        assert_eq!(
+            balances[&currency::THB],
+            Money::of_major(currency::THB, -10)
+        );
         let move_ = Move::new(MoveInput {
-            money: Money::new(1000, Currency::get(Iso::THB)),
+            money: Money::of_major(currency::THB, 10),
             account_key: AccountKey::default(),
         });
         draft.add_move(move_);
         let balances = draft.balances();
         assert_eq!(balances.len(), 1);
-        assert_eq!(balances["THB"], Money::new(0, Currency::get(Iso::THB)));
+        assert_eq!(balances[&currency::THB], Money::zero(currency::THB));
         let move_ = Move::new(MoveInput {
-            money: Money::new(2000, Currency::get(Iso::ILS)),
+            money: Money::of_major(currency::ILS, 20),
             account_key: AccountKey::default(),
         });
         draft.add_move(move_);
         let balances = draft.balances();
         assert_eq!(balances.len(), 2);
-        assert_eq!(balances["THB"], Money::new(0, Currency::get(Iso::THB)));
-        assert_eq!(balances["ILS"], Money::new(2000, Currency::get(Iso::ILS)));
+        assert_eq!(balances[&currency::THB], Money::zero(currency::THB));
+        assert_eq!(balances[&currency::ILS], Money::of_major(currency::ILS, 20));
     }
     #[test]
     fn transaction_draft_are_balanced() {
         let balances = hashmap! {};
         assert_eq!(TransactionDraft::are_balanced(&balances), true);
         let balances = hashmap! {
-            String::from("THB") => Money::new(0, Currency::get(Iso::THB)),
+            &currency::THB => Money::zero(currency::THB),
         };
         assert_eq!(TransactionDraft::are_balanced(&balances), true);
         let balances = hashmap! {
-            String::from("THB") => Money::new(1, Currency::get(Iso::THB)),
+            &currency::THB => Money::of_major(currency::THB, 1),
         };
         assert_eq!(TransactionDraft::are_balanced(&balances), false);
         let balances = hashmap! {
-            String::from("THB") => Money::new(-1, Currency::get(Iso::THB)),
+            &currency::THB => Money::of_major(currency::THB, -1),
         };
         assert_eq!(TransactionDraft::are_balanced(&balances), false);
         let balances = hashmap! {
-            String::from("THB") => Money::new(0, Currency::get(Iso::THB)),
-            String::from("ILS") => Money::new(2, Currency::get(Iso::ILS)),
+            &currency::THB => Money::zero(currency::THB),
+            &currency::ILS => Money::of_major(currency::ILS, 2),
         };
         assert_eq!(TransactionDraft::are_balanced(&balances), false);
         let balances = hashmap! {
-            String::from("THB") => Money::new(0, Currency::get(Iso::THB)),
-            String::from("ILS") => Money::new(0, Currency::get(Iso::ILS)),
+            &currency::THB => Money::zero(currency::THB),
+            &currency::ILS => Money::zero(currency::ILS),
         };
         assert_eq!(TransactionDraft::are_balanced(&balances), true);
     }
@@ -198,7 +201,7 @@ pub mod entities {
     fn finalize_unbalanced_transaction_draft() {
         let mut draft = TransactionDraft::new(TransactionDraftInput {});
         draft.add_move(Move::new(MoveInput {
-            money: Money::new(100, Currency::get(Iso::GBP)),
+            money: Money::of_major(currency::GBP, 100),
             account_key: AccountKey::default(),
         }));
         draft.finalize();
@@ -209,11 +212,11 @@ pub mod entities {
         let _transaction: Transaction = draft.finalize();
         let mut draft = TransactionDraft::new(TransactionDraftInput {});
         draft.add_move(Move::new(MoveInput {
-            money: Money::new(100, Currency::get(Iso::GBP)),
+            money: Money::of_major(currency::GBP, 100),
             account_key: AccountKey::default(),
         }));
         draft.add_move(Move::new(MoveInput {
-            money: Money::new(-100, Currency::get(Iso::GBP)),
+            money: Money::of_major(currency::GBP, -100),
             account_key: AccountKey::default(),
         }));
         let _transaction: Transaction = draft.finalize();
@@ -253,7 +256,7 @@ pub mod entities {
 mod changes {
     use crate::book::{Book, ChangeApplicationFailure};
     use crate::entities;
-    use rusty_money::Currency;
+    use steel_cent::currency::Currency;
     pub trait Change {
         fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure>;
     }
@@ -272,13 +275,12 @@ mod changes {
     }
     impl Change for AddCurrency {
         fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure> {
-            if book.currencies.contains_key(self.currency.iso_alpha_code) {
+            if book.currencies.contains(self.currency) {
                 Err(ChangeApplicationFailure::CurrencyAlreadyExists(
-                    self.currency.iso_alpha_code.to_string(),
+                    self.currency,
                 ))
             } else {
-                book.currencies
-                    .insert(self.currency.iso_alpha_code, self.currency);
+                book.currencies.insert(self.currency);
                 Ok(())
             }
         }
@@ -306,9 +308,9 @@ mod changes {
 pub mod book {
     use crate::changes::Change;
     use crate::entities;
-    use rusty_money::Currency;
     use slotmap::{new_key_type, DenseSlotMap};
-    use std::collections::HashMap;
+    use std::collections::{HashMap, HashSet};
+    use steel_cent::currency::Currency;
     new_key_type! {
         pub struct CurrencyKey;
         pub struct TransactionDraftKey;
@@ -316,7 +318,7 @@ pub mod book {
         pub struct AccountKey;
     }
     pub struct Book {
-        pub(crate) currencies: HashMap<&'static str, &'static Currency>,
+        pub(crate) currencies: HashSet<&'static Currency>,
         pub(crate) transaction_drafts:
             DenseSlotMap<TransactionDraftKey, entities::TransactionDraft>,
         pub(crate) transactions: DenseSlotMap<TransactionKey, entities::Transaction>,
@@ -325,7 +327,7 @@ pub mod book {
     impl Book {
         pub fn new() -> Self {
             Book {
-                currencies: HashMap::new(),
+                currencies: HashSet::new(),
                 transaction_drafts: DenseSlotMap::with_key(),
                 transactions: DenseSlotMap::with_key(),
                 accounts: DenseSlotMap::with_key(),
@@ -336,7 +338,7 @@ pub mod book {
         }
     }
     pub enum ChangeApplicationFailure {
-        CurrencyAlreadyExists(String),
+        CurrencyAlreadyExists(&'static Currency),
     }
     #[cfg(test)]
     mod tests {
@@ -353,18 +355,15 @@ pub mod book {
             use crate::book::Book;
             use crate::changes;
             use crate::entities;
-            use rusty_money::{Currency, Iso};
+            use steel_cent::currency;
             #[test]
             fn change_add_currency() {
                 let mut book = Book::new();
                 book.apply(changes::AddCurrency::new(changes::AddCurrencyInput {
-                    currency: Currency::get(Iso::THB),
+                    currency: &currency::THB,
                 }));
                 assert_eq!(book.currencies.len(), 1);
-                assert_eq!(
-                    *book.currencies.get("THB").unwrap(),
-                    Currency::find_by_alpha_iso(String::from("THB")).unwrap(),
-                );
+                assert!(book.currencies.contains(&currency::THB))
             }
             #[test]
             fn change_add_account() {
@@ -387,4 +386,4 @@ pub mod book {
     }
 }
 
-pub use rusty_money::{Currency, Iso, Money};
+pub use steel_cent::{currency, Currency, Money};

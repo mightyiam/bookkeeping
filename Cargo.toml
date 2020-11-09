@@ -11,5 +11,5 @@ edition = "2018"
 
 [dependencies]
 maplit = "1.0.2"
-rusty-money = "0.3.5"
 slotmap = "0.4.0"
+steel-cent = "0.2.3"
