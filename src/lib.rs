@@ -82,26 +82,6 @@ pub mod entities {
         pub fn add_move(&mut self, move_: Move) {
             self.moves.push(move_);
         }
-        /*
-        fn finalize_(self) -> Result<Transaction, TransactionFinalizeError> {
-            use itertools::Itertools;
-            use rust_decimal::Decimal;
-            use std::iter::Sum;
-            //use std::collections::HashMap;
-            if self
-                .moves
-                .iter()
-                .map(|mv| (mv.money.currency().iso_alpha_code, mv.money.clone()))
-                .into_group_map()
-                .into_iter()
-                .all(|(_, amounts)| amounts.into_iter().sum::<Money>().is_zero())
-            {
-                Ok(Transaction { moves: self.moves })
-            } else {
-                Err(TransactionFinalizeError {})
-            }
-        }
-        */
         /// Calculates the balances from the moves of the dransaction draft, one balance per currency.
         // TODO: the key should be `Currency`
         pub fn balances(&self) -> HashMap<String, Money> {
