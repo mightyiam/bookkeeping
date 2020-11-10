@@ -3,7 +3,6 @@ extern crate maplit;
 /// The various entities involved in accounting
 pub mod entities {
     use crate::book::{AccountKey, CurrencyKey};
-    use slotmap::DenseSlotMap;
     use std::collections::HashMap;
     /// Represents a currency.
     ///
@@ -180,6 +179,7 @@ pub mod entities {
     }
     #[test]
     fn transaction_draft_balances() {
+        use slotmap::DenseSlotMap;
         let mut draft = TransactionDraft::new(TransactionDraftInput {});
         let mut sm = DenseSlotMap::with_key();
         let thb = sm.insert("obtain a key");
@@ -215,6 +215,7 @@ pub mod entities {
     }
     #[test]
     fn transaction_draft_are_balanced() {
+        use slotmap::DenseSlotMap;
         let mut sm: DenseSlotMap<CurrencyKey, &str> = DenseSlotMap::with_key();
         let thb = sm.insert("obtain a key");
         let ils = sm.insert("obtain a key");
@@ -362,7 +363,6 @@ pub mod book {
     use crate::changes::Change;
     use crate::{entities, entities::Currency};
     use slotmap::{new_key_type, DenseSlotMap};
-    use std::collections::{HashMap, HashSet};
     new_key_type! {
         pub struct CurrencyKey;
         pub struct TransactionDraftKey;
@@ -389,6 +389,7 @@ pub mod book {
             change.apply(self)
         }
     }
+    #[derive(Debug)]
     pub enum ChangeApplicationFailure {
         CurrencyAlreadyExists(String),
     }
@@ -415,7 +416,8 @@ pub mod book {
                         code: "THB".into(),
                         decimal_places: 2,
                     }),
-                }));
+                }))
+                .unwrap();
                 assert_eq!(book.currencies.len(), 1);
                 assert!(book.currencies.values().any(|cur| cur.code == "THB"))
             }
@@ -427,7 +429,8 @@ pub mod book {
                 });
                 book.apply(changes::AddAccount::new(changes::AddAccountInput {
                     account,
-                }));
+                }))
+                .unwrap();
                 assert_eq!(book.accounts.len(), 1);
                 assert_eq!(
                     *book.accounts.iter().next().unwrap().1,
