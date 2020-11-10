@@ -10,6 +10,7 @@ pub mod entities {
     /// use envelope_system::entities::*;
     /// let thb = Currency::new(CurrencyInput{ code: "THB".into(), decimal_places: 2 });
     /// ```
+    #[derive(Clone, Debug)]
     pub struct Currency {
         pub(crate) code: String,
         pub(crate) decimal_places: u8,
@@ -294,76 +295,138 @@ pub mod entities {
     /// ## Example:
     /// ```
     /// use envelope_system::entities::{Account, AccountInput};
-    /// let wallet = Account::new(AccountInput{ name: String::from("Wallet") });
+    /// let wallet = Account::new(AccountInput{});
     /// ```
     #[derive(PartialEq, Debug)]
-    pub struct Account {
-        name: String,
-    }
+    pub struct Account {}
     /// Input for creating a new account.
-    pub struct AccountInput {
-        /// The name of the account.
-        pub name: String,
-    }
+    pub struct AccountInput {}
     impl Account {
         /// Creates a new account.
         pub fn new(input: AccountInput) -> Self {
-            Self { name: input.name }
+            Self {}
         }
     }
 }
-mod changes {
+/// Changes that can be applied to a [book](book::Book).
+pub mod changes {
     use crate::book::{Book, ChangeApplicationFailure};
     use crate::{entities, entities::Currency};
+    /// Describes a change that can be applied to a [book](Book).
+    ///
+    /// A set of changes is provided.
+    /// Custom changes are not supported; the fields of [book](Book) are private.
     pub trait Change {
-        fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure>;
+        /// Applies a change to a book.
+        fn apply(self, book: &mut Book);
     }
-    pub struct AddCurrencyInput {
-        pub currency: Currency,
-    }
+    /// Adds a [currency](Currency) to a [book](Book).
+    ///
+    /// ```
+    /// use envelope_system::{ changes::*, book::Book, entities::* };
+    /// let mut book = Book::new();
+    /// let currency = Currency::new(CurrencyInput{ code: "THB".into(), decimal_places: 2 });
+    /// let add_currency = AddCurrency::new(AddCurrencyInput{currency});
+    /// book.apply(add_currency);
+    /// ```
     pub struct AddCurrency {
         pub(crate) currency: Currency,
     }
     impl AddCurrency {
+        /// Creates a new AddCurrency change.
         pub fn new(input: AddCurrencyInput) -> Self {
             Self {
                 currency: input.currency,
             }
         }
     }
+    /// Input for creating a new [AddCurrency](AddCurrency).
+    pub struct AddCurrencyInput {
+        pub currency: Currency,
+    }
     impl Change for AddCurrency {
-        fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure> {
+        /// Applies the change.
+        ///
+        /// ## Panics
+        /// On application, if a currency with the same code already exists in the [book](Book).
+        fn apply(self, book: &mut Book) {
             if book
                 .currencies
                 .values()
                 .any(|currency| self.currency == *currency)
             {
-                Err(ChangeApplicationFailure::CurrencyAlreadyExists(
-                    self.currency.code,
-                ))
+                panic!("Currency code already exists.");
             } else {
                 book.currencies.insert(self.currency);
-                Ok(())
             }
         }
     }
-    pub struct AddAccountInput {
-        pub account: entities::Account,
+    #[test]
+    #[should_panic(expected = "Currency code already exists.")]
+    fn add_currency_code_exists() {
+        use entities::*;
+        let mut book = Book::new();
+        let thb = Currency::new(CurrencyInput {
+            code: "THB".into(),
+            decimal_places: 2,
+        });
+        let add_currency = AddCurrency::new(AddCurrencyInput { currency: thb });
+        book.apply(add_currency);
+        let thb = Currency::new(CurrencyInput {
+            code: "THB".into(),
+            decimal_places: 2,
+        });
+        let add_currency = AddCurrency::new(AddCurrencyInput { currency: thb });
+        book.apply(add_currency);
     }
+    #[test]
+    fn add_currency_code() {
+        use entities::*;
+        let mut book = Book::new();
+        let thb = Currency::new(CurrencyInput {
+            code: "THB".into(),
+            decimal_places: 2,
+        });
+        let thb_clone = thb.clone();
+        let add_currency = AddCurrency::new(AddCurrencyInput { currency: thb });
+        book.apply(add_currency);
+        assert_eq!(*book.currencies.iter().next().unwrap().1, thb_clone);
+        let ils = Currency::new(CurrencyInput {
+            code: "ILS".into(),
+            decimal_places: 2,
+        });
+        let ils_clone = ils.clone();
+        let add_currency = AddCurrency::new(AddCurrencyInput { currency: ils });
+        book.apply(add_currency);
+        assert_eq!(*book.currencies.iter().nth(1).unwrap().1, ils_clone);
+    }
+    /// Adds an [account](entities::Account) to a [book](Book).
+    ///
+    /// ```
+    /// use envelope_system::{ changes::*, book::Book, entities::* };
+    /// let mut book = Book::new();
+    /// let account = Account::new(AccountInput{});
+    /// let add_account = AddAccount::new(AddAccountInput{account});
+    /// book.apply(add_account);
+    /// ```
     pub struct AddAccount {
         pub(crate) account: entities::Account,
     }
     impl AddAccount {
+        /// Creates a new AddAcccount change.
         pub fn new(input: AddAccountInput) -> Self {
-            Self {
-                account: input.account,
-            }
+            let AddAccountInput { account } = input;
+            Self { account }
         }
     }
+    /// Input for creating a new [AddAccount](AddAccount).
+    pub struct AddAccountInput {
+        pub account: entities::Account,
+    }
     impl Change for AddAccount {
-        fn apply(self, book: &mut Book) -> Result<(), ChangeApplicationFailure> {
+        /// Applies the change.
+        fn apply(self, book: &mut Book) {
             book.accounts.insert(self.account);
-            Ok(())
         }
     }
 }
@@ -393,8 +456,8 @@ pub mod book {
                 accounts: DenseSlotMap::with_key(),
             }
         }
-        pub fn apply(&mut self, change: impl Change) -> Result<(), ChangeApplicationFailure> {
-            change.apply(self)
+        pub fn apply(&mut self, change: impl Change) {
+            change.apply(self);
         }
     }
     #[derive(Debug)]
@@ -424,29 +487,26 @@ pub mod book {
                         code: "THB".into(),
                         decimal_places: 2,
                     }),
-                }))
-                .unwrap();
+                }));
                 assert_eq!(book.currencies.len(), 1);
                 assert!(book.currencies.values().any(|cur| cur.code == "THB"))
             }
             #[test]
             fn change_add_account() {
                 let mut book = Book::new();
-                let account = Account::new(AccountInput {
-                    name: String::from("Wallet"),
-                });
+                let account = Account::new(AccountInput {});
                 book.apply(changes::AddAccount::new(changes::AddAccountInput {
                     account,
-                }))
-                .unwrap();
+                }));
                 assert_eq!(book.accounts.len(), 1);
                 assert_eq!(
                     *book.accounts.iter().next().unwrap().1,
-                    Account::new(AccountInput {
-                        name: String::from("Wallet"),
-                    })
+                    Account::new(AccountInput {})
                 )
             }
         }
     }
 }
+
+// TODO: Nicer export paths
+// TODO: Make change application panics docs more visible
