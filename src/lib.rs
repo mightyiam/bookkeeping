@@ -15,6 +15,12 @@ pub mod entities {
         pub(crate) decimal_places: u8,
     }
     impl Currency {
+        /// Creates a new currency.
+        ///
+        /// ```
+        /// use envelope_system::entities::*;
+        /// let currency = Currency::new(CurrencyInput{ code: "THB".into(), decimal_places: 2 });
+        /// ```
         pub fn new(input: CurrencyInput) -> Self {
             let CurrencyInput {
                 code,
@@ -33,7 +39,9 @@ pub mod entities {
     }
     /// Input for creating a new move.
     pub struct CurrencyInput {
+        /// A currency code. For example, `BHD`.
         pub code: String,
+        /// The amount of decimal places the currency has. In the example of `BHD`, it would be 3.
         pub decimal_places: u8,
     }
     /// Represents money either taken out of or put into an account.
