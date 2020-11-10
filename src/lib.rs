@@ -472,8 +472,6 @@ pub mod book {
     }
     pub struct Book<'book> {
         pub(crate) currencies: DenseSlotMap<CurrencyKey, Currency>,
-        pub(crate) transaction_drafts:
-            DenseSlotMap<TransactionDraftKey, entities::TransactionDraft<'book>>,
         pub(crate) transactions: DenseSlotMap<TransactionKey, entities::Transaction<'book>>,
         pub(crate) accounts: DenseSlotMap<AccountKey, entities::Account>,
     }
@@ -481,7 +479,6 @@ pub mod book {
         pub fn new() -> Self {
             Book {
                 currencies: DenseSlotMap::with_key(),
-                transaction_drafts: DenseSlotMap::with_key(),
                 transactions: DenseSlotMap::with_key(),
                 accounts: DenseSlotMap::with_key(),
             }
@@ -498,7 +495,6 @@ pub mod book {
             let book = Book::new();
             assert_eq!(book.currencies.len(), 0);
             assert_eq!(book.accounts.len(), 0);
-            assert_eq!(book.transaction_drafts.len(), 0);
             assert_eq!(book.transactions.len(), 0);
         }
         mod changes {
