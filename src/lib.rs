@@ -410,7 +410,7 @@ pub mod changes {
         book.apply(add_currency);
     }
     #[test]
-    fn add_currency_code() {
+    fn add_currency() {
         use entities::*;
         let mut book = Book::new();
         let thb = Currency::new(CurrencyInput {
@@ -459,6 +459,18 @@ pub mod changes {
             book.accounts.insert(self.account);
         }
     }
+    #[test]
+    fn change_add_account() {
+        use entities::*;
+        let mut book = Book::new();
+        let account = Account::new(AccountInput {});
+        book.apply(AddAccount::new(AddAccountInput { account }));
+        assert_eq!(book.accounts.len(), 1);
+        assert_eq!(
+            *book.accounts.iter().next().unwrap().1,
+            Account::new(AccountInput {})
+        )
+    }
 }
 pub mod book {
     use crate::changes::Change;
@@ -487,46 +499,12 @@ pub mod book {
             change.apply(self);
         }
     }
-    #[cfg(test)]
-    mod tests {
-        use crate::book::Book;
-        #[test]
-        fn initial_state() {
-            let book = Book::new();
-            assert_eq!(book.currencies.len(), 0);
-            assert_eq!(book.accounts.len(), 0);
-            assert_eq!(book.transactions.len(), 0);
-        }
-        mod changes {
-            use crate::book::Book;
-            use crate::changes;
-            use crate::entities::*;
-            #[test]
-            fn change_add_currency() {
-                let mut book = Book::new();
-                book.apply(changes::AddCurrency::new(changes::AddCurrencyInput {
-                    currency: Currency::new(CurrencyInput {
-                        code: "THB".into(),
-                        decimal_places: 2,
-                    }),
-                }));
-                assert_eq!(book.currencies.len(), 1);
-                assert!(book.currencies.values().any(|cur| cur.code == "THB"))
-            }
-            #[test]
-            fn change_add_account() {
-                let mut book = Book::new();
-                let account = Account::new(AccountInput {});
-                book.apply(changes::AddAccount::new(changes::AddAccountInput {
-                    account,
-                }));
-                assert_eq!(book.accounts.len(), 1);
-                assert_eq!(
-                    *book.accounts.iter().next().unwrap().1,
-                    Account::new(AccountInput {})
-                )
-            }
-        }
+    #[test]
+    fn book_new() {
+        let book = Book::new();
+        assert_eq!(book.currencies.len(), 0);
+        assert_eq!(book.accounts.len(), 0);
+        assert_eq!(book.transactions.len(), 0);
     }
 }
 
