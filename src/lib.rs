@@ -158,6 +158,12 @@ pub mod entities {
             }
         }
     }
+    /// Input for creating a new transaction draft.
+    pub struct TransactionDraftInput {}
+    /// A group of related [move](crate::entities::Move)s that all occur at some time.
+    ///
+    /// Transactions cannot be created directly.
+    /// They start as [draft](crate::entities::TransactionDraft)s.
     #[test]
     fn transaction_draft_new() {
         let draft = TransactionDraft::new(TransactionDraftInput {});
@@ -280,12 +286,6 @@ pub mod entities {
         }));
         let _transaction: Transaction = draft.finalize();
     }
-    /// Input for creating a new transaction draft.
-    pub struct TransactionDraftInput {}
-    /// A group of related [move](crate::entities::Move)s that all occur at some time.
-    ///
-    /// Transactions cannot be created directly.
-    /// They start as [draft](crate::entities::TransactionDraft)s.
     pub struct Transaction {
         moves: Vec<Move>,
     }
