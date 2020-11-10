@@ -2,7 +2,6 @@
 extern crate maplit;
 /// The various entities involved in accounting
 pub mod entities {
-    use crate::book::{AccountKey, CurrencyKey};
     use std::collections::HashMap;
     /// Represents a currency.
     ///
@@ -10,7 +9,8 @@ pub mod entities {
     /// use envelope_system::entities::*;
     /// let thb = Currency::new(CurrencyInput{ code: "THB".into(), decimal_places: 2 });
     /// ```
-    #[derive(Clone, Debug)]
+    // TODO is deriving Eq correct here?
+    #[derive(Eq, Clone, Debug)]
     pub struct Currency {
         pub(crate) code: String,
         pub(crate) decimal_places: u8,
@@ -38,6 +38,12 @@ pub mod entities {
             other.code == self.code
         }
     }
+    use std::hash::{Hash, Hasher};
+    impl Hash for Currency {
+        fn hash<H: Hasher>(&self, state: &mut H) {
+            self.code.hash(state);
+        }
+    }
     /// Input for creating a new move.
     pub struct CurrencyInput {
         /// A currency code. For example, `BHD`.
@@ -48,42 +54,40 @@ pub mod entities {
     /// Represents money either taken out of or put into an account.
     ///
     /// A group of multiple moves can make up a [transaction](crate::entities::Transaction).
-    #[derive(Eq, PartialEq, Debug, Clone)]
-    pub struct Move {
-        account_key: AccountKey,
-        currency_key: CurrencyKey,
+    #[derive(PartialEq, Debug, Clone)]
+    pub struct Move<'book> {
+        account: &'book Account,
+        currency: &'book Currency,
         amount: i64,
     }
-    impl Move {
+    impl<'book> Move<'book> {
         /// Creates a new move.
         ///
         /// ```
-        /// use envelope_system::entities::{ Move, MoveInput };
-        /// use envelope_system::book::{ AccountKey, CurrencyKey };
-        /// // Imagine that you got these keys from a `Book`
-        /// let account_key = AccountKey::default();
-        /// let currency_key = CurrencyKey::default();
-        /// let move_ = Move::new(MoveInput{account_key, currency_key, amount: 2000 });
+        /// use envelope_system::entities::*;
+        /// let wallet = Account::new(AccountInput{});
+        /// let thb = Currency::new(CurrencyInput{ code: "THB".into(), decimal_places: 2 });
+        /// let move_ = Move::new(MoveInput{account: &wallet, currency: &thb, amount: 2000 });
         /// ```
-        pub fn new(input: MoveInput) -> Self {
+        pub fn new(input: MoveInput<'book>) -> Self {
             let MoveInput {
-                account_key,
-                currency_key,
+                account,
+                currency,
                 amount,
             } = input;
             Self {
-                account_key,
-                currency_key,
+                account,
+                currency,
                 amount,
             }
         }
     }
     /// Input for creating a new move.
-    pub struct MoveInput {
+    pub struct MoveInput<'book> {
         /// Used to reference an [account](Account) in the [book](crate::book::Book).
-        pub account_key: AccountKey,
+        pub account: &'book Account,
         /// Used to reference a [currency](Currency) in the [book](crate::book::Book) that represents the currency moved.
-        pub currency_key: CurrencyKey,
+        pub currency: &'book Currency,
         /// Specifies the amount moved, in minor unit of currency.
         pub amount: i64,
     }
@@ -92,66 +96,68 @@ pub mod entities {
     /// Entities of this type may be finalized into [transaction](Transaction)s using [TransactionDraft::finalize].
     ///
     /// ```
-    /// use envelope_system::entities::{TransactionDraft, TransactionDraftInput, Move, MoveInput, Transaction};
-    /// use envelope_system::book::{AccountKey, CurrencyKey};
+    /// use envelope_system::entities::*;
     /// let mut draft = TransactionDraft::new(TransactionDraftInput{});
-    /// // Imagine you got this key from a `Book`.
-    /// let atm = AccountKey::default();
-    /// let thb = CurrencyKey::default();
-    /// draft.add_move(Move::new(MoveInput{account_key: atm, currency_key: thb, amount: -1000 }));
-    /// // Imagine you got this key from a `Book`, as well.
-    /// let wallet = AccountKey::default();
-    /// draft.add_move(Move::new(MoveInput{account_key: wallet, currency_key: thb, amount: 1000 }));
+    /// let atm = Account::new(AccountInput{});
+    /// let thb = Currency::new(CurrencyInput{code: "THB".into(), decimal_places: 2});
+    /// draft.add_move(Move::new(MoveInput{account: &atm, currency: &thb, amount: -1000 }));
+    /// let wallet = Account::new(AccountInput{});
+    /// draft.add_move(Move::new(MoveInput{account: &wallet, currency: &thb, amount: 1000 }));
     /// let transaction: Transaction = draft.finalize();
     /// ```
-    pub struct TransactionDraft {
-        moves: Vec<Move>,
+    pub struct TransactionDraft<'book> {
+        moves: Vec<Move<'book>>,
     }
 
     #[test]
     fn move_new() {
+        let wallet = Account::new(AccountInput {});
+        let currency = Currency::new(CurrencyInput {
+            code: "THB".into(),
+            decimal_places: 2,
+        });
         let amount = 2000;
         let move_ = Move::new(MoveInput {
-            account_key: AccountKey::default(),
-            currency_key: CurrencyKey::default(),
+            account: &wallet,
+            currency: &currency,
             amount,
         });
-        assert_eq!(move_.account_key, AccountKey::default());
-        assert_eq!(move_.currency_key, CurrencyKey::default());
+        assert_eq!(move_.account, &wallet);
+        assert_eq!(move_.currency, &currency);
         assert_eq!(move_.amount, 2000);
     }
 
-    impl TransactionDraft {
+    impl<'book> TransactionDraft<'book> {
         /// New transaction drafts start with no moves.
         /// Moves are to be added using [TransactionDraft::add_move].
         pub fn new(input: TransactionDraftInput) -> Self {
             Self { moves: Vec::new() }
         }
         /// Adds a move to the transaction draft.
-        pub fn add_move(&mut self, move_: Move) {
+        pub fn add_move(&mut self, move_: Move<'book>) {
             self.moves.push(move_);
         }
         /// Calculates the balances from the moves of the dransaction draft, one balance per currency.
         // TODO: the key should be `Currency`
-        pub fn balances(&self) -> HashMap<&CurrencyKey, i64> {
+        pub fn balances(&self) -> HashMap<&Currency, i64> {
             self.moves.iter().fold(HashMap::new(), |mut acc, curr| {
                 let amount = curr.amount;
                 let new_balance = acc
-                    .get(&curr.currency_key)
+                    .get(curr.currency)
                     .map_or(amount, |balance| balance + amount);
-                acc.insert(&curr.currency_key, new_balance);
+                acc.insert(curr.currency, new_balance);
                 acc
             })
         }
         /// Figures out whether all of the balances are zero.
-        pub fn are_balanced(balances: &HashMap<&CurrencyKey, i64>) -> bool {
+        pub fn are_balanced(balances: &HashMap<&Currency, i64>) -> bool {
             balances.iter().all(|(_, balance)| *balance == 0)
         }
         /// If all of the balances are found to be zero, the draft will be finalized.
         ///
         /// ## Panics
         /// If any of the balances are not zero.
-        pub fn finalize(self) -> Transaction {
+        pub fn finalize(self) -> Transaction<'book> {
             if Self::are_balanced(&self.balances()) {
                 Transaction { moves: self.moves }
             } else {
@@ -173,9 +179,14 @@ pub mod entities {
     #[test]
     fn transaction_draft_add_move() {
         let mut draft = TransactionDraft::new(TransactionDraftInput {});
+        let wallet = Account::new(AccountInput {});
+        let currency = Currency::new(CurrencyInput {
+            code: "THB".into(),
+            decimal_places: 2,
+        });
         let move_ = Move::new(MoveInput {
-            account_key: AccountKey::default(),
-            currency_key: CurrencyKey::default(),
+            account: &wallet,
+            currency: &currency,
             amount: -1000,
         });
         let move_clone = move_.clone();
@@ -183,8 +194,8 @@ pub mod entities {
         assert_eq!(draft.moves.len(), 1);
         assert_eq!(draft.moves[0], move_clone);
         let move_ = Move::new(MoveInput {
-            account_key: AccountKey::default(),
-            currency_key: CurrencyKey::default(),
+            account: &wallet,
+            currency: &currency,
             amount: 1000,
         });
         let move_clone = move_.clone();
@@ -194,13 +205,15 @@ pub mod entities {
     }
     #[test]
     fn transaction_draft_balances() {
-        use slotmap::DenseSlotMap;
         let mut draft = TransactionDraft::new(TransactionDraftInput {});
-        let mut sm = DenseSlotMap::with_key();
-        let thb = sm.insert("obtain a key");
+        let thb = Currency::new(CurrencyInput {
+            code: "THB".into(),
+            decimal_places: 2,
+        });
+        let wallet = Account::new(AccountInput {});
         let move_ = Move::new(MoveInput {
-            account_key: AccountKey::default(),
-            currency_key: thb,
+            account: &wallet,
+            currency: &thb,
             amount: -1000,
         });
         draft.add_move(move_);
@@ -208,18 +221,21 @@ pub mod entities {
         assert_eq!(balances.len(), 1);
         assert_eq!(balances[&thb], -1000,);
         let move_ = Move::new(MoveInput {
-            account_key: AccountKey::default(),
-            currency_key: thb,
+            account: &wallet,
+            currency: &thb,
             amount: 1000,
         });
         draft.add_move(move_);
         let balances = draft.balances();
         assert_eq!(balances.len(), 1);
         assert_eq!(balances[&thb], 0);
-        let ils = sm.insert("obtain a key");
+        let ils = Currency::new(CurrencyInput {
+            code: "ILS".into(),
+            decimal_places: 2,
+        });
         let move_ = Move::new(MoveInput {
-            account_key: AccountKey::default(),
-            currency_key: ils,
+            account: &wallet,
+            currency: &ils,
             amount: 2000,
         });
         draft.add_move(move_);
@@ -230,10 +246,14 @@ pub mod entities {
     }
     #[test]
     fn transaction_draft_are_balanced() {
-        use slotmap::DenseSlotMap;
-        let mut sm: DenseSlotMap<CurrencyKey, &str> = DenseSlotMap::with_key();
-        let thb = sm.insert("obtain a key");
-        let ils = sm.insert("obtain a key");
+        let thb = Currency::new(CurrencyInput {
+            code: "THB".into(),
+            decimal_places: 2,
+        });
+        let ils = Currency::new(CurrencyInput {
+            code: "ILS".into(),
+            decimal_places: 2,
+        });
         let balances = hashmap! {};
         assert_eq!(TransactionDraft::are_balanced(&balances), true);
         let balances = hashmap! {
@@ -263,9 +283,14 @@ pub mod entities {
     #[should_panic(expected = "Transaction draft not balanced.")]
     fn finalize_unbalanced_transaction_draft() {
         let mut draft = TransactionDraft::new(TransactionDraftInput {});
+        let wallet = Account::new(AccountInput {});
+        let thb = Currency::new(CurrencyInput {
+            code: "THB".into(),
+            decimal_places: 2,
+        });
         draft.add_move(Move::new(MoveInput {
-            account_key: AccountKey::default(),
-            currency_key: CurrencyKey::default(),
+            account: &wallet,
+            currency: &thb,
             amount: 10000,
         }));
         draft.finalize();
@@ -275,20 +300,25 @@ pub mod entities {
         let draft = TransactionDraft::new(TransactionDraftInput {});
         let _transaction: Transaction = draft.finalize();
         let mut draft = TransactionDraft::new(TransactionDraftInput {});
+        let wallet = Account::new(AccountInput {});
+        let thb = Currency::new(CurrencyInput {
+            code: "THB".into(),
+            decimal_places: 2,
+        });
         draft.add_move(Move::new(MoveInput {
-            account_key: AccountKey::default(),
-            currency_key: CurrencyKey::default(),
+            account: &wallet,
+            currency: &thb,
             amount: 10000,
         }));
         draft.add_move(Move::new(MoveInput {
-            account_key: AccountKey::default(),
-            currency_key: CurrencyKey::default(),
+            account: &wallet,
+            currency: &thb,
             amount: -10000,
         }));
         let _transaction: Transaction = draft.finalize();
     }
-    pub struct Transaction {
-        moves: Vec<Move>,
+    pub struct Transaction<'book> {
+        moves: Vec<Move<'book>>,
     }
     /// Represents an account. For example, a bank account or a wallet.
     ///
@@ -310,7 +340,7 @@ pub mod entities {
 }
 /// Changes that can be applied to a [book](book::Book).
 pub mod changes {
-    use crate::book::{Book, ChangeApplicationFailure};
+    use crate::book::Book;
     use crate::{entities, entities::Currency};
     /// Describes a change that can be applied to a [book](Book).
     ///
@@ -440,14 +470,14 @@ pub mod book {
         pub struct TransactionKey;
         pub struct AccountKey;
     }
-    pub struct Book {
+    pub struct Book<'book> {
         pub(crate) currencies: DenseSlotMap<CurrencyKey, Currency>,
         pub(crate) transaction_drafts:
-            DenseSlotMap<TransactionDraftKey, entities::TransactionDraft>,
-        pub(crate) transactions: DenseSlotMap<TransactionKey, entities::Transaction>,
+            DenseSlotMap<TransactionDraftKey, entities::TransactionDraft<'book>>,
+        pub(crate) transactions: DenseSlotMap<TransactionKey, entities::Transaction<'book>>,
         pub(crate) accounts: DenseSlotMap<AccountKey, entities::Account>,
     }
-    impl Book {
+    impl<'book> Book<'book> {
         pub fn new() -> Self {
             Book {
                 currencies: DenseSlotMap::with_key(),
@@ -459,10 +489,6 @@ pub mod book {
         pub fn apply(&mut self, change: impl Change) {
             change.apply(self);
         }
-    }
-    #[derive(Debug)]
-    pub enum ChangeApplicationFailure {
-        CurrencyAlreadyExists(String),
     }
     #[cfg(test)]
     mod tests {
