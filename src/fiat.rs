@@ -1,8 +1,5 @@
-use std::collections::HashMap;
-
 pub type MinorAmount = i64;
 pub type MajorAmount = MinorAmount;
-pub type Balance<'a> = HashMap<Currency<'a>, MinorAmount>;
 
 #[derive(Hash, Eq, PartialEq, Clone, Copy)]
 pub struct Currency<'a> {
@@ -80,28 +77,5 @@ impl<'a> Neg for Money<'a> {
     fn neg(mut self) -> Self {
         self.minor_amount = -self.minor_amount;
         self
-    }
-}
-use std::ops::Add;
-impl<'a> Add<Money<'a>> for Balance<'a> {
-    type Output = Balance<'a>;
-    fn add(mut self, rhs: Money<'a>) -> Balance<'a> {
-        self.entry(rhs.currency)
-            .and_modify(|amount| {
-                *amount += rhs.minor_amount;
-            })
-            .or_insert(rhs.minor_amount);
-        self
-    }
-}
-
-use std::iter::Sum;
-
-impl<'a> Sum<Money<'a>> for Balance<'a> {
-    fn sum<I>(iter: I) -> Self
-    where
-        I: Iterator<Item = Money<'a>>,
-    {
-        iter.fold(Balance::new(), Add::add)
     }
 }

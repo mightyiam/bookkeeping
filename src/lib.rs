@@ -1,23 +1,13 @@
+pub mod accounting;
+pub mod fiat;
+
+pub use accounting::*;
+pub use fiat::*;
 use std::rc::Rc;
 
 pub struct Book<'a> {
     accounts: Vec<Rc<Account>>,
     transactions: Vec<Rc<Transaction<'a>>>,
-}
-
-#[derive(PartialEq, Eq, Debug, Hash)]
-pub struct Account {
-    name: String,
-}
-
-pub mod fiat;
-
-impl Account {
-    fn new(name: &str) -> Self {
-        Self {
-            name: name.to_string(),
-        }
-    }
 }
 
 impl<'a> Book<'a> {
@@ -49,7 +39,7 @@ impl<'a> Book<'a> {
         transaction
     }
 
-    pub fn balance(&self, account: Rc<Account>) -> fiat::Balance {
+    pub fn balance(&self, account: Rc<Account>) -> Balance {
         self.transactions
             .iter()
             .filter_map(|tx| {
@@ -62,17 +52,5 @@ impl<'a> Book<'a> {
                 }
             })
             .sum()
-    }
-}
-
-pub struct Transaction<'a> {
-    pub(crate) from: Rc<Account>,
-    pub(crate) to: Rc<Account>,
-    pub(crate) money: fiat::Money<'a>,
-}
-
-impl<'a> Transaction<'a> {
-    pub fn new(from: Rc<Account>, to: Rc<Account>, money: fiat::Money<'a>) -> Self {
-        Transaction { from, to, money }
     }
 }
