@@ -1,3 +1,9 @@
+use std::collections::HashMap;
+use std::iter::FromIterator;
+use std::iter::Sum;
+use std::ops::Add;
+use std::ops::Neg;
+
 pub type MinorAmount = i64;
 pub type MajorAmount = MinorAmount;
 
@@ -20,62 +26,82 @@ impl<'a> Currency<'a> {
     }
 
     pub fn of_minor(&self, amount: MinorAmount) -> Money {
-        self.of(0, amount)
+        Money::none() + (*self, amount)
     }
 
     pub fn of(&self, major_amount: MajorAmount, minor_amount: MinorAmount) -> Money {
-        Money::new(major_amount, minor_amount, *self)
+        self.of_minor(
+            major_amount as MinorAmount * self.minor_to_major as MinorAmount + minor_amount,
+        )
     }
 }
 
 pub const THB: fn() -> Currency<'static> = || Currency::new("THB", 100);
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct Money<'a> {
-    pub(crate) minor_amount: MinorAmount,
-    pub(crate) currency: Currency<'a>,
+    pub(crate) amounts: HashMap<Currency<'a>, MinorAmount>,
 }
 
 impl<'a> Money<'a> {
-    pub(crate) fn new(
-        major_amount: MajorAmount,
-        minor_amount: MinorAmount,
-        currency: Currency<'a>,
-    ) -> Self {
-        let minor_amount =
-            major_amount as MinorAmount * currency.minor_to_major as MinorAmount + minor_amount;
+    pub(crate) fn none() -> Self {
         Money {
-            minor_amount,
-            currency,
+            amounts: HashMap::new(),
         }
     }
-    pub fn amount(&self) -> (MajorAmount, MinorAmount) {
-        let m = self.minor_amount;
-        let r = self.currency.minor_to_major as MinorAmount;
-        (m / r, m % r)
-    }
-
-    pub fn f64(self) -> f64 {
-        self.into()
+    pub fn get(&self, currency: Currency<'a>) -> Option<MinorAmount> {
+        self.amounts.get(&currency).map(|x| *x)
     }
 }
 
-impl<'a> From<Money<'a>> for f64 {
-    fn from(money: Money) -> Self {
-        let (major, minor) = money.amount();
-        major as Self + minor as Self / money.currency.minor_to_major as Self
+impl<'a> FromIterator<Money<'a>> for Money<'a> {
+    fn from_iter<I>(iter: I) -> Self
+    where
+        I: IntoIterator<Item = Money<'a>>,
+    {
+        iter.into_iter().sum()
     }
 }
 
-use std::ops::Neg;
+impl<'a> Add for Money<'a> {
+    type Output = Self;
+    fn add(mut self, rhs: Self) -> Self {
+        rhs.amounts.into_iter().for_each(|(currency, amount)| {
+            self.amounts
+                .entry(currency)
+                .and_modify(|this| *this += amount)
+                .or_insert(amount);
+        });
+        self
+    }
+}
+
+impl<'a> Add<(Currency<'a>, MinorAmount)> for Money<'a> {
+    type Output = Self;
+    fn add(mut self, (currency, amount): (Currency<'a>, MinorAmount)) -> Self {
+        self.amounts
+            .entry(currency)
+            .and_modify(|this| *this += amount)
+            .or_insert(amount);
+        self
+    }
+}
+
+impl<'a> Sum<Money<'a>> for Money<'a> {
+    fn sum<I>(iter: I) -> Self
+    where
+        I: Iterator<Item = Money<'a>>,
+    {
+        iter.fold(Money::none(), Add::add)
+    }
+}
 
 impl<'a> Neg for Money<'a> {
     type Output = Self;
-
-    /// # panics
-    /// When is the minimum ammount for currency.
     fn neg(mut self) -> Self {
-        self.minor_amount = -self.minor_amount;
+        self.amounts.iter_mut().for_each(|(_, amount)| {
+            *amount = -*amount;
+        });
         self
     }
 }

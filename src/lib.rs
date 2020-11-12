@@ -40,14 +40,14 @@ impl<'a> Book<'a> {
         transaction
     }
 
-    pub fn balance(&self, account: Rc<Account>) -> Balance {
+    pub fn balance(&self, account: Rc<Account>) -> Money<'a> {
         self.transactions
             .iter()
             .filter_map(|tx| {
                 if tx.to == account {
-                    Some(tx.money)
+                    Some(tx.money.clone())
                 } else if tx.from == account {
-                    Some(-tx.money)
+                    Some(-tx.money.clone())
                 } else {
                     None
                 }
