@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::iter::FromIterator;
 use std::iter::Sum;
 use std::ops::Add;
+use std::ops::AddAssign;
 use std::ops::Neg;
 
 pub type MinorAmount = i64;
@@ -38,13 +39,13 @@ impl<'a> Currency<'a> {
 
 pub const THB: fn() -> Currency<'static> = || Currency::new("THB", 100);
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Money<'a> {
     pub(crate) amounts: HashMap<Currency<'a>, MinorAmount>,
 }
 
 impl<'a> Money<'a> {
-    pub(crate) fn none() -> Self {
+    pub fn none() -> Self {
         Money {
             amounts: HashMap::new(),
         }
@@ -73,6 +74,18 @@ impl<'a> Add for Money<'a> {
                 .or_insert(amount);
         });
         self
+    }
+}
+
+impl<'a> AddAssign for Money<'a> {
+    fn add_assign(&mut self, rhs: Money<'a>) {
+        *self = self.clone() + rhs;
+    }
+}
+
+impl<'a> std::ops::SubAssign for Money<'a> {
+    fn sub_assign(&mut self, rhs: Money<'a>) {
+        *self += -rhs
     }
 }
 

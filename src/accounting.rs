@@ -15,14 +15,15 @@ impl<'a> Account {
     pub fn balance(&self, transactions: &[&Transaction<'a>]) -> Money<'a> {
         transactions
             .iter()
-            .filter_map(|tx| {
+            .map(|tx| {
+                let mut money = Money::none();
                 if tx.to == self {
-                    Some(tx.money.clone())
-                } else if tx.from == self {
-                    Some(-tx.money.clone())
-                } else {
-                    None
+                    money += tx.money.clone();
                 }
+                if tx.from == self {
+                    money -= tx.money.clone();
+                }
+                money
             })
             .collect()
     }

@@ -13,6 +13,16 @@ fn adding_one_account() {
 }
 
 #[test]
+fn transfer_own_account() {
+    let mut book = Book::new();
+    let acc = book.new_account("account");
+    let thb = fiat::THB();
+    assert_eq!(book.balance(&acc), fiat::Money::none());
+    let _tx = book.transfer(&acc, &acc, thb.of_major(5));
+    assert_eq!(book.balance(&acc).get(thb).unwrap(), 0);
+}
+
+#[test]
 fn transfer_between_two_accounts() {
     let mut book = Book::new();
     let bank = book.new_account("bank");
