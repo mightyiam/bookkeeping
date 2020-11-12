@@ -10,6 +10,7 @@ pub struct Book<'a> {
     transactions: Vec<Rc<Transaction<'a>>>,
 }
 
+/// Resembles a datastore
 impl<'a> Book<'a> {
     pub fn new() -> Self {
         Self {
