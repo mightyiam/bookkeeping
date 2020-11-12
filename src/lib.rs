@@ -31,27 +31,16 @@ impl<'a> Book<'a> {
 
     pub fn transfer(
         &mut self,
-        from: Rc<Account>,
-        to: Rc<Account>,
+        from: &'a Account,
+        to: &'a Account,
         money: fiat::Money<'a>,
-    ) -> Rc<Transaction> {
+    ) -> Rc<Transaction<'a>> {
         let transaction = Rc::new(Transaction::new(from, to, money));
         self.transactions.push(Rc::clone(&transaction));
         transaction
     }
 
-    pub fn balance(&self, account: Rc<Account>) -> Money<'a> {
-        self.transactions
-            .iter()
-            .filter_map(|tx| {
-                if tx.to == account {
-                    Some(tx.money.clone())
-                } else if tx.from == account {
-                    Some(-tx.money.clone())
-                } else {
-                    None
-                }
-            })
-            .sum()
+    pub fn balance(&self, account: &Account) -> Money<'a> {
+        account.balance(&self.transactions.iter().map(Rc::as_ref).collect::<Vec<_>>())
     }
 }

@@ -7,7 +7,7 @@ use std::ops::Neg;
 pub type MinorAmount = i64;
 pub type MajorAmount = MinorAmount;
 
-#[derive(Hash, Eq, PartialEq, Clone, Copy)]
+#[derive(Debug, Hash, Eq, PartialEq, Clone, Copy)]
 pub struct Currency<'a> {
     code: &'a str,
     minor_to_major: u8,
@@ -38,7 +38,7 @@ impl<'a> Currency<'a> {
 
 pub const THB: fn() -> Currency<'static> = || Currency::new("THB", 100);
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Money<'a> {
     pub(crate) amounts: HashMap<Currency<'a>, MinorAmount>,
 }
