@@ -1,3 +1,4 @@
+use chrono::Duration;
 use envelope_system::*;
 use std::rc::Rc;
 
@@ -38,4 +39,32 @@ fn transfer_between_two_accounts() {
     let _put_100_into_bank = book.transfer(&wallet, &bank, thb.of_major(100));
     assert_eq!(book.balance(&bank).get(thb).unwrap(), -40000);
     assert_eq!(book.balance(&wallet).get(thb).unwrap(), 40000);
+}
+
+#[test]
+fn balance_at_dates() {
+    let mut book = Book::new();
+    let thb = fiat::THB();
+    let wallet = book.new_account("wallet");
+    let bank = book.new_account("bank");
+    let first_withdraw_datetime = DateTime::parse_from_rfc3339("2020-11-10T10:10:57+07:00")
+        .unwrap()
+        .with_timezone(&Utc);
+    let _withdraw_900 =
+        book.transfer_at(first_withdraw_datetime, &bank, &wallet, thb.of_major(900));
+    let second_withdraw_datetime = first_withdraw_datetime + Duration::seconds(5);
+    let _withdraw_100 =
+        book.transfer_at(second_withdraw_datetime, &bank, &wallet, thb.of_major(100));
+    assert_eq!(
+        book.balance_at(first_withdraw_datetime - Duration::seconds(1), &wallet),
+        Money::none()
+    );
+    assert_eq!(
+        book.balance_at(first_withdraw_datetime, &wallet),
+        thb.of_major(900)
+    );
+    assert_eq!(
+        book.balance_at(second_withdraw_datetime, &wallet),
+        thb.of_major(1000)
+    );
 }

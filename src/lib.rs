@@ -2,6 +2,7 @@ pub mod accounting;
 pub mod fiat;
 
 pub use accounting::*;
+pub use chrono::{DateTime, Utc};
 pub use fiat::*;
 use std::rc::Rc;
 
@@ -28,19 +29,34 @@ impl<'a> Book<'a> {
     pub fn accounts(&self) -> Vec<Rc<Account>> {
         self.accounts.clone()
     }
-
     pub fn transfer(
         &mut self,
         from: &'a Account,
         to: &'a Account,
         money: fiat::Money<'a>,
     ) -> Rc<Transaction<'a>> {
-        let transaction = Rc::new(Transaction::new(from, to, money));
+        self.transfer_at(chrono::MIN_DATETIME, from, to, money)
+    }
+
+    pub fn transfer_at(
+        &mut self,
+        datetime: DateTime<Utc>,
+        from: &'a Account,
+        to: &'a Account,
+        money: fiat::Money<'a>,
+    ) -> Rc<Transaction<'a>> {
+        let transaction = Rc::new(Transaction::new(datetime, from, to, money));
         self.transactions.push(Rc::clone(&transaction));
         transaction
     }
 
     pub fn balance(&self, account: &Account) -> Money<'a> {
-        account.balance(&self.transactions.iter().map(Rc::as_ref).collect::<Vec<_>>())
+        self.balance_at(chrono::MAX_DATETIME, account)
+    }
+    pub fn balance_at(&self, datetime: DateTime<Utc>, account: &Account) -> Money<'a> {
+        account.balance(
+            datetime,
+            &self.transactions.iter().map(Rc::as_ref).collect::<Vec<_>>(),
+        )
     }
 }

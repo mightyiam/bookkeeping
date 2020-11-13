@@ -1,3 +1,5 @@
+use chrono::{DateTime, Utc};
+
 use super::fiat::*;
 
 #[derive(PartialEq, Eq, Debug)]
@@ -12,9 +14,10 @@ impl<'a> Account {
         }
     }
 
-    pub fn balance(&self, transactions: &[&Transaction<'a>]) -> Money<'a> {
+    pub fn balance(&self, datetime: DateTime<Utc>, transactions: &[&Transaction<'a>]) -> Money<'a> {
         transactions
             .iter()
+            .filter(|tx| tx.datetime <= datetime)
             .map(|tx| {
                 let mut money = Money::none();
                 if tx.to == self {
@@ -31,13 +34,24 @@ impl<'a> Account {
 
 #[derive(Debug)]
 pub struct Transaction<'a> {
+    pub(crate) datetime: DateTime<Utc>,
     pub(crate) from: &'a Account,
     pub(crate) to: &'a Account,
     pub(crate) money: Money<'a>,
 }
 
 impl<'a> Transaction<'a> {
-    pub fn new(from: &'a Account, to: &'a Account, money: Money<'a>) -> Self {
-        Transaction { from, to, money }
+    pub fn new(
+        datetime: DateTime<Utc>,
+        from: &'a Account,
+        to: &'a Account,
+        money: Money<'a>,
+    ) -> Self {
+        Transaction {
+            datetime,
+            from,
+            to,
+            money,
+        }
     }
 }
