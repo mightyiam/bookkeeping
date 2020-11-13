@@ -67,19 +67,19 @@ impl<'a> FromIterator<Money<'a>> for Money<'a> {
 impl<'a> Add for Money<'a> {
     type Output = Self;
     fn add(mut self, rhs: Self) -> Self {
-        rhs.amounts.into_iter().for_each(|(currency, amount)| {
-            self.amounts
-                .entry(currency)
-                .and_modify(|this| *this += amount)
-                .or_insert(amount);
-        });
+        self += rhs;
         self
     }
 }
 
 impl<'a> AddAssign for Money<'a> {
     fn add_assign(&mut self, rhs: Money<'a>) {
-        *self = self.clone() + rhs;
+        rhs.amounts.into_iter().for_each(|(currency, amount)| {
+            self.amounts
+                .entry(currency)
+                .and_modify(|this| *this += amount)
+                .or_insert(amount);
+        });
     }
 }
 
