@@ -35,7 +35,7 @@ impl<'a> Book<'a> {
         to: &'a Account,
         money: monetary::Money<'a>,
     ) -> Rc<Transaction<'a>> {
-        self.transfer_at(chrono::MIN_DATETIME, from, to, money)
+        self.transfer_at(Utc::now(), from, to, money)
     }
 
     pub fn transfer_at(
@@ -51,7 +51,7 @@ impl<'a> Book<'a> {
     }
 
     pub fn balance(&self, account: &Account) -> Money<'a> {
-        self.balance_at(chrono::MAX_DATETIME, account)
+        self.balance_at(Utc::now(), account)
     }
     pub fn balance_at(&self, datetime: DateTime<Utc>, account: &Account) -> Money<'a> {
         account.balance(
