@@ -221,14 +221,17 @@ fn move_fmt_debug() {
     assert_eq!(actual, expected);
 }
 impl Move {
-    fn new(debit: &Rc<Account>, credit: &Rc<Account>, sum: Sum) -> Rc<Self> {
+    fn new(debit_account: &Rc<Account>, credit_account: &Rc<Account>, sum: Sum) -> Rc<Self> {
         let book = {
-            let book = debit.book.clone();
+            let book = debit_account.book.clone();
             assert_eq!(
-                book.id, credit.book.id,
+                book.id, credit_account.book.id,
                 "Debit and credit accounts are in different books."
             );
-            assert!(debit != credit, "Debit and credit accounts are the same.");
+            assert!(
+                debit_account != credit_account,
+                "Debit and credit accounts are the same."
+            );
             book
         };
         sum.keys().for_each(|unit| {
@@ -240,12 +243,12 @@ impl Move {
         let move_ = Rc::new(Self {
             book: book.clone(),
             id: Self::next_id(&book),
-            debit_account: debit.clone(),
-            credit_account: credit.clone(),
+            debit_account: debit_account.clone(),
+            credit_account: credit_account.clone(),
             sum,
         });
-        debit.moves.borrow_mut().insert(move_.clone());
-        credit.moves.borrow_mut().insert(move_.clone());
+        debit_account.moves.borrow_mut().insert(move_.clone());
+        credit_account.moves.borrow_mut().insert(move_.clone());
         Self::register(&move_, &book);
         move_
     }
