@@ -1,3 +1,4 @@
+#![feature(map_first_last)]
 use duplicate::duplicate_inline;
 use maplit::{btreemap, btreeset};
 use std::{
@@ -199,6 +200,8 @@ struct Move {
     id: EntityId,
     debit_account: Rc<Account>,
     credit_account: Rc<Account>,
+    debit_account_balance: Sum,
+    credit_account_balance: Sum,
     sum: Sum,
 }
 #[test]
@@ -240,17 +243,41 @@ impl Move {
                 "Some unit is not in the same book as accounts."
             );
         });
+        // TODO deduplicate
+        let debit_account_last_move = debit_account.moves.borrow().last();
+        let debit_account_last_balance = match debit_account_last_move {
+            Some(move_) => move_.balance_in(&debit_account),
+            None => Sum::default(),
+        };
+        // TODO deduplicate
+        let credit_account_last_move = credit_account.moves.borrow().last();
+        let credit_account_last_balance = match credit_account_last_move {
+            Some(move_) => move_.balance_in(&credit_account),
+            None => Sum::default(),
+        };
         let move_ = Rc::new(Self {
             book: book.clone(),
             id: Self::next_id(&book),
             debit_account: debit_account.clone(),
             credit_account: credit_account.clone(),
+            debit_account_balance: debit_account_last_balance - sum,
+            credit_account_balance: credit_account_last_balance + sum,
             sum,
         });
         debit_account.moves.borrow_mut().insert(move_.clone());
         credit_account.moves.borrow_mut().insert(move_.clone());
         Self::register(&move_, &book);
         move_
+    }
+    // TODO test this
+    fn balance_in(&self, account: &Rc<Account>) -> Sum {
+        if *account == self.debit_account {
+            self.debit_account_balance
+        } else if *account == self.credit_account {
+            self.credit_account_balance
+        } else {
+            panic!("Provided account is not debit nor credit in this move.");
+        }
     }
 }
 #[test]
@@ -335,3 +362,4 @@ duplicate_inline! {
     impl Eq for Entity {}
 }
 // TODO Macro that creates sums
+// TODO do not use nightly features
