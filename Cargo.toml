@@ -1,5 +1,5 @@
 [package]
-name = "envelope-system"
+name = "bookkeeping"
 version = "0.1.0"
 authors = [
   "Shahar Or (mightyiam) <mightyiampresence@gmail.com>",

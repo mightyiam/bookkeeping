@@ -4,43 +4,28 @@ use std::{
     cell::RefCell,
     cmp::{Ord, Ordering},
     collections::{BTreeMap, BTreeSet},
+    fmt,
     rc::Rc,
     sync::{atomic, atomic::AtomicUsize},
 };
 type Amount = u64;
 type Sum = BTreeMap<Rc<Unit>, Amount>;
 type EntityId = usize;
-type MutableEntitySet<T> = RefCell<BTreeSet<Rc<T>>>;
-fn mutable_entity_set<T: Ord>() -> MutableEntitySet<T> {
-    RefCell::new(BTreeSet::new())
-}
-#[test]
-fn mutable_entity_set_return() {
-    let actual = mutable_entity_set::<()>();
-    let expected = RefCell::new(BTreeSet::new());
-    assert_eq!(actual, expected);
-}
+type EntitySet<T> = RefCell<BTreeSet<Rc<T>>>;
 static BOOK_COUNTER: AtomicUsize = AtomicUsize::new(0);
-#[derive(Debug)]
+#[derive(Default)]
 struct Book {
     id: usize,
-    accounts: MutableEntitySet<Account>,
-    units: MutableEntitySet<Unit>,
-    moves: MutableEntitySet<Move>,
+    accounts: EntitySet<Account>,
+    units: EntitySet<Unit>,
+    moves: EntitySet<Move>,
 }
 impl Book {
     fn new() -> Rc<Self> {
         Rc::new(Self {
             id: BOOK_COUNTER.fetch_add(1, atomic::Ordering::SeqCst),
-            accounts: mutable_entity_set(),
-            units: mutable_entity_set(),
-            moves: mutable_entity_set(),
+            ..Default::default()
         })
-    }
-}
-impl PartialEq for Book {
-    fn eq(&self, other: &Book) -> bool {
-        other.id == self.id
     }
 }
 #[test]
@@ -54,24 +39,71 @@ fn book_new() {
             [Move] [moves];
         ]
         let actual = &book.field_name;
-        let expected = mutable_entity_set::<Entity>();
+        let expected = EntitySet::default();
         assert_eq!(*actual, expected);
     }
+    let other_book = Book::new();
+    assert_ne!(book.id, other_book.id);
 }
-#[derive(Debug)]
+impl PartialEq for Book {
+    fn eq(&self, other: &Book) -> bool {
+        other.id == self.id
+    }
+}
+#[test]
+fn book_partial_eq() {
+    let a = Rc::new(Book {
+        id: 0,
+        ..Default::default()
+    });
+    let b = Rc::new(Book {
+        id: 0,
+        ..Default::default()
+    });
+    assert_eq!(a, b, "All fields equal");
+    let c = Rc::new(Book {
+        id: 0,
+        ..Default::default()
+    });
+    Account::new(c.clone());
+    assert_eq!(a, c, "Same id, some different field");
+    let d = Rc::new(Book {
+        id: 1,
+        ..Default::default()
+    });
+    assert_ne!(a, d, "Only id different");
+}
+impl fmt::Debug for Book {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Book").field("id", &self.id).finish()
+    }
+}
+#[test]
+fn book_fmt_debug() {
+    let book = Book::default();
+    let actual = format!("{:?}", book);
+    let expected = "Book { id: 0 }";
+    assert_eq!(actual, expected);
+    let book = Book {
+        id: 1,
+        ..Default::default()
+    };
+    let actual = format!("{:?}", book);
+    let expected = "Book { id: 1 }";
+    assert_eq!(actual, expected);
+}
+#[derive(Default)]
 struct Account {
     id: EntityId,
     book: Rc<Book>,
-    debits: MutableEntitySet<Move>,
-    credits: MutableEntitySet<Move>,
+    moves: EntitySet<Move>,
 }
 impl Account {
     fn new(book: Rc<Book>) -> Rc<Self> {
         let account = Rc::new(Self {
             book: book.clone(),
             id: Self::next_id(&book),
-            debits: RefCell::new(BTreeSet::new()),
-            credits: RefCell::new(BTreeSet::new()),
+            moves: RefCell::new(BTreeSet::new()),
         });
         Self::register(account.clone(), &book);
         account
@@ -80,25 +112,41 @@ impl Account {
 #[test]
 fn account_new() {
     let book = Book::new();
-    let account = Account::new(book.clone());
-    // TODO use PartialEq to compare Account with Account
-    let actual = account.id;
-    let expected = 0;
-    assert_eq!(actual, expected);
-    let actual = &account.book;
-    let expected = &book;
-    // TODO use PartialEq to compare Book with Book
-    assert_eq!(actual.id, expected.id);
-    let actual = account.debits.borrow();
-    let expected = BTreeSet::new();
-    assert_eq!(*actual, expected);
-    let actual = account.credits.borrow();
-    let expected = BTreeSet::new();
-    assert_eq!(*actual, expected);
-    assert_eq!(book.accounts.borrow().len(), 1);
-    assert_eq!(book.accounts.borrow().iter().next().unwrap().id, account.id);
+    let account_a = Account::new(book.clone());
+    assert_eq!(account_a.id, 0);
+    assert_eq!(account_a.book, book);
+    assert_eq!(*account_a.moves.borrow(), BTreeSet::new());
+    let account_b = Account::new(book.clone());
+    assert_eq!(account_b.id, 1);
+    assert_eq!(account_b.book, book);
+    assert_eq!(*account_b.moves.borrow(), BTreeSet::new());
+    let expected = btreeset! {
+        account_a.clone(),
+        account_b.clone()
+    };
+    assert_eq!(
+        *book.accounts.borrow(),
+        expected,
+        "Accounts are in the book"
+    );
 }
-#[derive(Debug)]
+impl fmt::Debug for Account {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Account").field("id", &self.id).finish()
+    }
+}
+#[test]
+fn account_fmt_debug() {
+    let book = Book::new();
+    let account = Account::new(book.clone());
+    let actual = format!("{:?}", account);
+    let expected = "Account { id: 0 }";
+    assert_eq!(actual, expected);
+    let account = Account::new(book.clone());
+    let actual = format!("{:?}", account);
+    let expected = "Account { id: 1 }";
+    assert_eq!(actual, expected);
+}
 struct Unit {
     id: EntityId,
     book: Rc<Book>,
@@ -113,6 +161,38 @@ impl Unit {
         unit
     }
 }
+#[test]
+fn unit_new() {
+    let book = Book::new();
+    let unit_a = Unit::new(book.clone());
+    assert_eq!(unit_a.id, 0);
+    assert_eq!(unit_a.book, book);
+    let unit_b = Unit::new(book.clone());
+    assert_eq!(unit_b.id, 1);
+    assert_eq!(unit_b.book, book);
+    let expected = btreeset! {
+        unit_a.clone(),
+        unit_b.clone()
+    };
+    assert_eq!(*book.units.borrow(), expected, "Units are in the book");
+}
+impl fmt::Debug for Unit {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Unit").field("id", &self.id).finish()
+    }
+}
+#[test]
+fn unit_fmt_debug() {
+    let book = Book::new();
+    let unit = Unit::new(book.clone());
+    let actual = format!("{:?}", unit);
+    let expected = "Unit { id: 0 }";
+    assert_eq!(actual, expected);
+    let unit = Unit::new(book.clone());
+    let actual = format!("{:?}", unit);
+    let expected = "Unit { id: 1 }";
+    assert_eq!(actual, expected);
+}
 #[derive(Debug)]
 struct Move {
     book: Rc<Book>,
@@ -121,14 +201,31 @@ struct Move {
     credit: Rc<Account>,
     sum: Sum,
 }
+#[test]
+fn move_fmt_debug() {
+    let id = 0;
+    let book = Rc::new(Book {
+        id,
+        ..Default::default()
+    });
+    let debit = Account::new(book.clone());
+    let credit = Account::new(book.clone());
+    let unit = Unit::new(book.clone());
+    let sum = btreemap! { unit.clone() => 76 };
+    let move_ = Move::new(debit.clone(), credit.clone(), sum.clone());
+    let actual = format!("{:?}", move_);
+    let expected = format!(
+        "Move {{ book: {:?}, id: {:?}, debit: {:?}, credit: {:?}, sum: {:?} }}",
+        book, id, debit, credit, sum,
+    );
+    assert_eq!(actual, expected);
+}
 impl Move {
     fn new(debit: Rc<Account>, credit: Rc<Account>, sum: Sum) -> Rc<Self> {
         let book = {
             let book = debit.book.clone();
             assert_eq!(
-                // TODO use PartialEq to compare Book with Book
-                book.id,
-                credit.book.id,
+                book.id, credit.book.id,
                 "Debit and credit accounts are in different books."
             );
             assert!(debit != credit, "Debit and credit accounts are the same.");
@@ -147,8 +244,8 @@ impl Move {
             credit: credit.clone(),
             sum,
         });
-        debit.debits.borrow_mut().insert(move_.clone());
-        credit.credits.borrow_mut().insert(move_.clone());
+        debit.moves.borrow_mut().insert(move_.clone());
+        credit.moves.borrow_mut().insert(move_.clone());
         Self::register(move_.clone(), &book);
         move_
     }
@@ -158,15 +255,6 @@ impl Move {
 fn move_new_panic_debit_and_credit_accounts_are_in_different_books() {
     let debit = Account::new(Book::new());
     let credit = Account::new(Book::new());
-    Move::new(debit.clone(), credit.clone(), Sum::new());
-}
-#[test]
-#[should_panic(expected = "Debit and credit accounts are in different books.")]
-fn move_new_panic_debit_and_credit_accounts_with_same_id_in_different_books() {
-    let book = Book::new();
-    let debit = Account::new(book.clone());
-    let credit = Account::new(Book::new());
-    assert_eq!(debit.id, credit.id);
     Move::new(debit.clone(), credit.clone(), Sum::new());
 }
 #[test]
@@ -199,7 +287,17 @@ fn move_new() {
         ils.clone() => 41,
         usd.clone() => 104,
     };
-    let move_ = Move::new(debit.clone(), credit.clone(), sum.clone());
+    let move_a = Move::new(debit.clone(), credit.clone(), sum.clone());
+    let sum = btreemap! {
+        thb.clone() => 13,
+        ils.clone() => 805,
+        usd.clone() => 10,
+    };
+    let move_b = Move::new(debit.clone(), credit.clone(), sum.clone());
+    assert_eq!(
+        *book.moves.borrow(),
+        btreeset! { move_a.clone(), move_b.clone() }
+    );
 }
 duplicate_inline! {
     [
@@ -228,10 +326,10 @@ duplicate_inline! {
     }
     impl PartialEq for Entity {
         fn eq(&self, other: &Self) -> bool {
-            // TODO use PartialEq to compare Book with Book
-            other.book.id == self.book.id && other.id == self.id
+            other.book == self.book && other.id == self.id
         }
     }
     impl Eq for Entity {}
 }
-// TODO implicit cloning?
+// TODO implicit cloning
+// TODO Macro that creates sums
