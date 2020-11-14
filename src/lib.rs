@@ -197,8 +197,8 @@ fn unit_fmt_debug() {
 struct Move {
     book: Rc<Book>,
     id: EntityId,
-    debit: Rc<Account>,
-    credit: Rc<Account>,
+    debit_account: Rc<Account>,
+    credit_account: Rc<Account>,
     sum: Sum,
 }
 #[test]
@@ -215,7 +215,7 @@ fn move_fmt_debug() {
     let move_ = Move::new(&debit, &credit, sum.clone());
     let actual = format!("{:?}", move_);
     let expected = format!(
-        "Move {{ book: {:?}, id: {:?}, debit: {:?}, credit: {:?}, sum: {:?} }}",
+        "Move {{ book: {:?}, id: {:?}, debit_account: {:?}, credit_account: {:?}, sum: {:?} }}",
         book, id, debit, credit, sum,
     );
     assert_eq!(actual, expected);
@@ -240,8 +240,8 @@ impl Move {
         let move_ = Rc::new(Self {
             book: book.clone(),
             id: Self::next_id(&book),
-            debit: debit.clone(),
-            credit: credit.clone(),
+            debit_account: debit.clone(),
+            credit_account: credit.clone(),
             sum,
         });
         debit.moves.borrow_mut().insert(move_.clone());
