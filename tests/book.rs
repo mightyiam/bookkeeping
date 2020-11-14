@@ -17,8 +17,8 @@ fn adding_one_account() {
 fn transfer_own_account() {
     let mut book = Book::new();
     let acc = book.new_account("account");
-    let thb = fiat::THB();
-    assert_eq!(book.balance(&acc), fiat::Money::none());
+    let thb = monetary::THB();
+    assert_eq!(book.balance(&acc), monetary::Money::none());
     let _tx = book.transfer(&acc, &acc, thb.of_major(5));
     assert_eq!(book.balance(&acc).get(thb).unwrap(), 0);
 }
@@ -28,7 +28,7 @@ fn transfer_between_two_accounts() {
     let mut book = Book::new();
     let bank = book.new_account("bank");
     let wallet = book.new_account("wallet");
-    let thb = fiat::THB();
+    let thb = monetary::THB();
     let _500_baht = thb.of(500, 0);
     let _withdraw_500_from_bank = book.transfer(&bank, &wallet, _500_baht);
     let bank_balance = book.balance(&bank);
@@ -44,7 +44,7 @@ fn transfer_between_two_accounts() {
 #[test]
 fn balance_at_dates() {
     let mut book = Book::new();
-    let thb = fiat::THB();
+    let thb = monetary::THB();
     let wallet = book.new_account("wallet");
     let bank = book.new_account("bank");
     let first_withdraw_datetime = DateTime::parse_from_rfc3339("2020-11-10T10:10:57+07:00")

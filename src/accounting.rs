@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 
-use super::fiat::*;
+use super::monetary::*;
 
 #[derive(PartialEq, Eq, Debug)]
 pub struct Account {

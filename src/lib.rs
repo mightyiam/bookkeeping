@@ -1,9 +1,9 @@
 pub mod accounting;
-pub mod fiat;
+pub mod monetary;
 
 pub use accounting::*;
 pub use chrono::{DateTime, Utc};
-pub use fiat::*;
+pub use monetary::*;
 use std::rc::Rc;
 
 pub struct Book<'a> {
@@ -33,7 +33,7 @@ impl<'a> Book<'a> {
         &mut self,
         from: &'a Account,
         to: &'a Account,
-        money: fiat::Money<'a>,
+        money: monetary::Money<'a>,
     ) -> Rc<Transaction<'a>> {
         self.transfer_at(chrono::MIN_DATETIME, from, to, money)
     }
@@ -43,7 +43,7 @@ impl<'a> Book<'a> {
         datetime: DateTime<Utc>,
         from: &'a Account,
         to: &'a Account,
-        money: fiat::Money<'a>,
+        money: monetary::Money<'a>,
     ) -> Rc<Transaction<'a>> {
         let transaction = Rc::new(Transaction::new(datetime, from, to, money));
         self.transactions.push(Rc::clone(&transaction));
