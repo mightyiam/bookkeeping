@@ -65,7 +65,7 @@ fn book_partial_eq() {
         id: 0,
         ..Default::default()
     });
-    Account::new(c.clone());
+    Account::new(&c);
     assert_eq!(a, c, "Same id, some different field");
     let d = Rc::new(Book {
         id: 1,
@@ -99,24 +99,24 @@ struct Account {
     moves: EntitySet<Move>,
 }
 impl Account {
-    fn new(book: Rc<Book>) -> Rc<Self> {
+    fn new(book: &Rc<Book>) -> Rc<Self> {
         let account = Rc::new(Self {
             book: book.clone(),
             id: Self::next_id(&book),
             moves: RefCell::new(BTreeSet::new()),
         });
-        Self::register(account.clone(), &book);
+        Self::register(&account, &book);
         account
     }
 }
 #[test]
 fn account_new() {
     let book = Book::new();
-    let account_a = Account::new(book.clone());
+    let account_a = Account::new(&book);
     assert_eq!(account_a.id, 0);
     assert_eq!(account_a.book, book);
     assert_eq!(*account_a.moves.borrow(), BTreeSet::new());
-    let account_b = Account::new(book.clone());
+    let account_b = Account::new(&book);
     assert_eq!(account_b.id, 1);
     assert_eq!(account_b.book, book);
     assert_eq!(*account_b.moves.borrow(), BTreeSet::new());
@@ -138,11 +138,11 @@ impl fmt::Debug for Account {
 #[test]
 fn account_fmt_debug() {
     let book = Book::new();
-    let account = Account::new(book.clone());
+    let account = Account::new(&book);
     let actual = format!("{:?}", account);
     let expected = "Account { id: 0 }";
     assert_eq!(actual, expected);
-    let account = Account::new(book.clone());
+    let account = Account::new(&book);
     let actual = format!("{:?}", account);
     let expected = "Account { id: 1 }";
     assert_eq!(actual, expected);
@@ -152,22 +152,22 @@ struct Unit {
     book: Rc<Book>,
 }
 impl Unit {
-    fn new(book: Rc<Book>) -> Rc<Self> {
+    fn new(book: &Rc<Book>) -> Rc<Self> {
         let unit = Rc::new(Self {
             id: Self::next_id(&book),
             book: book.clone(),
         });
-        Self::register(unit.clone(), &book);
+        Self::register(&unit, &book);
         unit
     }
 }
 #[test]
 fn unit_new() {
     let book = Book::new();
-    let unit_a = Unit::new(book.clone());
+    let unit_a = Unit::new(&book);
     assert_eq!(unit_a.id, 0);
     assert_eq!(unit_a.book, book);
-    let unit_b = Unit::new(book.clone());
+    let unit_b = Unit::new(&book);
     assert_eq!(unit_b.id, 1);
     assert_eq!(unit_b.book, book);
     let expected = btreeset! {
@@ -184,11 +184,11 @@ impl fmt::Debug for Unit {
 #[test]
 fn unit_fmt_debug() {
     let book = Book::new();
-    let unit = Unit::new(book.clone());
+    let unit = Unit::new(&book);
     let actual = format!("{:?}", unit);
     let expected = "Unit { id: 0 }";
     assert_eq!(actual, expected);
-    let unit = Unit::new(book.clone());
+    let unit = Unit::new(&book);
     let actual = format!("{:?}", unit);
     let expected = "Unit { id: 1 }";
     assert_eq!(actual, expected);
@@ -208,11 +208,11 @@ fn move_fmt_debug() {
         id,
         ..Default::default()
     });
-    let debit = Account::new(book.clone());
-    let credit = Account::new(book.clone());
-    let unit = Unit::new(book.clone());
+    let debit = Account::new(&book);
+    let credit = Account::new(&book);
+    let unit = Unit::new(&book);
     let sum = btreemap! { unit.clone() => 76 };
-    let move_ = Move::new(debit.clone(), credit.clone(), sum.clone());
+    let move_ = Move::new(&debit, &credit, sum.clone());
     let actual = format!("{:?}", move_);
     let expected = format!(
         "Move {{ book: {:?}, id: {:?}, debit: {:?}, credit: {:?}, sum: {:?} }}",
@@ -221,7 +221,7 @@ fn move_fmt_debug() {
     assert_eq!(actual, expected);
 }
 impl Move {
-    fn new(debit: Rc<Account>, credit: Rc<Account>, sum: Sum) -> Rc<Self> {
+    fn new(debit: &Rc<Account>, credit: &Rc<Account>, sum: Sum) -> Rc<Self> {
         let book = {
             let book = debit.book.clone();
             assert_eq!(
@@ -246,54 +246,54 @@ impl Move {
         });
         debit.moves.borrow_mut().insert(move_.clone());
         credit.moves.borrow_mut().insert(move_.clone());
-        Self::register(move_.clone(), &book);
+        Self::register(&move_, &book);
         move_
     }
 }
 #[test]
 #[should_panic(expected = "Debit and credit accounts are in different books.")]
 fn move_new_panic_debit_and_credit_accounts_are_in_different_books() {
-    let debit = Account::new(Book::new());
-    let credit = Account::new(Book::new());
-    Move::new(debit.clone(), credit.clone(), Sum::new());
+    let debit = Account::new(&Book::new());
+    let credit = Account::new(&Book::new());
+    Move::new(&debit, &credit, Sum::new());
 }
 #[test]
 #[should_panic(expected = "Debit and credit accounts are the same.")]
 fn move_new_panic_debit_and_credit_accounts_are_the_same() {
     let book = Book::new();
-    let account = Account::new(book.clone());
-    Move::new(account.clone(), account.clone(), Sum::new());
+    let account = Account::new(&book);
+    Move::new(&account, &account, Sum::new());
 }
 #[test]
 #[should_panic(expected = "Some unit is not in the same book as accounts.")]
 fn move_new_panic_some_unit_is_not_in_the_same_book_as_accounts() {
     let book = Book::new();
-    let debit = Account::new(book.clone());
-    let credit = Account::new(book.clone());
-    let unit = Unit::new(Book::new());
+    let debit = Account::new(&book);
+    let credit = Account::new(&book);
+    let unit = Unit::new(&Book::new());
     let sum = btreemap! { unit.clone() => 0 };
-    Move::new(debit.clone(), credit.clone(), sum);
+    Move::new(&debit, &credit, sum);
 }
 #[test]
 fn move_new() {
     let book = Book::new();
-    let debit = Account::new(book.clone());
-    let credit = Account::new(book.clone());
-    let thb = Unit::new(book.clone());
-    let ils = Unit::new(book.clone());
-    let usd = Unit::new(book.clone());
+    let debit = Account::new(&book);
+    let credit = Account::new(&book);
+    let thb = Unit::new(&book);
+    let ils = Unit::new(&book);
+    let usd = Unit::new(&book);
     let sum = btreemap! {
         thb.clone() => 20,
         ils.clone() => 41,
         usd.clone() => 104,
     };
-    let move_a = Move::new(debit.clone(), credit.clone(), sum.clone());
+    let move_a = Move::new(&debit, &credit, sum.clone());
     let sum = btreemap! {
         thb.clone() => 13,
         ils.clone() => 805,
         usd.clone() => 10,
     };
-    let move_b = Move::new(debit.clone(), credit.clone(), sum.clone());
+    let move_b = Move::new(&debit, &credit, sum.clone());
     assert_eq!(
         *book.moves.borrow(),
         btreeset! { move_a.clone(), move_b.clone() }
@@ -310,8 +310,8 @@ duplicate_inline! {
         fn next_id(book: &Book) -> EntityId {
             book.book_field.borrow().len()
         }
-        fn register(entity: Rc<Self>, book: &Book) {
-            book.book_field.borrow_mut().insert(entity);
+        fn register(entity: &Rc<Self>, book: &Book) {
+            book.book_field.borrow_mut().insert(entity.clone());
         }
     }
     impl Ord for Entity {
@@ -331,5 +331,4 @@ duplicate_inline! {
     }
     impl Eq for Entity {}
 }
-// TODO implicit cloning
 // TODO Macro that creates sums
