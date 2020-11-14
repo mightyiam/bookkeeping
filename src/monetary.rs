@@ -74,11 +74,8 @@ impl<'a> Add for Money<'a> {
 
 impl<'a> AddAssign for Money<'a> {
     fn add_assign(&mut self, rhs: Money<'a>) {
-        rhs.amounts.into_iter().for_each(|(currency, amount)| {
-            self.amounts
-                .entry(currency)
-                .and_modify(|this| *this += amount)
-                .or_insert(amount);
+        rhs.amounts.into_iter().for_each(|entry| {
+            *self += entry;
         });
     }
 }
@@ -89,13 +86,19 @@ impl<'a> std::ops::SubAssign for Money<'a> {
     }
 }
 
-impl<'a> Add<(Currency<'a>, MinorAmount)> for Money<'a> {
-    type Output = Self;
-    fn add(mut self, (currency, amount): (Currency<'a>, MinorAmount)) -> Self {
+impl<'a> AddAssign<(Currency<'a>, MinorAmount)> for Money<'a> {
+    fn add_assign(&mut self, (currency, amount): (Currency<'a>, MinorAmount)) {
         self.amounts
             .entry(currency)
             .and_modify(|this| *this += amount)
             .or_insert(amount);
+    }
+}
+
+impl<'a> Add<(Currency<'a>, MinorAmount)> for Money<'a> {
+    type Output = Self;
+    fn add(mut self, entry: (Currency<'a>, MinorAmount)) -> Self {
+        self += entry;
         self
     }
 }
