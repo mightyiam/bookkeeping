@@ -1,3 +1,5 @@
+use std::iter::FromIterator;
+
 use chrono::{DateTime, Utc};
 
 use super::monetary::*;
@@ -14,9 +16,13 @@ impl<'a> Account {
         }
     }
 
-    pub fn balance(&self, datetime: DateTime<Utc>, transactions: &[&Transaction<'a>]) -> Money<'a> {
+    pub fn balance<R>(&self, datetime: DateTime<Utc>, transactions: &[R]) -> Money<'a>
+    where
+        R: AsRef<Transaction<'a>>,
+    {
         transactions
             .iter()
+            .map(AsRef::as_ref)
             .filter(|tx| tx.datetime <= datetime)
             .map(|tx| {
                 let mut money = Money::none();
@@ -27,6 +33,24 @@ impl<'a> Account {
                     money -= tx.money.clone();
                 }
                 money
+            })
+            .collect()
+    }
+
+    pub fn running_balance<R, T>(&self, transactions: &'a [R]) -> T
+    where
+        R: AsRef<Transaction<'a>> + ToOwned,
+        T: FromIterator<(<R as ToOwned>::Owned, Money<'a>)>,
+    {
+        transactions
+            .iter()
+            .filter_map(|tx| {
+                let tx_r = tx.as_ref();
+                if tx_r.to == self || tx_r.from == self {
+                    Some((tx.to_owned(), self.balance(tx_r.datetime, transactions)))
+                } else {
+                    None
+                }
             })
             .collect()
     }

@@ -50,13 +50,14 @@ impl<'a> Book<'a> {
         transaction
     }
 
-    pub fn balance(&self, account: &Account) -> Money<'a> {
+    pub fn balance(&self, account: &Account) -> Money {
         self.balance_at(Utc::now(), account)
     }
-    pub fn balance_at(&self, datetime: DateTime<Utc>, account: &Account) -> Money<'a> {
-        account.balance(
-            datetime,
-            &self.transactions.iter().map(Rc::as_ref).collect::<Vec<_>>(),
-        )
+    pub fn balance_at(&self, datetime: DateTime<Utc>, account: &Account) -> Money {
+        account.balance(datetime, &self.transactions)
+    }
+
+    pub fn running_balance(&self, account: &'a Account) -> Vec<(Rc<Transaction>, Money)> {
+        account.running_balance(&self.transactions)
     }
 }

@@ -68,3 +68,28 @@ fn balance_at_dates() {
         thb.of_major(1000)
     );
 }
+
+#[test]
+fn running_balance() {
+    let mut book = Book::new();
+    let thb = monetary::THB();
+    let bank = book.new_account("bank");
+    let wallet = book.new_account("wallet");
+    book.transfer(&wallet, &bank, thb.of_major(10));
+    book.transfer(&bank, &wallet, thb.of_major(2));
+    book.transfer(&bank, &wallet, thb.of_major(2));
+    book.transfer(&bank, &wallet, thb.of_major(2));
+    book.transfer(&bank, &wallet, thb.of_major(1));
+    let running_balance = book.running_balance(&bank);
+    assert_eq!(
+        running_balance
+            .iter()
+            .map(|(_, m)| m.get(thb).unwrap())
+            .collect::<Vec<_>>(),
+        vec![1000, 800, 600, 400, 300]
+    );
+    println!("running balance of {:?}", bank);
+    running_balance.iter().for_each(|bal| {
+        println!("{:?}", bal);
+    });
+}
