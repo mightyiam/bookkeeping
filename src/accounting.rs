@@ -65,12 +65,7 @@ pub struct Transaction<'a> {
 }
 
 impl<'a> Transaction<'a> {
-    pub fn new(
-        datetime: DateTime<Utc>,
-        from: &'a Account,
-        to: &'a Account,
-        money: Money,
-    ) -> Self {
+    pub fn new(datetime: DateTime<Utc>, from: &'a Account, to: &'a Account, money: Money) -> Self {
         Transaction {
             datetime,
             from,

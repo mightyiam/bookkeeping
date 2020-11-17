@@ -40,7 +40,7 @@ fn transfer_between_two_accounts() {
     assert_eq!(bank.balance().get(&thb).unwrap(), -40000);
     assert_eq!(wallet.balance().get(&thb).unwrap(), 40000);
 }
-/*
+
 #[test]
 fn balance_at_dates() {
     let mut book = BookHandle::new();
@@ -91,5 +91,3 @@ fn running_balance() {
         vec![2000, 1600, 1300, 1100, 900, 800]
     );
 }
-
-*/
