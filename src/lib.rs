@@ -278,6 +278,9 @@ where
     fn new() -> Self {
         Self(Default::default())
     }
+    fn of(unit: &Rc<Unit<B, A, U, M>>, amount: u64) -> Self {
+        Self::new().unit(&unit, amount)
+    }
     fn unit(mut self, unit: &Rc<Unit<B, A, U, M>>, amount: u64) -> Self {
         self.0.insert(unit.clone(), amount);
         self
@@ -289,6 +292,15 @@ fn sum_new() {
     let actual = Sum::<(), (), (), ()>::new();
     let expected = Sum(BTreeMap::new());
     assert_eq!(actual, expected);
+}
+#[test]
+fn sum_of() {
+    let book = Book::<(), (), (), ()>::new(());
+    let unit = Unit::new(&book, ());
+    let sum = Sum::of(&unit, 24);
+    let mut expected = BTreeMap::new();
+    expected.insert(unit.clone(), 24);
+    assert_eq!(sum.0, expected);
 }
 #[test]
 fn sum_unit() {
@@ -319,7 +331,7 @@ fn sum_fmt_debug() {
     let amount_a = 76;
     let unit_b = Unit::new(&book, ());
     let amount_b = 45;
-    let sum = Sum::new().unit(&unit_a, amount_a).unit(&unit_b, amount_b);
+    let sum = Sum::of(&unit_a, amount_a).unit(&unit_b, amount_b);
     let actual = format!("{:?}", sum);
     let expected = format!(
         "Sum({{{:?}: {:?}, {:?}: {:?}}})",
@@ -367,9 +379,9 @@ fn balance_operation() {
     let book = Book::<(), (), (), ()>::new(());
     let unit_a = Unit::new(&book, ());
     let unit_b = Unit::new(&book, ());
-    let sum = Sum::new().unit(&unit_a, 2).unit(&unit_b, 3);
+    let sum = Sum::of(&unit_a, 2).unit(&unit_b, 3);
     actual.operation(&sum, |balance, amount| balance + amount as i128);
-    let sum = Sum::new().unit(&unit_a, 2).unit(&unit_b, 3);
+    let sum = Sum::of(&unit_a, 2).unit(&unit_b, 3);
     actual.operation(&sum, |balance, amount| balance * amount as i128);
     let expected = Balance(btreemap! {
         unit_a.clone() => 4,
@@ -397,7 +409,7 @@ fn balance_fmt_debug() {
     let amount_a = 76;
     let unit_b = Unit::new(&book, ());
     let amount_b = 45;
-    let sum = Sum::new().unit(&unit_a, amount_a).unit(&unit_b, amount_b);
+    let sum = Sum::of(&unit_a, amount_a).unit(&unit_b, amount_b);
     let balance = Balance::new() + &sum;
     let actual = format!("{:?}", balance);
     let expected = format!(
@@ -424,7 +436,7 @@ fn balance_sub_assign_sum() {
     let book = Book::<(), (), (), ()>::new(());
     let unit = Unit::new(&book, ());
     let mut actual = Balance::new();
-    actual -= &Sum::new().unit(&unit, 9);
+    actual -= &Sum::of(&unit, 9);
     let expected = Balance(btreemap! {
         unit.clone() => -9,
     });
@@ -449,7 +461,7 @@ fn balance_sub_sum() {
     let book = Book::<(), (), (), ()>::new(());
     let unit = Unit::new(&book, ());
     let balance = Balance::new();
-    let actual = balance - &Sum::new().unit(&unit, 9);
+    let actual = balance - &Sum::of(&unit, 9);
     let expected = Balance(btreemap! {
         unit.clone() => -9,
     });
@@ -473,7 +485,7 @@ fn balance_add_assign_sum() {
     let book = Book::<(), (), (), ()>::new(());
     let unit = Unit::new(&book, ());
     let mut actual = Balance::new();
-    actual += &Sum::new().unit(&unit, 9);
+    actual += &Sum::of(&unit, 9);
     let expected = Balance(btreemap! {
         unit.clone() => 9,
     });
@@ -498,7 +510,7 @@ fn balance_add_sum() {
     let book = Book::<(), (), (), ()>::new(());
     let unit = Unit::new(&book, ());
     let balance = Balance::new();
-    let actual = balance + &Sum::new().unit(&unit, 9);
+    let actual = balance + &Sum::of(&unit, 9);
     let expected = Balance(btreemap! {
         unit.clone() => 9,
     });
@@ -598,8 +610,7 @@ fn move_balance_in() {
     let account_a = Account::new(&book, ());
     let account_b = Account::new(&book, ());
     let unit = Unit::new(&book, ());
-    // TODO method for new sum with unit amount
-    let move_1 = Move::new(&account_a, &account_b, &Sum::new().unit(&unit, 3), 1);
+    let move_1 = Move::new(&account_a, &account_b, &Sum::of(&unit, 3), 1);
     assert_eq!(
         move_1.balance_in(&account_a, cmp),
         Balance(btreemap! { unit.clone() => -3 })
@@ -609,7 +620,7 @@ fn move_balance_in() {
         Balance(btreemap! { unit.clone() => 3 })
     );
 
-    let move_2 = Move::new(&account_a, &account_b, &Sum::new().unit(&unit, 4), 2);
+    let move_2 = Move::new(&account_a, &account_b, &Sum::of(&unit, 4), 2);
     assert_eq!(
         move_1.balance_in(&account_a, cmp),
         Balance(btreemap! { unit.clone() => -3 })
@@ -627,7 +638,7 @@ fn move_balance_in() {
         Balance(btreemap! { unit.clone() => 7 })
     );
 
-    let move_0 = Move::new(&account_a, &account_b, &Sum::new().unit(&unit, 1), 0);
+    let move_0 = Move::new(&account_a, &account_b, &Sum::of(&unit, 1), 0);
     assert_eq!(
         move_0.balance_in(&account_a, cmp),
         Balance(btreemap! { unit.clone() => -1 })
@@ -674,7 +685,7 @@ fn move_new_panic_some_unit_is_not_in_the_same_book_as_accounts() {
     let debit = Account::new(&book, ());
     let credit = Account::new(&book, ());
     let unit = Unit::new(&Book::new(()), ());
-    let sum = Sum::new().unit(&unit, 0);
+    let sum = Sum::of(&unit, 0);
     Move::new(&debit, &credit, &sum, ());
 }
 #[test]
@@ -685,7 +696,7 @@ fn move_new() {
     let thb = Unit::new(&book, ());
     let ils = Unit::new(&book, ());
     let usd = Unit::new(&book, ());
-    let sum = Sum::new().unit(&thb, 20).unit(&ils, 41).unit(&usd, 104);
+    let sum = Sum::of(&thb, 20).unit(&ils, 41).unit(&usd, 104);
     let move_a = Move::new(&debit, &credit, &sum, ());
     let expected = Rc::new(Move {
         book: book.clone(),
@@ -698,7 +709,7 @@ fn move_new() {
     assert_eq!(move_a, expected);
     assert_eq!(*debit.moves.borrow(), btreeset! { move_a.clone() });
     assert_eq!(*credit.moves.borrow(), btreeset! { move_a.clone() });
-    let sum = Sum::new().unit(&thb, 13).unit(&ils, 805).unit(&usd, 10);
+    let sum = Sum::of(&thb, 13).unit(&ils, 805).unit(&usd, 10);
     let move_b = Move::new(&debit, &credit, &sum, ());
     assert_eq!(
         *debit.moves.borrow(),
