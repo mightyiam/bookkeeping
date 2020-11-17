@@ -13,23 +13,40 @@ type EntityId = usize;
 type EntitySet<T> = RefCell<BTreeSet<Rc<T>>>;
 static BOOK_COUNTER: AtomicUsize = AtomicUsize::new(0);
 #[derive(Default)]
-struct Book {
+// TODO could this be a single type parameter
+struct Book<B, A, U, M>
+where
+    B: Clone,
+    A: Clone,
+    U: Clone,
+    M: Clone,
+{
     id: usize,
-    accounts: EntitySet<Account>,
-    units: EntitySet<Unit>,
-    moves: EntitySet<Move>,
+    meta: B,
+    accounts: EntitySet<Account<B, A, U, M>>,
+    units: EntitySet<Unit<B, A, U, M>>,
+    moves: EntitySet<Move<B, A, U, M>>,
 }
-impl Book {
-    fn new() -> Rc<Self> {
+impl<B, A, U, M> Book<B, A, U, M>
+where
+    B: Clone,
+    A: Clone,
+    U: Clone,
+    M: Clone,
+{
+    fn new(meta: B) -> Rc<Self> {
         Rc::new(Self {
             id: BOOK_COUNTER.fetch_add(1, atomic::Ordering::SeqCst),
-            ..Default::default()
+            meta,
+            accounts: Default::default(),
+            units: Default::default(),
+            moves: Default::default(),
         })
     }
 }
 #[test]
 fn book_new() {
-    let book = Book::new();
+    let book = Book::<(), (), (), ()>::new(());
     duplicate_inline! {
         [
             Entity field_name;
@@ -41,17 +58,23 @@ fn book_new() {
         let expected = EntitySet::default();
         assert_eq!(*actual, expected);
     }
-    let other_book = Book::new();
+    let other_book = Book::<(), (), (), ()>::new(());
     assert_ne!(book.id, other_book.id);
 }
-impl PartialEq for Book {
-    fn eq(&self, other: &Book) -> bool {
+impl<B, A, U, M> PartialEq for Book<B, A, U, M>
+where
+    B: Clone,
+    A: Clone,
+    U: Clone,
+    M: Clone,
+{
+    fn eq(&self, other: &Book<B, A, U, M>) -> bool {
         other.id == self.id
     }
 }
 #[test]
 fn book_partial_eq() {
-    let a = Rc::new(Book {
+    let a = Rc::new(Book::<(), (), (), ()> {
         id: 0,
         ..Default::default()
     });
@@ -64,7 +87,7 @@ fn book_partial_eq() {
         id: 0,
         ..Default::default()
     });
-    Account::new(&c);
+    Account::new(&c, ());
     assert_eq!(a, c, "Same id, some different field");
     let d = Rc::new(Book {
         id: 1,
@@ -72,18 +95,24 @@ fn book_partial_eq() {
     });
     assert_ne!(a, d, "Only id different");
 }
-impl fmt::Debug for Book {
+impl<B, A, U, M> fmt::Debug for Book<B, A, U, M>
+where
+    B: Clone,
+    A: Clone,
+    U: Clone,
+    M: Clone,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Book").field("id", &self.id).finish()
     }
 }
 #[test]
 fn book_fmt_debug() {
-    let book = Book::default();
+    let book = Book::<(), (), (), ()>::default();
     let actual = format!("{:?}", book);
     let expected = "Book { id: 0 }";
     assert_eq!(actual, expected);
-    let book = Book {
+    let book = Book::<(), (), (), ()> {
         id: 1,
         ..Default::default()
     };
@@ -92,16 +121,30 @@ fn book_fmt_debug() {
     assert_eq!(actual, expected);
 }
 #[derive(Default)]
-struct Account {
+struct Account<B, A, U, M>
+where
+    B: Clone,
+    A: Clone,
+    U: Clone,
+    M: Clone,
+{
     id: EntityId,
-    book: Rc<Book>,
-    moves: EntitySet<Move>,
+    meta: A,
+    book: Rc<Book<B, A, U, M>>,
+    moves: EntitySet<Move<B, A, U, M>>,
 }
-impl Account {
-    fn new(book: &Rc<Book>) -> Rc<Self> {
+impl<B, A, U, M> Account<B, A, U, M>
+where
+    B: Clone,
+    A: Clone,
+    U: Clone,
+    M: Clone,
+{
+    fn new(book: &Rc<Book<B, A, U, M>>, meta: A) -> Rc<Self> {
         let account = Rc::new(Self {
             book: book.clone(),
             id: Self::next_id(&book),
+            meta,
             moves: RefCell::new(BTreeSet::new()),
         });
         Self::register(&account, &book);
@@ -110,12 +153,12 @@ impl Account {
 }
 #[test]
 fn account_new() {
-    let book = Book::new();
-    let account_a = Account::new(&book);
+    let book = Book::<(), (), (), ()>::new(());
+    let account_a = Account::new(&book, ());
     assert_eq!(account_a.id, 0);
     assert_eq!(account_a.book, book);
     assert_eq!(*account_a.moves.borrow(), BTreeSet::new());
-    let account_b = Account::new(&book);
+    let account_b = Account::new(&book, ());
     assert_eq!(account_b.id, 1);
     assert_eq!(account_b.book, book);
     assert_eq!(*account_b.moves.borrow(), BTreeSet::new());
@@ -129,32 +172,52 @@ fn account_new() {
         "Accounts are in the book"
     );
 }
-impl fmt::Debug for Account {
+impl<B, A, U, M> fmt::Debug for Account<B, A, U, M>
+where
+    B: Clone,
+    A: Clone,
+    U: Clone,
+    M: Clone,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Account").field("id", &self.id).finish()
     }
 }
 #[test]
 fn account_fmt_debug() {
-    let book = Book::new();
-    let account = Account::new(&book);
+    let book = Book::<(), (), (), ()>::new(());
+    let account = Account::new(&book, ());
     let actual = format!("{:?}", account);
     let expected = "Account { id: 0 }";
     assert_eq!(actual, expected);
-    let account = Account::new(&book);
+    let account = Account::new(&book, ());
     let actual = format!("{:?}", account);
     let expected = "Account { id: 1 }";
     assert_eq!(actual, expected);
 }
-struct Unit {
+struct Unit<B, A, U, M>
+where
+    B: Clone,
+    A: Clone,
+    U: Clone,
+    M: Clone,
+{
     id: EntityId,
-    book: Rc<Book>,
+    meta: U,
+    book: Rc<Book<B, A, U, M>>,
 }
-impl Unit {
-    fn new(book: &Rc<Book>) -> Rc<Self> {
+impl<B, A, U, M> Unit<B, A, U, M>
+where
+    B: Clone,
+    A: Clone,
+    U: Clone,
+    M: Clone,
+{
+    fn new(book: &Rc<Book<B, A, U, M>>, meta: U) -> Rc<Self> {
         let unit = Rc::new(Self {
             id: Self::next_id(&book),
             book: book.clone(),
+            meta,
         });
         Self::register(&unit, &book);
         unit
@@ -162,11 +225,11 @@ impl Unit {
 }
 #[test]
 fn unit_new() {
-    let book = Book::new();
-    let unit_a = Unit::new(&book);
+    let book = Book::<(), (), (), ()>::new(());
+    let unit_a = Unit::new(&book, ());
     assert_eq!(unit_a.id, 0);
     assert_eq!(unit_a.book, book);
-    let unit_b = Unit::new(&book);
+    let unit_b = Unit::new(&book, ());
     assert_eq!(unit_b.id, 1);
     assert_eq!(unit_b.book, book);
     let expected = btreeset! {
@@ -175,30 +238,47 @@ fn unit_new() {
     };
     assert_eq!(*book.units.borrow(), expected, "Units are in the book");
 }
-impl fmt::Debug for Unit {
+impl<B, A, U, M> fmt::Debug for Unit<B, A, U, M>
+where
+    B: Clone,
+    A: Clone,
+    U: Clone,
+    M: Clone,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Unit").field("id", &self.id).finish()
     }
 }
 #[test]
 fn unit_fmt_debug() {
-    let book = Book::new();
-    let unit = Unit::new(&book);
+    let book = Book::<(), (), (), ()>::new(());
+    let unit = Unit::new(&book, ());
     let actual = format!("{:?}", unit);
     let expected = "Unit { id: 0 }";
     assert_eq!(actual, expected);
-    let unit = Unit::new(&book);
+    let unit = Unit::new(&book, ());
     let actual = format!("{:?}", unit);
     let expected = "Unit { id: 1 }";
     assert_eq!(actual, expected);
 }
 #[derive(Clone, PartialEq)]
-struct Sum(BTreeMap<Rc<Unit>, u64>);
-impl Sum {
+struct Sum<B, A, U, M>(BTreeMap<Rc<Unit<B, A, U, M>>, u64>)
+where
+    B: Clone,
+    A: Clone,
+    U: Clone,
+    M: Clone;
+impl<B, A, U, M> Sum<B, A, U, M>
+where
+    B: Clone,
+    A: Clone,
+    U: Clone,
+    M: Clone,
+{
     fn new() -> Self {
         Self(Default::default())
     }
-    fn unit(mut self, unit: &Rc<Unit>, amount: u64) -> Self {
+    fn unit(mut self, unit: &Rc<Unit<B, A, U, M>>, amount: u64) -> Self {
         self.0.insert(unit.clone(), amount);
         self
     }
@@ -206,20 +286,26 @@ impl Sum {
 }
 #[test]
 fn sum_new() {
-    let actual = Sum::new();
+    let actual = Sum::<(), (), (), ()>::new();
     let expected = Sum(BTreeMap::new());
     assert_eq!(actual, expected);
 }
 #[test]
 fn sum_unit() {
-    let book = Book::new();
-    let unit = Unit::new(&book);
+    let book = Book::<(), (), (), ()>::new(());
+    let unit = Unit::new(&book, ());
     let sum = Sum::new().unit(&unit, 124);
     let mut expected = BTreeMap::new();
     expected.insert(unit.clone(), 124);
     assert_eq!(sum.0, expected);
 }
-impl fmt::Debug for Sum {
+impl<B, A, U, M> fmt::Debug for Sum<B, A, U, M>
+where
+    B: Clone,
+    A: Clone,
+    U: Clone,
+    M: Clone,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Sum(")?;
         f.debug_map().entries(self.0.clone()).finish()?;
@@ -228,10 +314,10 @@ impl fmt::Debug for Sum {
 }
 #[test]
 fn sum_fmt_debug() {
-    let book = Book::new();
-    let unit_a = Unit::new(&book);
+    let book = Book::<(), (), (), ()>::new(());
+    let unit_a = Unit::new(&book, ());
     let amount_a = 76;
-    let unit_b = Unit::new(&book);
+    let unit_b = Unit::new(&book, ());
     let amount_b = 45;
     let sum = Sum::new().unit(&unit_a, amount_a).unit(&unit_b, amount_b);
     let actual = format!("{:?}", sum);
@@ -242,12 +328,23 @@ fn sum_fmt_debug() {
     assert_eq!(actual, expected);
 }
 #[derive(Clone, PartialEq)]
-struct Balance(BTreeMap<Rc<Unit>, i128>);
-impl Balance {
+struct Balance<B, A, U, M>(BTreeMap<Rc<Unit<B, A, U, M>>, i128>)
+where
+    B: Clone,
+    A: Clone,
+    U: Clone,
+    M: Clone;
+impl<B, A, U, M> Balance<B, A, U, M>
+where
+    B: Clone,
+    A: Clone,
+    U: Clone,
+    M: Clone,
+{
     fn new() -> Self {
         Self(Default::default())
     }
-    fn operation(&mut self, rhs: &Sum, amount_op: fn(i128, u64) -> i128) {
+    fn operation(&mut self, rhs: &Sum<B, A, U, M>, amount_op: fn(i128, u64) -> i128) {
         rhs.0.iter().for_each(|(unit, amount)| {
             self.0
                 .entry(unit.clone())
@@ -260,16 +357,16 @@ impl Balance {
 }
 #[test]
 fn balance_new() {
-    let actual = Balance::new();
+    let actual = Balance::<(), (), (), ()>::new();
     let expected = Balance(BTreeMap::new());
     assert_eq!(actual, expected);
 }
 #[test]
 fn balance_operation() {
     let mut actual = Balance::new();
-    let book = Book::new();
-    let unit_a = Unit::new(&book);
-    let unit_b = Unit::new(&book);
+    let book = Book::<(), (), (), ()>::new(());
+    let unit_a = Unit::new(&book, ());
+    let unit_b = Unit::new(&book, ());
     let sum = Sum::new().unit(&unit_a, 2).unit(&unit_b, 3);
     actual.operation(&sum, |balance, amount| balance + amount as i128);
     let sum = Sum::new().unit(&unit_a, 2).unit(&unit_b, 3);
@@ -280,7 +377,13 @@ fn balance_operation() {
     });
     assert_eq!(actual, expected);
 }
-impl fmt::Debug for Balance {
+impl<B, A, U, M> fmt::Debug for Balance<B, A, U, M>
+where
+    B: Clone,
+    A: Clone,
+    U: Clone,
+    M: Clone,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Balance(")?;
         f.debug_map().entries(self.0.clone()).finish()?;
@@ -289,10 +392,10 @@ impl fmt::Debug for Balance {
 }
 #[test]
 fn balance_fmt_debug() {
-    let book = Book::new();
-    let unit_a = Unit::new(&book);
+    let book = Book::<(), (), (), ()>::new(());
+    let unit_a = Unit::new(&book, ());
     let amount_a = 76;
-    let unit_b = Unit::new(&book);
+    let unit_b = Unit::new(&book, ());
     let amount_b = 45;
     let sum = Sum::new().unit(&unit_a, amount_a).unit(&unit_b, amount_b);
     let balance = Balance::new() + &sum;
@@ -303,9 +406,15 @@ fn balance_fmt_debug() {
     );
     assert_eq!(actual, expected);
 }
-impl ops::Sub<&Sum> for Balance {
-    type Output = Balance;
-    fn sub(self, sum: &Sum) -> Self::Output {
+impl<B, A, U, M> ops::Sub<&Sum<B, A, U, M>> for Balance<B, A, U, M>
+where
+    B: Clone,
+    A: Clone,
+    U: Clone,
+    M: Clone,
+{
+    type Output = Balance<B, A, U, M>;
+    fn sub(self, sum: &Sum<B, A, U, M>) -> Self::Output {
         let mut clone = self.clone();
         clone.operation(sum, |balance_amount, sum_amount| {
             balance_amount - sum_amount as i128
@@ -315,8 +424,8 @@ impl ops::Sub<&Sum> for Balance {
 }
 #[test]
 fn balance_minus_sum() {
-    let book = Book::new();
-    let unit = Unit::new(&book);
+    let book = Book::<(), (), (), ()>::new(());
+    let unit = Unit::new(&book, ());
     let balance = Balance::new();
     let actual = balance - &Sum::new().unit(&unit, 9);
     let expected = Balance(btreemap! {
@@ -324,9 +433,15 @@ fn balance_minus_sum() {
     });
     assert_eq!(actual, expected);
 }
-impl ops::Add<&Sum> for Balance {
-    type Output = Balance;
-    fn add(self, sum: &Sum) -> Self::Output {
+impl<B, A, U, M> ops::Add<&Sum<B, A, U, M>> for Balance<B, A, U, M>
+where
+    B: Clone,
+    A: Clone,
+    U: Clone,
+    M: Clone,
+{
+    type Output = Balance<B, A, U, M>;
+    fn add(self, sum: &Sum<B, A, U, M>) -> Self::Output {
         let mut clone = self.clone();
         clone.operation(sum, |balance_amount, sum_amount| {
             balance_amount + sum_amount as i128
@@ -336,8 +451,8 @@ impl ops::Add<&Sum> for Balance {
 }
 #[test]
 fn balance_plus_sum() {
-    let book = Book::new();
-    let unit = Unit::new(&book);
+    let book = Book::<(), (), (), ()>::new(());
+    let unit = Unit::new(&book, ());
     let balance = Balance::new();
     let actual = balance + &Sum::new().unit(&unit, 9);
     let expected = Balance(btreemap! {
@@ -346,17 +461,35 @@ fn balance_plus_sum() {
     assert_eq!(actual, expected);
 }
 #[derive(Debug)]
-struct Move {
-    book: Rc<Book>,
+struct Move<B, A, U, M>
+where
+    B: Clone,
+    A: Clone,
+    U: Clone,
+    M: Clone,
+{
+    book: Rc<Book<B, A, U, M>>,
     id: EntityId,
-    debit_account: Rc<Account>,
-    credit_account: Rc<Account>,
-    debit_account_balance: Balance,
-    credit_account_balance: Balance,
-    sum: Sum,
+    meta: M,
+    debit_account: Rc<Account<B, A, U, M>>,
+    credit_account: Rc<Account<B, A, U, M>>,
+    debit_account_balance: Balance<B, A, U, M>,
+    credit_account_balance: Balance<B, A, U, M>,
+    sum: Sum<B, A, U, M>,
 }
-impl Move {
-    fn new(debit_account: &Rc<Account>, credit_account: &Rc<Account>, sum: &Sum) -> Rc<Self> {
+impl<B, A, U, M> Move<B, A, U, M>
+where
+    B: Clone,
+    A: Clone,
+    U: Clone,
+    M: Clone,
+{
+    fn new(
+        debit_account: &Rc<Account<B, A, U, M>>,
+        credit_account: &Rc<Account<B, A, U, M>>,
+        sum: &Sum<B, A, U, M>,
+        meta: M,
+    ) -> Rc<Self> {
         let book = {
             let book = debit_account.book.clone();
             assert_eq!(
@@ -396,6 +529,7 @@ impl Move {
         let move_ = Rc::new(Self {
             book: book.clone(),
             id: Self::next_id(&book),
+            meta,
             debit_account: debit_account.clone(),
             credit_account: credit_account.clone(),
             debit_account_balance: debit_account_last_balance - &sum,
@@ -407,7 +541,7 @@ impl Move {
         Self::register(&move_, &book);
         move_
     }
-    fn balance_in(&self, account: &Rc<Account>) -> Balance {
+    fn balance_in(&self, account: &Rc<Account<B, A, U, M>>) -> Balance<B, A, U, M> {
         if *account == self.debit_account {
             self.debit_account_balance.clone()
         } else if *account == self.credit_account {
@@ -419,12 +553,12 @@ impl Move {
 }
 #[test]
 fn move_balance_in() {
-    let book = Book::new();
-    let debit = Account::new(&book);
-    let credit = Account::new(&book);
-    let unit = Unit::new(&book);
+    let book = Book::<(), (), (), ()>::new(());
+    let debit = Account::new(&book, ());
+    let credit = Account::new(&book, ());
+    let unit = Unit::new(&book, ());
     let sum = Sum::new().unit(&unit, 90);
-    let move_ = Move::new(&debit, &credit, &sum);
+    let move_ = Move::new(&debit, &credit, &sum, ());
     let actual = move_.balance_in(&debit);
     let expected = Balance(btreemap! {
         unit.clone() => -90,
@@ -439,40 +573,41 @@ fn move_balance_in() {
 #[test]
 #[should_panic(expected = "Debit and credit accounts are in different books.")]
 fn move_new_panic_debit_and_credit_accounts_are_in_different_books() {
-    let debit = Account::new(&Book::new());
-    let credit = Account::new(&Book::new());
-    Move::new(&debit, &credit, &Sum::new());
+    let debit = Account::<(), (), (), ()>::new(&Book::new(()), ());
+    let credit = Account::new(&Book::new(()), ());
+    Move::new(&debit, &credit, &Sum::new(), ());
 }
 #[test]
 #[should_panic(expected = "Debit and credit accounts are the same.")]
 fn move_new_panic_debit_and_credit_accounts_are_the_same() {
-    let book = Book::new();
-    let account = Account::new(&book);
-    Move::new(&account, &account, &Sum::new());
+    let book = Book::<(), (), (), ()>::new(());
+    let account = Account::new(&book, ());
+    Move::new(&account, &account, &Sum::new(), ());
 }
 #[test]
 #[should_panic(expected = "Some unit is not in the same book as accounts.")]
 fn move_new_panic_some_unit_is_not_in_the_same_book_as_accounts() {
-    let book = Book::new();
-    let debit = Account::new(&book);
-    let credit = Account::new(&book);
-    let unit = Unit::new(&Book::new());
+    let book = Book::<(), (), (), ()>::new(());
+    let debit = Account::new(&book, ());
+    let credit = Account::new(&book, ());
+    let unit = Unit::new(&Book::new(()), ());
     let sum = Sum::new().unit(&unit, 0);
-    Move::new(&debit, &credit, &sum);
+    Move::new(&debit, &credit, &sum, ());
 }
 #[test]
 fn move_new() {
-    let book = Book::new();
-    let debit = Account::new(&book);
-    let credit = Account::new(&book);
-    let thb = Unit::new(&book);
-    let ils = Unit::new(&book);
-    let usd = Unit::new(&book);
+    let book = Book::<(), (), (), ()>::new(());
+    let debit = Account::new(&book, ());
+    let credit = Account::new(&book, ());
+    let thb = Unit::new(&book, ());
+    let ils = Unit::new(&book, ());
+    let usd = Unit::new(&book, ());
     let sum = Sum::new().unit(&thb, 20).unit(&ils, 41).unit(&usd, 104);
-    let move_a = Move::new(&debit, &credit, &sum);
+    let move_a = Move::new(&debit, &credit, &sum, ());
     let expected = Rc::new(Move {
         book: book.clone(),
         id: 0,
+        meta: (),
         debit_account: debit.clone(),
         credit_account: credit.clone(),
         debit_account_balance: Balance(btreemap! {
@@ -491,7 +626,7 @@ fn move_new() {
     assert_eq!(*debit.moves.borrow(), btreeset! { move_a.clone() });
     assert_eq!(*credit.moves.borrow(), btreeset! { move_a.clone() });
     let sum = Sum::new().unit(&thb, 13).unit(&ils, 805).unit(&usd, 10);
-    let move_b = Move::new(&debit, &credit, &sum);
+    let move_b = Move::new(&debit, &credit, &sum, ());
     assert_eq!(
         *debit.moves.borrow(),
         btreeset! {
@@ -518,29 +653,59 @@ duplicate_inline! {
         [Unit] [units];
         [Move] [moves];
     ]
-    impl Entity {
-        fn next_id(book: &Book) -> EntityId {
+    impl<B, A, U, M> Entity<B, A, U, M>
+    where
+        B: Clone,
+        A: Clone,
+        U: Clone,
+        M: Clone,
+    {
+        fn next_id(book: &Book<B, A, U, M>) -> EntityId {
             book.book_field.borrow().len()
         }
-        fn register(entity: &Rc<Self>, book: &Book) {
+        fn register(entity: &Rc<Self>, book: &Book<B, A, U, M>) {
             book.book_field.borrow_mut().insert(entity.clone());
         }
     }
-    impl Ord for Entity {
+    impl<B, A, U, M> Ord for Entity<B, A, U, M>
+    where
+        B: Clone,
+        A: Clone,
+        U: Clone,
+        M: Clone,
+    {
         fn cmp(&self, other: &Self) -> Ordering {
             self.id.cmp(&other.id)
         }
     }
-    impl PartialOrd for Entity {
+    impl<B, A, U, M> PartialOrd for Entity<B, A, U, M>
+    where
+        B: Clone,
+        A: Clone,
+        U: Clone,
+        M: Clone,
+    {
         fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
             Some(self.id.cmp(&other.id))
         }
     }
-    impl PartialEq for Entity {
+    impl<B, A, U, M> PartialEq for Entity<B, A, U, M>
+    where
+        B: Clone,
+        A: Clone,
+        U: Clone,
+        M: Clone,
+    {
         fn eq(&self, other: &Self) -> bool {
             other.book == self.book && other.id == self.id
         }
     }
-    impl Eq for Entity {}
+    impl<B, A, U, M> Eq for Entity<B, A, U, M>
+    where
+        B: Clone,
+        A: Clone,
+        U: Clone,
+        M: Clone,
+    {}
 }
 // TODO do not use nightly features
