@@ -1,5 +1,5 @@
 use chrono::Duration;
-use envelope_system::*;
+use envelope_system::book::*;
 use std::rc::Rc;
 
 #[test]
@@ -17,10 +17,10 @@ fn adding_one_account() {
 fn transfer_own_account() {
     let mut book = Book::new();
     let acc = book.new_account("account");
-    let thb = monetary::THB();
-    assert_eq!(book.balance(&acc), monetary::Money::none());
+    let thb = THB();
+    assert_eq!(book.balance(&acc), Money::none());
     let _tx = book.transfer(&acc, &acc, thb.of_major(5));
-    assert_eq!(book.balance(&acc).get(thb).unwrap(), 0);
+    assert_eq!(book.balance(&acc).get(&thb).unwrap(), 0);
 }
 
 #[test]
@@ -28,23 +28,23 @@ fn transfer_between_two_accounts() {
     let mut book = Book::new();
     let bank = book.new_account("bank");
     let wallet = book.new_account("wallet");
-    let thb = monetary::THB();
+    let thb = THB();
     let _500_baht = thb.of(500, 0);
     let _withdraw_500_from_bank = book.transfer(&bank, &wallet, _500_baht);
     let bank_balance = book.balance(&bank);
     let wallet_balance = book.balance(&wallet);
-    assert_eq!(bank_balance.get(thb).unwrap(), -50000);
-    assert_eq!(wallet_balance.get(thb).unwrap(), 50000);
+    assert_eq!(bank_balance.get(&thb).unwrap(), -50000);
+    assert_eq!(wallet_balance.get(&thb).unwrap(), 50000);
 
     let _put_100_into_bank = book.transfer(&wallet, &bank, thb.of_major(100));
-    assert_eq!(book.balance(&bank).get(thb).unwrap(), -40000);
-    assert_eq!(book.balance(&wallet).get(thb).unwrap(), 40000);
+    assert_eq!(book.balance(&bank).get(&thb).unwrap(), -40000);
+    assert_eq!(book.balance(&wallet).get(&thb).unwrap(), 40000);
 }
 
 #[test]
 fn balance_at_dates() {
     let mut book = Book::new();
-    let thb = monetary::THB();
+    let thb = THB();
     let wallet = book.new_account("wallet");
     let bank = book.new_account("bank");
     let first_withdraw_datetime = DateTime::parse_from_rfc3339("2020-11-10T10:10:57+07:00")
@@ -72,7 +72,7 @@ fn balance_at_dates() {
 #[test]
 fn running_balance() {
     let mut book = Book::new();
-    let thb = monetary::THB();
+    let thb = THB();
     let bank = book.new_account("bank");
     let wallet = book.new_account("wallet");
     book.transfer(&wallet, &bank, thb.of_major(10));
@@ -84,7 +84,7 @@ fn running_balance() {
     assert_eq!(
         running_balance
             .iter()
-            .map(|(_, m)| m.get(thb).unwrap())
+            .map(|(_, m)| m.get(&thb).unwrap())
             .collect::<Vec<_>>(),
         vec![1000, 800, 600, 400, 300]
     );

@@ -16,7 +16,7 @@ impl<'a> Account {
         }
     }
 
-    pub fn balance<R>(&self, datetime: DateTime<Utc>, transactions: &[R]) -> Money<'a>
+    pub fn balance<R>(&self, datetime: DateTime<Utc>, transactions: &[R]) -> Money
     where
         R: AsRef<Transaction<'a>>,
     {
@@ -40,7 +40,7 @@ impl<'a> Account {
     pub fn running_balance<R, T>(&self, transactions: &'a [R]) -> T
     where
         R: AsRef<Transaction<'a>> + ToOwned,
-        T: FromIterator<(<R as ToOwned>::Owned, Money<'a>)>,
+        T: FromIterator<(<R as ToOwned>::Owned, Money)>,
     {
         transactions
             .iter()
@@ -56,12 +56,12 @@ impl<'a> Account {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct Transaction<'a> {
     pub(crate) datetime: DateTime<Utc>,
     pub(crate) from: &'a Account,
     pub(crate) to: &'a Account,
-    pub(crate) money: Money<'a>,
+    pub(crate) money: Money,
 }
 
 impl<'a> Transaction<'a> {
@@ -69,7 +69,7 @@ impl<'a> Transaction<'a> {
         datetime: DateTime<Utc>,
         from: &'a Account,
         to: &'a Account,
-        money: Money<'a>,
+        money: Money,
     ) -> Self {
         Transaction {
             datetime,
@@ -77,5 +77,9 @@ impl<'a> Transaction<'a> {
             to,
             money,
         }
+    }
+
+    pub fn datetime(&self) -> DateTime<Utc> {
+        self.datetime
     }
 }
