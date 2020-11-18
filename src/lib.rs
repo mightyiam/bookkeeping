@@ -12,29 +12,35 @@ use std::{
 type EntityId = usize;
 type EntitySet<T> = RefCell<BTreeSet<Rc<T>>>;
 static BOOK_COUNTER: AtomicUsize = AtomicUsize::new(0);
-#[derive(Default)]
-// TODO could this be a single type parameter
-struct Book<B, A, U, M>
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone,
-{
-    id: usize,
-    meta: B,
-    accounts: EntitySet<Account<B, A, U, M>>,
-    units: EntitySet<Unit<B, A, U, M>>,
-    moves: EntitySet<Move<B, A, U, M>>,
+trait Metadata: Clone {
+    type Book;
+    type Account;
+    type Unit;
+    type Move;
 }
-impl<B, A, U, M> Book<B, A, U, M>
+impl<B, A, U, M> Metadata for (B, A, U, M)
 where
     B: Clone,
     A: Clone,
     U: Clone,
     M: Clone,
 {
-    fn new(meta: B) -> Rc<Self> {
+    type Book = B;
+    type Account = A;
+    type Unit = U;
+    type Move = M;
+}
+type BlankMetadata = ((), (), (), ());
+#[derive(Default)]
+struct Book<T: Metadata> {
+    id: usize,
+    meta: T::Book,
+    accounts: EntitySet<Account<T>>,
+    units: EntitySet<Unit<T>>,
+    moves: EntitySet<Move<T>>,
+}
+impl<T: Metadata> Book<T> {
+    fn new(meta: T::Book) -> Rc<Self> {
         Rc::new(Self {
             id: BOOK_COUNTER.fetch_add(1, atomic::Ordering::SeqCst),
             meta,
@@ -46,7 +52,7 @@ where
 }
 #[test]
 fn book_new() {
-    let book = Book::<(), (), (), ()>::new(());
+    let book = Book::<BlankMetadata>::new(());
     duplicate_inline! {
         [
             Entity field_name;
@@ -58,23 +64,17 @@ fn book_new() {
         let expected = EntitySet::default();
         assert_eq!(*actual, expected);
     }
-    let other_book = Book::<(), (), (), ()>::new(());
+    let other_book = Book::<BlankMetadata>::new(());
     assert_ne!(book.id, other_book.id);
 }
-impl<B, A, U, M> PartialEq for Book<B, A, U, M>
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone,
-{
-    fn eq(&self, other: &Book<B, A, U, M>) -> bool {
+impl<T: Metadata> PartialEq for Book<T> {
+    fn eq(&self, other: &Book<T>) -> bool {
         other.id == self.id
     }
 }
 #[test]
 fn book_partial_eq() {
-    let a = Rc::new(Book::<(), (), (), ()> {
+    let a = Rc::new(Book::<BlankMetadata> {
         id: 0,
         ..Default::default()
     });
@@ -95,24 +95,18 @@ fn book_partial_eq() {
     });
     assert_ne!(a, d, "Only id different");
 }
-impl<B, A, U, M> fmt::Debug for Book<B, A, U, M>
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone,
-{
+impl<T: Metadata> fmt::Debug for Book<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Book").field("id", &self.id).finish()
     }
 }
 #[test]
 fn book_fmt_debug() {
-    let book = Book::<(), (), (), ()>::default();
+    let book = Book::<BlankMetadata>::default();
     let actual = format!("{:?}", book);
     let expected = "Book { id: 0 }";
     assert_eq!(actual, expected);
-    let book = Book::<(), (), (), ()> {
+    let book = Book::<BlankMetadata> {
         id: 1,
         ..Default::default()
     };
@@ -120,27 +114,14 @@ fn book_fmt_debug() {
     let expected = "Book { id: 1 }";
     assert_eq!(actual, expected);
 }
-#[derive(Default)]
-struct Account<B, A, U, M>
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone,
-{
+struct Account<T: Metadata> {
     id: EntityId,
-    meta: A,
-    book: Rc<Book<B, A, U, M>>,
-    moves: EntitySet<Move<B, A, U, M>>,
+    meta: T::Account,
+    book: Rc<Book<T>>,
+    moves: EntitySet<Move<T>>,
 }
-impl<B, A, U, M> Account<B, A, U, M>
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone,
-{
-    fn new(book: &Rc<Book<B, A, U, M>>, meta: A) -> Rc<Self> {
+impl<T: Metadata> Account<T> {
+    fn new(book: &Rc<Book<T>>, meta: T::Account) -> Rc<Self> {
         let account = Rc::new(Self {
             book: book.clone(),
             id: Self::next_id(&book),
@@ -153,7 +134,7 @@ where
 }
 #[test]
 fn account_new() {
-    let book = Book::<(), (), (), ()>::new(());
+    let book = Book::<BlankMetadata>::new(());
     let account_a = Account::new(&book, ());
     assert_eq!(account_a.id, 0);
     assert_eq!(account_a.book, book);
@@ -172,20 +153,14 @@ fn account_new() {
         "Accounts are in the book"
     );
 }
-impl<B, A, U, M> fmt::Debug for Account<B, A, U, M>
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone,
-{
+impl<T: Metadata> fmt::Debug for Account<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Account").field("id", &self.id).finish()
     }
 }
 #[test]
 fn account_fmt_debug() {
-    let book = Book::<(), (), (), ()>::new(());
+    let book = Book::<BlankMetadata>::new(());
     let account = Account::new(&book, ());
     let actual = format!("{:?}", account);
     let expected = "Account { id: 0 }";
@@ -195,25 +170,13 @@ fn account_fmt_debug() {
     let expected = "Account { id: 1 }";
     assert_eq!(actual, expected);
 }
-struct Unit<B, A, U, M>
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone,
-{
+struct Unit<T: Metadata> {
     id: EntityId,
-    meta: U,
-    book: Rc<Book<B, A, U, M>>,
+    meta: T::Unit,
+    book: Rc<Book<T>>,
 }
-impl<B, A, U, M> Unit<B, A, U, M>
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone,
-{
-    fn new(book: &Rc<Book<B, A, U, M>>, meta: U) -> Rc<Self> {
+impl<T: Metadata> Unit<T> {
+    fn new(book: &Rc<Book<T>>, meta: T::Unit) -> Rc<Self> {
         let unit = Rc::new(Self {
             id: Self::next_id(&book),
             book: book.clone(),
@@ -225,7 +188,7 @@ where
 }
 #[test]
 fn unit_new() {
-    let book = Book::<(), (), (), ()>::new(());
+    let book = Book::<BlankMetadata>::new(());
     let unit_a = Unit::new(&book, ());
     assert_eq!(unit_a.id, 0);
     assert_eq!(unit_a.book, book);
@@ -238,20 +201,14 @@ fn unit_new() {
     };
     assert_eq!(*book.units.borrow(), expected, "Units are in the book");
 }
-impl<B, A, U, M> fmt::Debug for Unit<B, A, U, M>
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone,
-{
+impl<T: Metadata> fmt::Debug for Unit<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Unit").field("id", &self.id).finish()
     }
 }
 #[test]
 fn unit_fmt_debug() {
-    let book = Book::<(), (), (), ()>::new(());
+    let book = Book::<BlankMetadata>::new(());
     let unit = Unit::new(&book, ());
     let actual = format!("{:?}", unit);
     let expected = "Unit { id: 0 }";
@@ -262,26 +219,15 @@ fn unit_fmt_debug() {
     assert_eq!(actual, expected);
 }
 #[derive(Clone, PartialEq)]
-struct Sum<B, A, U, M>(BTreeMap<Rc<Unit<B, A, U, M>>, u64>)
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone;
-impl<B, A, U, M> Sum<B, A, U, M>
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone,
-{
+struct Sum<T: Metadata>(BTreeMap<Rc<Unit<T>>, u64>);
+impl<T: Metadata> Sum<T> {
     fn new() -> Self {
         Self(Default::default())
     }
-    fn of(unit: &Rc<Unit<B, A, U, M>>, amount: u64) -> Self {
+    fn of(unit: &Rc<Unit<T>>, amount: u64) -> Self {
         Self::new().unit(&unit, amount)
     }
-    fn unit(mut self, unit: &Rc<Unit<B, A, U, M>>, amount: u64) -> Self {
+    fn unit(mut self, unit: &Rc<Unit<T>>, amount: u64) -> Self {
         self.0.insert(unit.clone(), amount);
         self
     }
@@ -289,13 +235,13 @@ where
 }
 #[test]
 fn sum_new() {
-    let actual = Sum::<(), (), (), ()>::new();
+    let actual = Sum::<BlankMetadata>::new();
     let expected = Sum(BTreeMap::new());
     assert_eq!(actual, expected);
 }
 #[test]
 fn sum_of() {
-    let book = Book::<(), (), (), ()>::new(());
+    let book = Book::<BlankMetadata>::new(());
     let unit = Unit::new(&book, ());
     let sum = Sum::of(&unit, 24);
     let mut expected = BTreeMap::new();
@@ -304,20 +250,14 @@ fn sum_of() {
 }
 #[test]
 fn sum_unit() {
-    let book = Book::<(), (), (), ()>::new(());
+    let book = Book::<BlankMetadata>::new(());
     let unit = Unit::new(&book, ());
     let sum = Sum::new().unit(&unit, 124);
     let mut expected = BTreeMap::new();
     expected.insert(unit.clone(), 124);
     assert_eq!(sum.0, expected);
 }
-impl<B, A, U, M> fmt::Debug for Sum<B, A, U, M>
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone,
-{
+impl<T: Metadata> fmt::Debug for Sum<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Sum(")?;
         f.debug_map().entries(self.0.clone()).finish()?;
@@ -326,7 +266,7 @@ where
 }
 #[test]
 fn sum_fmt_debug() {
-    let book = Book::<(), (), (), ()>::new(());
+    let book = Book::<BlankMetadata>::new(());
     let unit_a = Unit::new(&book, ());
     let amount_a = 76;
     let unit_b = Unit::new(&book, ());
@@ -340,23 +280,12 @@ fn sum_fmt_debug() {
     assert_eq!(actual, expected);
 }
 #[derive(Clone, PartialEq)]
-struct Balance<B, A, U, M>(BTreeMap<Rc<Unit<B, A, U, M>>, i128>)
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone;
-impl<B, A, U, M> Balance<B, A, U, M>
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone,
-{
+struct Balance<T: Metadata>(BTreeMap<Rc<Unit<T>>, i128>);
+impl<T: Metadata> Balance<T> {
     fn new() -> Self {
         Self(Default::default())
     }
-    fn operation(&mut self, rhs: &Sum<B, A, U, M>, amount_op: fn(i128, u64) -> i128) {
+    fn operation(&mut self, rhs: &Sum<T>, amount_op: fn(i128, u64) -> i128) {
         rhs.0.iter().for_each(|(unit, amount)| {
             self.0
                 .entry(unit.clone())
@@ -369,14 +298,14 @@ where
 }
 #[test]
 fn balance_new() {
-    let actual = Balance::<(), (), (), ()>::new();
+    let actual = Balance::<BlankMetadata>::new();
     let expected = Balance(BTreeMap::new());
     assert_eq!(actual, expected);
 }
 #[test]
 fn balance_operation() {
     let mut actual = Balance::new();
-    let book = Book::<(), (), (), ()>::new(());
+    let book = Book::<BlankMetadata>::new(());
     let unit_a = Unit::new(&book, ());
     let unit_b = Unit::new(&book, ());
     let sum = Sum::of(&unit_a, 2).unit(&unit_b, 3);
@@ -389,13 +318,7 @@ fn balance_operation() {
     });
     assert_eq!(actual, expected);
 }
-impl<B, A, U, M> fmt::Debug for Balance<B, A, U, M>
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone,
-{
+impl<T: Metadata> fmt::Debug for Balance<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Balance(")?;
         f.debug_map().entries(self.0.clone()).finish()?;
@@ -404,7 +327,7 @@ where
 }
 #[test]
 fn balance_fmt_debug() {
-    let book = Book::<(), (), (), ()>::new(());
+    let book = Book::<BlankMetadata>::new(());
     let unit_a = Unit::new(&book, ());
     let amount_a = 76;
     let unit_b = Unit::new(&book, ());
@@ -418,14 +341,8 @@ fn balance_fmt_debug() {
     );
     assert_eq!(actual, expected);
 }
-impl<B, A, U, M> ops::SubAssign<&Sum<B, A, U, M>> for Balance<B, A, U, M>
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone,
-{
-    fn sub_assign(&mut self, sum: &Sum<B, A, U, M>) {
+impl<T: Metadata> ops::SubAssign<&Sum<T>> for Balance<T> {
+    fn sub_assign(&mut self, sum: &Sum<T>) {
         self.operation(sum, |balance_amount, sum_amount| {
             balance_amount - sum_amount as i128
         });
@@ -433,7 +350,7 @@ where
 }
 #[test]
 fn balance_sub_assign_sum() {
-    let book = Book::<(), (), (), ()>::new(());
+    let book = Book::<BlankMetadata>::new(());
     let unit = Unit::new(&book, ());
     let mut actual = Balance::new();
     actual -= &Sum::of(&unit, 9);
@@ -442,15 +359,9 @@ fn balance_sub_assign_sum() {
     });
     assert_eq!(actual, expected);
 }
-impl<B, A, U, M> ops::Sub<&Sum<B, A, U, M>> for Balance<B, A, U, M>
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone,
-{
+impl<T: Metadata> ops::Sub<&Sum<T>> for Balance<T> {
     type Output = Self;
-    fn sub(self, sum: &Sum<B, A, U, M>) -> Self::Output {
+    fn sub(self, sum: &Sum<T>) -> Self::Output {
         let mut result = self.clone();
         result -= sum;
         result
@@ -458,7 +369,7 @@ where
 }
 #[test]
 fn balance_sub_sum() {
-    let book = Book::<(), (), (), ()>::new(());
+    let book = Book::<BlankMetadata>::new(());
     let unit = Unit::new(&book, ());
     let balance = Balance::new();
     let actual = balance - &Sum::of(&unit, 9);
@@ -467,14 +378,8 @@ fn balance_sub_sum() {
     });
     assert_eq!(actual, expected);
 }
-impl<B, A, U, M> ops::AddAssign<&Sum<B, A, U, M>> for Balance<B, A, U, M>
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone,
-{
-    fn add_assign(&mut self, sum: &Sum<B, A, U, M>) {
+impl<T: Metadata> ops::AddAssign<&Sum<T>> for Balance<T> {
+    fn add_assign(&mut self, sum: &Sum<T>) {
         self.operation(sum, |balance_amount, sum_amount| {
             balance_amount + sum_amount as i128
         });
@@ -482,7 +387,7 @@ where
 }
 #[test]
 fn balance_add_assign_sum() {
-    let book = Book::<(), (), (), ()>::new(());
+    let book = Book::<BlankMetadata>::new(());
     let unit = Unit::new(&book, ());
     let mut actual = Balance::new();
     actual += &Sum::of(&unit, 9);
@@ -491,15 +396,9 @@ fn balance_add_assign_sum() {
     });
     assert_eq!(actual, expected);
 }
-impl<B, A, U, M> ops::Add<&Sum<B, A, U, M>> for Balance<B, A, U, M>
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone,
-{
+impl<T: Metadata> ops::Add<&Sum<T>> for Balance<T> {
     type Output = Self;
-    fn add(self, sum: &Sum<B, A, U, M>) -> Self::Output {
+    fn add(self, sum: &Sum<T>) -> Self::Output {
         let mut result = self.clone();
         result += sum;
         result
@@ -507,7 +406,7 @@ where
 }
 #[test]
 fn balance_add_sum() {
-    let book = Book::<(), (), (), ()>::new(());
+    let book = Book::<BlankMetadata>::new(());
     let unit = Unit::new(&book, ());
     let balance = Balance::new();
     let actual = balance + &Sum::of(&unit, 9);
@@ -517,32 +416,20 @@ fn balance_add_sum() {
     assert_eq!(actual, expected);
 }
 #[derive(Debug)]
-struct Move<B, A, U, M>
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone,
-{
-    book: Rc<Book<B, A, U, M>>,
+struct Move<T: Metadata> {
+    book: Rc<Book<T>>,
     id: EntityId,
-    meta: M,
-    debit_account: Rc<Account<B, A, U, M>>,
-    credit_account: Rc<Account<B, A, U, M>>,
-    sum: Sum<B, A, U, M>,
+    meta: T::Move,
+    debit_account: Rc<Account<T>>,
+    credit_account: Rc<Account<T>>,
+    sum: Sum<T>,
 }
-impl<B, A, U, M> Move<B, A, U, M>
-where
-    B: Clone,
-    A: Clone,
-    U: Clone,
-    M: Clone,
-{
+impl<T: Metadata> Move<T> {
     fn new(
-        debit_account: &Rc<Account<B, A, U, M>>,
-        credit_account: &Rc<Account<B, A, U, M>>,
-        sum: &Sum<B, A, U, M>,
-        meta: M,
+        debit_account: &Rc<Account<T>>,
+        credit_account: &Rc<Account<T>>,
+        sum: &Sum<T>,
+        meta: T::Move,
     ) -> Rc<Self> {
         let book = {
             let book = debit_account.book.clone();
@@ -577,9 +464,9 @@ where
     }
     fn balance_in(
         &self,
-        account: &Rc<Account<B, A, U, M>>,
-        cmp: impl Fn(&M, &M) -> Ordering,
-    ) -> Balance<B, A, U, M> {
+        account: &Rc<Account<T>>,
+        cmp: impl Fn(&T::Move, &T::Move) -> Ordering,
+    ) -> Balance<T> {
         // TODO more concise check
         if *account != self.debit_account && *account != self.credit_account {
             panic!("Provided account is not debit nor credit in this move.");
@@ -606,7 +493,7 @@ where
 #[test]
 fn move_balance_in() {
     let cmp = |a: &u8, b: &u8| a.cmp(&b);
-    let book = Book::<(), (), (), u8>::new(());
+    let book = Book::<((), (), (), u8)>::new(());
     let account_a = Account::new(&book, ());
     let account_b = Account::new(&book, ());
     let unit = Unit::new(&book, ());
@@ -667,21 +554,21 @@ fn move_balance_in() {
 #[test]
 #[should_panic(expected = "Debit and credit accounts are in different books.")]
 fn move_new_panic_debit_and_credit_accounts_are_in_different_books() {
-    let debit = Account::<(), (), (), ()>::new(&Book::new(()), ());
+    let debit = Account::<BlankMetadata>::new(&Book::new(()), ());
     let credit = Account::new(&Book::new(()), ());
     Move::new(&debit, &credit, &Sum::new(), ());
 }
 #[test]
 #[should_panic(expected = "Debit and credit accounts are the same.")]
 fn move_new_panic_debit_and_credit_accounts_are_the_same() {
-    let book = Book::<(), (), (), ()>::new(());
+    let book = Book::<BlankMetadata>::new(());
     let account = Account::new(&book, ());
     Move::new(&account, &account, &Sum::new(), ());
 }
 #[test]
 #[should_panic(expected = "Some unit is not in the same book as accounts.")]
 fn move_new_panic_some_unit_is_not_in_the_same_book_as_accounts() {
-    let book = Book::<(), (), (), ()>::new(());
+    let book = Book::<BlankMetadata>::new(());
     let debit = Account::new(&book, ());
     let credit = Account::new(&book, ());
     let unit = Unit::new(&Book::new(()), ());
@@ -690,7 +577,7 @@ fn move_new_panic_some_unit_is_not_in_the_same_book_as_accounts() {
 }
 #[test]
 fn move_new() {
-    let book = Book::<(), (), (), ()>::new(());
+    let book = Book::<BlankMetadata>::new(());
     let debit = Account::new(&book, ());
     let credit = Account::new(&book, ());
     let thb = Unit::new(&book, ());
@@ -737,59 +624,29 @@ duplicate_inline! {
         [Unit] [units];
         [Move] [moves];
     ]
-    impl<B, A, U, M> Entity<B, A, U, M>
-    where
-        B: Clone,
-        A: Clone,
-        U: Clone,
-        M: Clone,
-    {
-        fn next_id(book: &Book<B, A, U, M>) -> EntityId {
+    impl<T: Metadata> Entity<T> {
+        fn next_id(book: &Book<T>) -> EntityId {
             book.book_field.borrow().len()
         }
-        fn register(entity: &Rc<Self>, book: &Book<B, A, U, M>) {
+        fn register(entity: &Rc<Self>, book: &Book<T>) {
             book.book_field.borrow_mut().insert(entity.clone());
         }
     }
-    impl<B, A, U, M> Ord for Entity<B, A, U, M>
-    where
-        B: Clone,
-        A: Clone,
-        U: Clone,
-        M: Clone,
-    {
+    impl<T: Metadata> Ord for Entity<T> {
         fn cmp(&self, other: &Self) -> Ordering {
             self.id.cmp(&other.id)
         }
     }
-    impl<B, A, U, M> PartialOrd for Entity<B, A, U, M>
-    where
-        B: Clone,
-        A: Clone,
-        U: Clone,
-        M: Clone,
-    {
+    impl<T: Metadata> PartialOrd for Entity<T> {
         fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
             Some(self.id.cmp(&other.id))
         }
     }
-    impl<B, A, U, M> PartialEq for Entity<B, A, U, M>
-    where
-        B: Clone,
-        A: Clone,
-        U: Clone,
-        M: Clone,
-    {
+    impl<T: Metadata> PartialEq for Entity<T> {
         fn eq(&self, other: &Self) -> bool {
             other.book == self.book && other.id == self.id
         }
     }
-    impl<B, A, U, M> Eq for Entity<B, A, U, M>
-    where
-        B: Clone,
-        A: Clone,
-        U: Clone,
-        M: Clone,
-    {}
+    impl<T: Metadata> Eq for Entity<T> {}
 }
 // TODO do not use nightly features
