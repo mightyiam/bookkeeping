@@ -479,12 +479,12 @@ impl<T: Metadata> Move<T> {
                 _ => true,
             })
             .fold(Balance::new(), |mut balance, move_| {
-                // TODO deduplicate
-                if move_.debit_account == *account {
-                    balance -= &move_.sum;
-                } else if move_.credit_account == *account {
-                    balance += &move_.sum;
-                }
+                (if move_.debit_account == *account {
+                    ops::SubAssign::sub_assign
+                } else {
+                    // `move_.credit_account == *account`
+                    ops::AddAssign::add_assign
+                })(&mut balance, &move_.sum);
                 balance
             })
     }
