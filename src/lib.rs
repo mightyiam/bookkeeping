@@ -467,10 +467,9 @@ impl<T: Metadata> Move<T> {
         account: &Rc<Account<T>>,
         cmp: impl Fn(&T::Move, &T::Move) -> Ordering,
     ) -> Balance<T> {
-        // TODO more concise check
-        if *account != self.debit_account && *account != self.credit_account {
+        if ![&self.debit_account, &self.credit_account].contains(&account) {
             panic!("Provided account is not debit nor credit in this move.");
-        };
+        }
         account
             .moves
             .borrow()
@@ -489,6 +488,20 @@ impl<T: Metadata> Move<T> {
                 balance
             })
     }
+}
+#[test]
+#[should_panic(expected = "Provided account is not debit nor credit in this move.")]
+fn move_balance_in_unrelated_account() {
+    let book = Book::<BlankMetadata>::new(());
+    let move_ = Move::new(
+        &Account::new(&book, ()),
+        &Account::new(&book, ()),
+        &Sum::of(&Unit::new(&book, ()), 123),
+        (),
+    );
+    move_.balance_in(&Account::new(&book, ()), |&(), &()| {
+        panic!();
+    });
 }
 #[test]
 fn move_balance_in() {
