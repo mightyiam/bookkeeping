@@ -1,4 +1,3 @@
-#![feature(map_first_last)]
 use duplicate::duplicate_inline;
 use maplit::{btreemap, btreeset};
 use std::{
