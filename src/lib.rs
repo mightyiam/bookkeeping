@@ -50,7 +50,8 @@ impl<T: Metadata> Book<T> {
 }
 #[test]
 fn book_new() {
-    let book = Book::<BlankMetadata>::new(());
+    let book = Book::<(u8, (), (), ())>::new(77);
+    assert_eq!(book.meta, 77);
     duplicate_inline! {
         [
             Entity field_name;
@@ -130,13 +131,15 @@ impl<T: Metadata> Account<T> {
 }
 #[test]
 fn account_new() {
-    let book = Book::<BlankMetadata>::new(());
-    let account_a = Account::new(&book, ());
+    let book = Book::<((), u8, (), ())>::new(());
+    let account_a = Account::new(&book, 9);
     assert_eq!(account_a.id, 0);
     assert_eq!(account_a.book, book);
-    let account_b = Account::new(&book, ());
+    assert_eq!(account_a.meta, 9);
+    let account_b = Account::new(&book, 4);
     assert_eq!(account_b.id, 1);
     assert_eq!(account_b.book, book);
+    assert_eq!(account_b.meta, 4);
     let expected = btreeset! {
         account_a.clone(),
         account_b.clone()
@@ -182,13 +185,15 @@ impl<T: Metadata> Unit<T> {
 }
 #[test]
 fn unit_new() {
-    let book = Book::<BlankMetadata>::new(());
-    let unit_a = Unit::new(&book, ());
+    let book = Book::<((), (), u8, ())>::new(());
+    let unit_a = Unit::new(&book, 50);
     assert_eq!(unit_a.id, 0);
     assert_eq!(unit_a.book, book);
-    let unit_b = Unit::new(&book, ());
+    assert_eq!(unit_a.meta, 50);
+    let unit_b = Unit::new(&book, 40);
     assert_eq!(unit_b.id, 1);
     assert_eq!(unit_b.book, book);
+    assert_eq!(unit_b.meta, 40);
     let expected = btreeset! {
         unit_a.clone(),
         unit_b.clone()
@@ -587,25 +592,25 @@ fn move_new_panic_some_unit_is_not_in_the_same_book_as_accounts() {
 }
 #[test]
 fn move_new() {
-    let book = Book::<BlankMetadata>::new(());
+    let book = Book::<((), (), (), u8)>::new(());
     let debit = Account::new(&book, ());
     let credit = Account::new(&book, ());
     let thb = Unit::new(&book, ());
     let ils = Unit::new(&book, ());
     let usd = Unit::new(&book, ());
     let sum = Sum::of(&thb, 20).unit(&ils, 41).unit(&usd, 104);
-    let move_a = Move::new(&debit, &credit, &sum, ());
+    let move_a = Move::new(&debit, &credit, &sum, 45);
     let expected = Rc::new(Move {
         book: book.clone(),
         id: 0,
-        meta: (),
+        meta: 45,
         debit_account: debit.clone(),
         credit_account: credit.clone(),
         sum: sum.clone(),
     });
     assert_eq!(move_a, expected);
     let sum = Sum::of(&thb, 13).unit(&ils, 805).unit(&usd, 10);
-    let move_b = Move::new(&debit, &credit, &sum, ());
+    let move_b = Move::new(&debit, &credit, &sum, 0);
     assert_eq!(
         *book.moves.borrow(),
         btreeset! { move_a.clone(), move_b.clone() }
