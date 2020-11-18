@@ -9,7 +9,6 @@ use std::{
     sync::{atomic, atomic::AtomicUsize},
 };
 type EntityId = usize;
-type EntitySet<T> = RefCell<BTreeSet<Rc<T>>>;
 static BOOK_COUNTER: AtomicUsize = AtomicUsize::new(0);
 trait Metadata: Clone {
     type Book;
@@ -34,9 +33,9 @@ type BlankMetadata = ((), (), (), ());
 struct Book<T: Metadata> {
     id: usize,
     meta: T::Book,
-    accounts: EntitySet<Account<T>>,
-    units: EntitySet<Unit<T>>,
-    moves: EntitySet<Move<T>>,
+    accounts: RefCell<BTreeSet<Rc<Account<T>>>>,
+    units: RefCell<BTreeSet<Rc<Unit<T>>>>,
+    moves: RefCell<BTreeSet<Rc<Move<T>>>>,
 }
 impl<T: Metadata> Book<T> {
     fn new(meta: T::Book) -> Rc<Self> {
@@ -60,7 +59,7 @@ fn book_new() {
             [Move] [moves];
         ]
         let actual = &book.field_name;
-        let expected = EntitySet::default();
+        let expected = Default::default();
         assert_eq!(*actual, expected);
     }
     let other_book = Book::<BlankMetadata>::new(());
@@ -117,7 +116,6 @@ struct Account<T: Metadata> {
     id: EntityId,
     meta: T::Account,
     book: Rc<Book<T>>,
-    moves: EntitySet<Move<T>>,
 }
 impl<T: Metadata> Account<T> {
     fn new(book: &Rc<Book<T>>, meta: T::Account) -> Rc<Self> {
@@ -125,7 +123,6 @@ impl<T: Metadata> Account<T> {
             book: book.clone(),
             id: Self::next_id(&book),
             meta,
-            moves: RefCell::new(BTreeSet::new()),
         });
         Self::register(&account, &book);
         account
@@ -137,11 +134,9 @@ fn account_new() {
     let account_a = Account::new(&book, ());
     assert_eq!(account_a.id, 0);
     assert_eq!(account_a.book, book);
-    assert_eq!(*account_a.moves.borrow(), BTreeSet::new());
     let account_b = Account::new(&book, ());
     assert_eq!(account_b.id, 1);
     assert_eq!(account_b.book, book);
-    assert_eq!(*account_b.moves.borrow(), BTreeSet::new());
     let expected = btreeset! {
         account_a.clone(),
         account_b.clone()
@@ -456,8 +451,6 @@ impl<T: Metadata> Move<T> {
             credit_account: credit_account.clone(),
             sum: sum.clone(),
         });
-        debit_account.moves.borrow_mut().insert(move_.clone());
-        credit_account.moves.borrow_mut().insert(move_.clone());
         Self::register(&move_, &book);
         move_
     }
@@ -470,6 +463,7 @@ impl<T: Metadata> Move<T> {
             panic!("Provided account is not debit nor credit in this move.");
         }
         account
+            .book
             .moves
             .borrow()
             .iter()
@@ -477,13 +471,17 @@ impl<T: Metadata> Move<T> {
                 Ordering::Less => false,
                 _ => true,
             })
-            .fold(Balance::new(), |mut balance, move_| {
-                (if move_.debit_account == *account {
-                    ops::SubAssign::sub_assign
+            .filter_map(|move_| -> Option<(fn(&mut Balance<T>, _), &Sum<T>)> {
+                if move_.debit_account == *account {
+                    Some((ops::SubAssign::sub_assign, &move_.sum))
+                } else if move_.credit_account == *account {
+                    Some((ops::AddAssign::add_assign, &move_.sum))
                 } else {
-                    // `move_.credit_account == *account`
-                    ops::AddAssign::add_assign
-                })(&mut balance, &move_.sum);
+                    None
+                }
+            })
+            .fold(Balance::new(), |mut balance, (operation, sum)| {
+                operation(&mut balance, sum);
                 balance
             })
     }
@@ -606,24 +604,8 @@ fn move_new() {
         sum: sum.clone(),
     });
     assert_eq!(move_a, expected);
-    assert_eq!(*debit.moves.borrow(), btreeset! { move_a.clone() });
-    assert_eq!(*credit.moves.borrow(), btreeset! { move_a.clone() });
     let sum = Sum::of(&thb, 13).unit(&ils, 805).unit(&usd, 10);
     let move_b = Move::new(&debit, &credit, &sum, ());
-    assert_eq!(
-        *debit.moves.borrow(),
-        btreeset! {
-            move_a.clone(),
-            move_b.clone(),
-        }
-    );
-    assert_eq!(
-        *credit.moves.borrow(),
-        btreeset! {
-            move_a.clone(),
-            move_b.clone(),
-        }
-    );
     assert_eq!(
         *book.moves.borrow(),
         btreeset! { move_a.clone(), move_b.clone() }
