@@ -92,4 +92,11 @@ fn running_balance() {
     running_balance.iter().for_each(|bal| {
         println!("{:?}", bal);
     });
+    book.transfer(&bank, &wallet, thb.of_major(2));
+    
+    println!("running balance of {:?}", bank);
+    running_balance.iter().for_each(|bal| {
+        println!("{:?}", bal);
+    });
+    
 }

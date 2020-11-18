@@ -3,14 +3,14 @@ pub use super::monetary::*;
 pub use chrono::{DateTime, Utc};
 use std::rc::Rc;
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct Book<'a> {
+#[derive(Debug)]
+pub struct Book {
     accounts: Vec<Rc<Account>>,
-    transactions: Vec<Rc<Transaction<'a>>>,
+    transactions: Vec<Rc<Transaction>>,
 }
 
 /// Resembles a datastore
-impl<'a> Book<'a> {
+impl Book {
     pub fn new() -> Self {
         Self {
             accounts: Vec::new(),
@@ -29,20 +29,20 @@ impl<'a> Book<'a> {
     }
     pub fn transfer(
         &mut self,
-        from: &'a Account,
-        to: &'a Account,
+        from: &Rc<Account>,
+        to: &Rc<Account>,
         money: Money,
-    ) -> Rc<Transaction<'a>> {
+    ) -> Rc<Transaction> {
         self.transfer_at(Utc::now(), from, to, money)
     }
 
     pub fn transfer_at(
         &mut self,
         datetime: DateTime<Utc>,
-        from: &'a Account,
-        to: &'a Account,
+        from: &Rc<Account>,
+        to: &Rc<Account>,
         money: Money,
-    ) -> Rc<Transaction<'a>> {
+    ) -> Rc<Transaction> {
         let transaction = Rc::new(Transaction::new(datetime, from, to, money));
         self.transactions.push(Rc::clone(&transaction));
         transaction
@@ -55,7 +55,7 @@ impl<'a> Book<'a> {
         account.balance(datetime, &self.transactions)
     }
 
-    pub fn running_balance(&self, account: &'a Account) -> Vec<(Rc<Transaction>, Money)> {
+    pub fn running_balance(&self, account: &Rc<Account>) -> Vec<(Rc<Transaction>, Money)> {
         account.running_balance(&self.transactions)
     }
 }

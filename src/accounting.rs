@@ -1,4 +1,6 @@
 use std::iter::FromIterator;
+use std::rc::Rc;
+use std::rc::Weak;
 
 use chrono::{DateTime, Utc};
 
@@ -18,7 +20,7 @@ impl<'a> Account {
 
     pub fn balance<R>(&self, datetime: DateTime<Utc>, transactions: &[R]) -> Money
     where
-        R: AsRef<Transaction<'a>>,
+        R: AsRef<Transaction>,
     {
         transactions
             .iter()
@@ -26,10 +28,10 @@ impl<'a> Account {
             .filter(|tx| tx.datetime <= datetime)
             .map(|tx| {
                 let mut money = Money::none();
-                if tx.to == self {
+                if tx.to.upgrade().unwrap().as_ref() == self {
                     money += tx.money.clone();
                 }
-                if tx.from == self {
+                if tx.from.upgrade().unwrap().as_ref() == self {
                     money -= tx.money.clone();
                 }
                 money
@@ -39,14 +41,16 @@ impl<'a> Account {
 
     pub fn running_balance<R, T>(&self, transactions: &'a [R]) -> T
     where
-        R: AsRef<Transaction<'a>> + ToOwned,
+        R: AsRef<Transaction> + ToOwned,
         T: FromIterator<(<R as ToOwned>::Owned, Money)>,
     {
         transactions
             .iter()
             .filter_map(|tx| {
                 let tx_r = tx.as_ref();
-                if tx_r.to == self || tx_r.from == self {
+                if tx_r.to.upgrade().unwrap().as_ref() == self
+                    || tx_r.from.upgrade().unwrap().as_ref() == self
+                {
                     Some((tx.to_owned(), self.balance(tx_r.datetime, transactions)))
                 } else {
                     None
@@ -56,20 +60,25 @@ impl<'a> Account {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
-pub struct Transaction<'a> {
+#[derive(Debug)]
+pub struct Transaction {
     pub(crate) datetime: DateTime<Utc>,
-    pub(crate) from: &'a Account,
-    pub(crate) to: &'a Account,
+    pub(crate) from: Weak<Account>,
+    pub(crate) to: Weak<Account>,
     pub(crate) money: Money,
 }
 
-impl<'a> Transaction<'a> {
-    pub fn new(datetime: DateTime<Utc>, from: &'a Account, to: &'a Account, money: Money) -> Self {
+impl Transaction {
+    pub fn new(
+        datetime: DateTime<Utc>,
+        from: &Rc<Account>,
+        to: &Rc<Account>,
+        money: Money,
+    ) -> Self {
         Transaction {
             datetime,
-            from,
-            to,
+            from: Rc::downgrade(from),
+            to: Rc::downgrade(to),
             money,
         }
     }
