@@ -1,9 +1,8 @@
 use crate::account::Account;
 use crate::balance::Balance;
-use crate::book::{Book, EntityId, Index};
-use crate::metadata::{BlankMetadata, Metadata};
+use crate::book::{EntityId, Index};
+use crate::metadata::Metadata;
 use crate::sum::Sum;
-use crate::unit::Unit;
 use std::cmp::Ordering;
 use std::ops;
 use std::rc::Rc;
@@ -84,130 +83,141 @@ impl<T: Metadata> Move<T> {
             })
     }
 }
-#[test]
-#[should_panic(expected = "Provided account is not debit nor credit in this move.")]
-fn move_balance_in_unrelated_account() {
-    let book = Book::<BlankMetadata>::new(());
-    let move_ = Move::new(
-        &Account::new(&book, ()),
-        &Account::new(&book, ()),
-        &Sum::of(&Unit::new(&book, ()), 123),
-        (),
-    );
-    move_.balance_in(&Account::new(&book, ()), |&(), &()| {
-        panic!();
-    });
-}
-#[test]
-fn move_balance_in() {
-    use maplit::btreemap;
-    let cmp = |a: &u8, b: &u8| a.cmp(&b);
-    let book = Book::<((), (), (), u8)>::new(());
-    let account_a = Account::new(&book, ());
-    let account_b = Account::new(&book, ());
-    let unit = Unit::new(&book, ());
-    let move_1 = Move::new(&account_a, &account_b, &Sum::of(&unit, 3), 1);
-    assert_eq!(
-        move_1.balance_in(&account_a, cmp),
-        Balance(btreemap! { unit.clone() => -3 })
-    );
-    assert_eq!(
-        move_1.balance_in(&account_b, cmp),
-        Balance(btreemap! { unit.clone() => 3 })
-    );
+#[cfg(test)]
+mod test {
+    use super::Account;
+    use super::Balance;
+    use super::Move;
+    use super::Rc;
+    use super::Sum;
+    use crate::book::Book;
+    use crate::metadata::BlankMetadata;
+    use crate::unit::Unit;
+    #[test]
+    #[should_panic(expected = "Provided account is not debit nor credit in this move.")]
+    fn move_balance_in_unrelated_account() {
+        let book = Book::<BlankMetadata>::new(());
+        let move_ = Move::new(
+            &Account::new(&book, ()),
+            &Account::new(&book, ()),
+            &Sum::of(&Unit::new(&book, ()), 123),
+            (),
+        );
+        move_.balance_in(&Account::new(&book, ()), |&(), &()| {
+            panic!();
+        });
+    }
+    #[test]
+    fn move_balance_in() {
+        use maplit::btreemap;
+        let cmp = |a: &u8, b: &u8| a.cmp(&b);
+        let book = Book::<((), (), (), u8)>::new(());
+        let account_a = Account::new(&book, ());
+        let account_b = Account::new(&book, ());
+        let unit = Unit::new(&book, ());
+        let move_1 = Move::new(&account_a, &account_b, &Sum::of(&unit, 3), 1);
+        assert_eq!(
+            move_1.balance_in(&account_a, cmp),
+            Balance(btreemap! { unit.clone() => -3 })
+        );
+        assert_eq!(
+            move_1.balance_in(&account_b, cmp),
+            Balance(btreemap! { unit.clone() => 3 })
+        );
 
-    let move_2 = Move::new(&account_a, &account_b, &Sum::of(&unit, 4), 2);
-    assert_eq!(
-        move_1.balance_in(&account_a, cmp),
-        Balance(btreemap! { unit.clone() => -3 })
-    );
-    assert_eq!(
-        move_1.balance_in(&account_b, cmp),
-        Balance(btreemap! { unit.clone() => 3 })
-    );
-    assert_eq!(
-        move_2.balance_in(&account_a, cmp),
-        Balance(btreemap! { unit.clone() => -7 })
-    );
-    assert_eq!(
-        move_2.balance_in(&account_b, cmp),
-        Balance(btreemap! { unit.clone() => 7 })
-    );
+        let move_2 = Move::new(&account_a, &account_b, &Sum::of(&unit, 4), 2);
+        assert_eq!(
+            move_1.balance_in(&account_a, cmp),
+            Balance(btreemap! { unit.clone() => -3 })
+        );
+        assert_eq!(
+            move_1.balance_in(&account_b, cmp),
+            Balance(btreemap! { unit.clone() => 3 })
+        );
+        assert_eq!(
+            move_2.balance_in(&account_a, cmp),
+            Balance(btreemap! { unit.clone() => -7 })
+        );
+        assert_eq!(
+            move_2.balance_in(&account_b, cmp),
+            Balance(btreemap! { unit.clone() => 7 })
+        );
 
-    let move_0 = Move::new(&account_a, &account_b, &Sum::of(&unit, 1), 0);
-    assert_eq!(
-        move_0.balance_in(&account_a, cmp),
-        Balance(btreemap! { unit.clone() => -1 })
-    );
-    assert_eq!(
-        move_0.balance_in(&account_b, cmp),
-        Balance(btreemap! { unit.clone() => 1 })
-    );
-    assert_eq!(
-        move_1.balance_in(&account_a, cmp),
-        Balance(btreemap! { unit.clone() => -4 })
-    );
-    assert_eq!(
-        move_1.balance_in(&account_b, cmp),
-        Balance(btreemap! { unit.clone() => 4 })
-    );
-    assert_eq!(
-        move_2.balance_in(&account_a, cmp),
-        Balance(btreemap! { unit.clone() => -8 })
-    );
-    assert_eq!(
-        move_2.balance_in(&account_b, cmp),
-        Balance(btreemap! { unit.clone() => 8 })
-    );
-}
-#[test]
-#[should_panic(expected = "Debit and credit accounts are in different books.")]
-fn move_new_panic_debit_and_credit_accounts_are_in_different_books() {
-    let debit = Account::<BlankMetadata>::new(&Book::new(()), ());
-    let credit = Account::new(&Book::new(()), ());
-    Move::new(&debit, &credit, &Sum::new(), ());
-}
-#[test]
-#[should_panic(expected = "Debit and credit accounts are the same.")]
-fn move_new_panic_debit_and_credit_accounts_are_the_same() {
-    let book = Book::<BlankMetadata>::new(());
-    let account = Account::new(&book, ());
-    Move::new(&account, &account, &Sum::new(), ());
-}
-#[test]
-#[should_panic(expected = "Some unit is not in the same book as accounts.")]
-fn move_new_panic_some_unit_is_not_in_the_same_book_as_accounts() {
-    let book = Book::<BlankMetadata>::new(());
-    let debit = Account::new(&book, ());
-    let credit = Account::new(&book, ());
-    let unit = Unit::new(&Book::new(()), ());
-    let sum = Sum::of(&unit, 0);
-    Move::new(&debit, &credit, &sum, ());
-}
-#[test]
-fn move_new() {
-    use maplit::btreeset;
-    let book = Book::<((), (), (), u8)>::new(());
-    let debit = Account::new(&book, ());
-    let credit = Account::new(&book, ());
-    let thb = Unit::new(&book, ());
-    let ils = Unit::new(&book, ());
-    let usd = Unit::new(&book, ());
-    let sum = Sum::of(&thb, 20).unit(&ils, 41).unit(&usd, 104);
-    let move_a = Move::new(&debit, &credit, &sum, 45);
-    let expected = Rc::new(Move {
-        index: book.index.clone(),
-        id: 0,
-        meta: 45,
-        debit_account: debit.clone(),
-        credit_account: credit.clone(),
-        sum: sum.clone(),
-    });
-    assert_eq!(move_a, expected);
-    let sum = Sum::of(&thb, 13).unit(&ils, 805).unit(&usd, 10);
-    let move_b = Move::new(&debit, &credit, &sum, 0);
-    assert_eq!(
-        *book.index.moves.borrow(),
-        btreeset! { move_a.clone(), move_b.clone() }
-    );
+        let move_0 = Move::new(&account_a, &account_b, &Sum::of(&unit, 1), 0);
+        assert_eq!(
+            move_0.balance_in(&account_a, cmp),
+            Balance(btreemap! { unit.clone() => -1 })
+        );
+        assert_eq!(
+            move_0.balance_in(&account_b, cmp),
+            Balance(btreemap! { unit.clone() => 1 })
+        );
+        assert_eq!(
+            move_1.balance_in(&account_a, cmp),
+            Balance(btreemap! { unit.clone() => -4 })
+        );
+        assert_eq!(
+            move_1.balance_in(&account_b, cmp),
+            Balance(btreemap! { unit.clone() => 4 })
+        );
+        assert_eq!(
+            move_2.balance_in(&account_a, cmp),
+            Balance(btreemap! { unit.clone() => -8 })
+        );
+        assert_eq!(
+            move_2.balance_in(&account_b, cmp),
+            Balance(btreemap! { unit.clone() => 8 })
+        );
+    }
+    #[test]
+    #[should_panic(expected = "Debit and credit accounts are in different books.")]
+    fn move_new_panic_debit_and_credit_accounts_are_in_different_books() {
+        let debit = Account::<BlankMetadata>::new(&Book::new(()), ());
+        let credit = Account::new(&Book::new(()), ());
+        Move::new(&debit, &credit, &Sum::new(), ());
+    }
+    #[test]
+    #[should_panic(expected = "Debit and credit accounts are the same.")]
+    fn move_new_panic_debit_and_credit_accounts_are_the_same() {
+        let book = Book::<BlankMetadata>::new(());
+        let account = Account::new(&book, ());
+        Move::new(&account, &account, &Sum::new(), ());
+    }
+    #[test]
+    #[should_panic(expected = "Some unit is not in the same book as accounts.")]
+    fn move_new_panic_some_unit_is_not_in_the_same_book_as_accounts() {
+        let book = Book::<BlankMetadata>::new(());
+        let debit = Account::new(&book, ());
+        let credit = Account::new(&book, ());
+        let unit = Unit::new(&Book::new(()), ());
+        let sum = Sum::of(&unit, 0);
+        Move::new(&debit, &credit, &sum, ());
+    }
+    #[test]
+    fn move_new() {
+        use maplit::btreeset;
+        let book = Book::<((), (), (), u8)>::new(());
+        let debit = Account::new(&book, ());
+        let credit = Account::new(&book, ());
+        let thb = Unit::new(&book, ());
+        let ils = Unit::new(&book, ());
+        let usd = Unit::new(&book, ());
+        let sum = Sum::of(&thb, 20).unit(&ils, 41).unit(&usd, 104);
+        let move_a = Move::new(&debit, &credit, &sum, 45);
+        let expected = Rc::new(Move {
+            index: book.index.clone(),
+            id: 0,
+            meta: 45,
+            debit_account: debit.clone(),
+            credit_account: credit.clone(),
+            sum: sum.clone(),
+        });
+        assert_eq!(move_a, expected);
+        let sum = Sum::of(&thb, 13).unit(&ils, 805).unit(&usd, 10);
+        let move_b = Move::new(&debit, &credit, &sum, 0);
+        assert_eq!(
+            *book.index.moves.borrow(),
+            btreeset! { move_a.clone(), move_b.clone() }
+        );
+    }
 }
