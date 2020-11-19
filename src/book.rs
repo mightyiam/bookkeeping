@@ -42,14 +42,15 @@ mod test {
     use crate::move_::Move;
     use crate::sum::Sum;
     use crate::unit::Unit;
+    use std::mem;
     #[test]
-    fn book_new() {
+    fn new() {
         let book = Book::<(u8, (), (), ())>::new(77);
         assert_eq!(book.meta, 77);
         assert_ne!(book, Book::new(77));
     }
     #[test]
-    fn book_drop() {
+    fn drop() {
         use std::rc::Rc;
         let book = Book::<BlankMetadata>::new(());
         assert_eq!(Rc::strong_count(&book.index), 1, "book");
@@ -81,18 +82,18 @@ mod test {
         assert_eq!(Rc::strong_count(&account_a), 3, "account_a, book, move_");
         assert_eq!(Rc::strong_count(&account_b), 3, "account_b, book, move_");
         assert_eq!(Rc::strong_count(&unit), 3, "unit, book, move_.sum");
-        drop(book);
+        mem::drop(book);
         assert_eq!(Rc::strong_count(&account_a), 2, "account_a, move_");
         assert_eq!(Rc::strong_count(&account_b), 2, "account_b, move_");
         assert_eq!(Rc::strong_count(&unit), 2, "unit, move_.sum");
         assert_eq!(Rc::strong_count(&move_), 1, "move_");
-        drop(move_);
+        mem::drop(move_);
         assert_eq!(Rc::strong_count(&account_a), 1, "account_a");
         assert_eq!(Rc::strong_count(&account_b), 1, "account_b");
         assert_eq!(Rc::strong_count(&unit), 1, "unit");
     }
     #[test]
-    fn book_partial_eq() {
+    fn partial_eq() {
         let index_0 = Rc::new(Index {
             id: 0,
             ..Default::default()
@@ -122,7 +123,7 @@ mod test {
         assert_ne!(a, d, "Only id different");
     }
     #[test]
-    fn book_fmt_debug() {
+    fn fmt_debug() {
         let book = Book::<BlankMetadata>::default();
         let actual = format!("{:?}", book);
         let expected = format!("Book {{ index: {:?} }}", book.index);

@@ -30,7 +30,7 @@ mod test {
     use super::Book;
     use crate::metadata::BlankMetadata;
     #[test]
-    fn account_new() {
+    fn new() {
         use maplit::btreeset;
         let book = Book::<((), u8, (), ())>::new(());
         let account_a = Account::new(&book, 9);
@@ -52,7 +52,7 @@ mod test {
         );
     }
     #[test]
-    fn account_fmt_debug() {
+    fn fmt_debug() {
         let book = Book::<BlankMetadata>::new(());
         let account = Account::new(&book, ());
         let actual = format!("{:?}", account);

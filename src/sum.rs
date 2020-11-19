@@ -33,13 +33,13 @@ mod test {
     use crate::book::Book;
     use crate::metadata::BlankMetadata;
     #[test]
-    fn sum_new() {
+    fn new() {
         let actual = Sum::<BlankMetadata>::new();
         let expected = Sum(BTreeMap::new());
         assert_eq!(actual, expected);
     }
     #[test]
-    fn sum_of() {
+    fn of() {
         let book = Book::<BlankMetadata>::new(());
         let unit = Unit::new(&book, ());
         let sum = Sum::of(&unit, 24);
@@ -48,7 +48,7 @@ mod test {
         assert_eq!(sum.0, expected);
     }
     #[test]
-    fn sum_unit() {
+    fn unit() {
         let book = Book::<BlankMetadata>::new(());
         let unit = Unit::new(&book, ());
         let sum = Sum::new().unit(&unit, 124);
@@ -57,7 +57,7 @@ mod test {
         assert_eq!(sum.0, expected);
     }
     #[test]
-    fn sum_fmt_debug() {
+    fn fmt_debug() {
         let book = Book::<BlankMetadata>::new(());
         let unit_a = Unit::new(&book, ());
         let amount_a = 76;

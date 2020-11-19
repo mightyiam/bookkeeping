@@ -68,13 +68,13 @@ mod test {
     use crate::book::Book;
     use crate::metadata::BlankMetadata;
     #[test]
-    fn balance_new() {
+    fn new() {
         let actual = Balance::<BlankMetadata>::new();
         let expected = Balance(BTreeMap::new());
         assert_eq!(actual, expected);
     }
     #[test]
-    fn balance_operation() {
+    fn operation() {
         use maplit::btreemap;
         let mut actual = Balance::new();
         let book = Book::<BlankMetadata>::new(());
@@ -91,7 +91,7 @@ mod test {
         assert_eq!(actual, expected);
     }
     #[test]
-    fn balance_fmt_debug() {
+    fn fmt_debug() {
         let book = Book::<BlankMetadata>::new(());
         let unit_a = Unit::new(&book, ());
         let amount_a = 76;
@@ -107,7 +107,7 @@ mod test {
         assert_eq!(actual, expected);
     }
     #[test]
-    fn balance_sub_assign_sum() {
+    fn sub_assign_sum() {
         use maplit::btreemap;
         let book = Book::<BlankMetadata>::new(());
         let unit = Unit::new(&book, ());
@@ -119,7 +119,7 @@ mod test {
         assert_eq!(actual, expected);
     }
     #[test]
-    fn balance_sub_sum() {
+    fn sub_sum() {
         use maplit::btreemap;
         let book = Book::<BlankMetadata>::new(());
         let unit = Unit::new(&book, ());
@@ -131,7 +131,7 @@ mod test {
         assert_eq!(actual, expected);
     }
     #[test]
-    fn balance_add_assign_sum() {
+    fn add_assign_sum() {
         use maplit::btreemap;
         let book = Book::<BlankMetadata>::new(());
         let unit = Unit::new(&book, ());
@@ -143,7 +143,7 @@ mod test {
         assert_eq!(actual, expected);
     }
     #[test]
-    fn balance_add_sum() {
+    fn add_sum() {
         use maplit::btreemap;
         let book = Book::<BlankMetadata>::new(());
         let unit = Unit::new(&book, ());

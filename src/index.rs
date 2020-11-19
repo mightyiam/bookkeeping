@@ -75,7 +75,7 @@ mod test {
     use super::Index;
     use crate::metadata::BlankMetadata;
     #[test]
-    fn index_new() {
+    fn new() {
         let index = Index::<BlankMetadata>::new();
         assert_ne!(index.id, Index::<BlankMetadata>::new().id);
         assert_eq!(index.accounts, Default::default());
@@ -83,7 +83,7 @@ mod test {
         assert_eq!(index.moves, Default::default());
     }
     #[test]
-    fn index_partial_eq() {
+    fn partial_eq() {
         let index = Index::<BlankMetadata> {
             id: 0,
             ..Default::default()
@@ -106,7 +106,7 @@ mod test {
         );
     }
     #[test]
-    fn index_fmt_debug() {
+    fn fmt_debug() {
         let index = Index::<BlankMetadata>::default();
         let actual = format!("{:?}", index);
         let expected = "Index { id: 0 }";

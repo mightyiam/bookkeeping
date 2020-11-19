@@ -30,7 +30,7 @@ mod test {
     use super::Unit;
     use crate::metadata::BlankMetadata;
     #[test]
-    fn unit_new() {
+    fn new() {
         use maplit::btreeset;
         let book = Book::<((), (), u8, ())>::new(());
         let unit_a = Unit::new(&book, 50);
@@ -52,7 +52,7 @@ mod test {
         );
     }
     #[test]
-    fn unit_fmt_debug() {
+    fn fmt_debug() {
         let book = Book::<BlankMetadata>::new(());
         let unit = Unit::new(&book, ());
         let actual = format!("{:?}", unit);

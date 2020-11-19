@@ -108,7 +108,7 @@ mod test {
         });
     }
     #[test]
-    fn move_balance_in() {
+    fn balance_in() {
         use maplit::btreemap;
         let cmp = |a: &u8, b: &u8| a.cmp(&b);
         let book = Book::<((), (), (), u8)>::new(());
@@ -194,7 +194,7 @@ mod test {
         Move::new(&debit, &credit, &sum, ());
     }
     #[test]
-    fn move_new() {
+    fn new() {
         use maplit::btreeset;
         let book = Book::<((), (), (), u8)>::new(());
         let debit = Account::new(&book, ());
