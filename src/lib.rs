@@ -9,7 +9,7 @@ use std::{
     sync::{atomic, atomic::AtomicUsize},
 };
 type EntityId = usize;
-static BOOK_COUNTER: AtomicUsize = AtomicUsize::new(0);
+static INDEX_COUNTER: AtomicUsize = AtomicUsize::new(0);
 trait Metadata: Clone {
     type Book;
     type Account;
@@ -30,18 +30,16 @@ where
 }
 type BlankMetadata = ((), (), (), ());
 #[derive(Default)]
-struct Book<T: Metadata> {
+struct Index<T: Metadata> {
     id: usize,
-    meta: T::Book,
     accounts: RefCell<BTreeSet<Rc<Account<T>>>>,
     units: RefCell<BTreeSet<Rc<Unit<T>>>>,
     moves: RefCell<BTreeSet<Rc<Move<T>>>>,
 }
-impl<T: Metadata> Book<T> {
-    fn new(meta: T::Book) -> Rc<Self> {
-        Rc::new(Self {
-            id: BOOK_COUNTER.fetch_add(1, atomic::Ordering::SeqCst),
-            meta,
+impl<T: Metadata> Index<T> {
+    fn new() -> Rc<Self> {
+        Rc::new(Index {
+            id: INDEX_COUNTER.fetch_add(1, atomic::Ordering::SeqCst),
             accounts: Default::default(),
             units: Default::default(),
             moves: Default::default(),
@@ -49,83 +47,195 @@ impl<T: Metadata> Book<T> {
     }
 }
 #[test]
-fn book_new() {
-    let book = Book::<(u8, (), (), ())>::new(77);
-    assert_eq!(book.meta, 77);
-    duplicate_inline! {
-        [
-            Entity field_name;
-            [Account] [accounts];
-            [Unit] [units];
-            [Move] [moves];
-        ]
-        let actual = &book.field_name;
-        let expected = Default::default();
-        assert_eq!(*actual, expected);
-    }
-    let other_book = Book::<BlankMetadata>::new(());
-    assert_ne!(book.id, other_book.id);
+fn index_new() {
+    let index = Index::<BlankMetadata>::new();
+    assert_ne!(index.id, Index::<BlankMetadata>::new().id);
+    assert_eq!(index.accounts, Default::default());
+    assert_eq!(index.units, Default::default());
+    assert_eq!(index.moves, Default::default());
 }
-impl<T: Metadata> PartialEq for Book<T> {
-    fn eq(&self, other: &Book<T>) -> bool {
+impl<T: Metadata> PartialEq for Index<T> {
+    fn eq(&self, other: &Index<T>) -> bool {
         other.id == self.id
     }
 }
 #[test]
-fn book_partial_eq() {
-    let a = Rc::new(Book::<BlankMetadata> {
+fn index_partial_eq() {
+    let index = Index::<BlankMetadata> {
         id: 0,
         ..Default::default()
-    });
-    let b = Rc::new(Book {
-        id: 0,
-        ..Default::default()
-    });
-    assert_eq!(a, b, "All fields equal");
-    let c = Rc::new(Book {
-        id: 0,
-        ..Default::default()
-    });
-    Account::new(&c, ());
-    assert_eq!(a, c, "Same id, some different field");
-    let d = Rc::new(Book {
+    };
+    assert_eq!(
+        index,
+        Index {
+            id: 0,
+            ..Default::default()
+        },
+        "All fields equal",
+    );
+    let book = Book {
+        index: Default::default(),
+        meta: (),
+    };
+    Account::new(&book, ());
+    assert_eq!(index, *book.index, "id same, some fields different");
+    assert_ne!(
+        index,
+        Index {
+            id: 1,
+            ..Default::default()
+        },
+        "id different, other fields equal"
+    );
+}
+impl<T: Metadata> fmt::Debug for Index<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Index").field("id", &self.id).finish()
+    }
+}
+#[test]
+fn index_fmt_debug() {
+    let index = Index::<BlankMetadata>::default();
+    let actual = format!("{:?}", index);
+    let expected = "Index { id: 0 }";
+    assert_eq!(actual, expected);
+    let index = Index::<BlankMetadata> {
         id: 1,
         ..Default::default()
+    };
+    let actual = format!("{:?}", index);
+    let expected = "Index { id: 1 }";
+    assert_eq!(actual, expected);
+}
+#[derive(Default)]
+struct Book<T: Metadata> {
+    meta: T::Book,
+    index: Rc<Index<T>>,
+}
+impl<T: Metadata> Book<T> {
+    fn new(meta: T::Book) -> Self {
+        Self {
+            meta,
+            index: Index::new(),
+        }
+    }
+}
+#[test]
+fn book_new() {
+    let book = Book::<(u8, (), (), ())>::new(77);
+    assert_eq!(book.meta, 77);
+    assert_ne!(book, Book::new(77));
+}
+impl<T: Metadata> Drop for Book<T> {
+    fn drop(&mut self) {
+        self.index.accounts.borrow_mut().clear();
+        self.index.units.borrow_mut().clear();
+        self.index.moves.borrow_mut().clear();
+    }
+}
+#[test]
+fn book_drop() {
+    use std::rc::Rc;
+    let book = Book::<BlankMetadata>::new(());
+    assert_eq!(Rc::strong_count(&book.index), 1, "book");
+    let account_a = Account::new(&book, ());
+    assert_eq!(Rc::strong_count(&account_a), 2, "account_a, book");
+    assert_eq!(Rc::strong_count(&book.index), 2, "book, account_a");
+    let account_b = Account::new(&book, ());
+    assert_eq!(Rc::strong_count(&account_b), 2, "account_b, book");
+    assert_eq!(
+        Rc::strong_count(&book.index),
+        3,
+        "book, account_a, account_b"
+    );
+    let unit = Unit::new(&book, ());
+    assert_eq!(Rc::strong_count(&unit), 2, "unit, book");
+    assert_eq!(
+        Rc::strong_count(&book.index),
+        4,
+        "book, account_a, account_b, unit"
+    );
+    assert_eq!(Rc::strong_count(&unit), 2, "unit, book");
+    let move_ = Move::new(&account_a, &account_b, &Sum::of(&unit, 0), ());
+    assert_eq!(Rc::strong_count(&move_), 2, "move, book");
+    assert_eq!(
+        Rc::strong_count(&book.index),
+        5,
+        "book, account_a, account_b, unit, move_"
+    );
+    assert_eq!(Rc::strong_count(&account_a), 3, "account_a, book, move_");
+    assert_eq!(Rc::strong_count(&account_b), 3, "account_b, book, move_");
+    assert_eq!(Rc::strong_count(&unit), 3, "unit, book, move_.sum");
+    drop(book);
+    assert_eq!(Rc::strong_count(&account_a), 2, "account_a, move_");
+    assert_eq!(Rc::strong_count(&account_b), 2, "account_b, move_");
+    assert_eq!(Rc::strong_count(&unit), 2, "unit, move_.sum");
+    assert_eq!(Rc::strong_count(&move_), 1, "move_");
+    drop(move_);
+    assert_eq!(Rc::strong_count(&account_a), 1, "account_a");
+    assert_eq!(Rc::strong_count(&account_b), 1, "account_b");
+    assert_eq!(Rc::strong_count(&unit), 1, "unit");
+}
+impl<T: Metadata> PartialEq for Book<T> {
+    fn eq(&self, other: &Book<T>) -> bool {
+        other.index == self.index
+    }
+}
+#[test]
+fn book_partial_eq() {
+    let index_0 = Rc::new(Index {
+        id: 0,
+        ..Default::default()
     });
+    let a = Book::<(u8, (), (), ())> {
+        meta: 0,
+        index: index_0.clone(),
+        ..Default::default()
+    };
+    let b = Book::<(u8, (), (), ())> {
+        meta: 0,
+        index: index_0.clone(),
+    };
+    assert_eq!(a, b, "All fields equal");
+    let c = Book {
+        meta: 1,
+        index: index_0.clone(),
+    };
+    assert_eq!(a, c, "Same index, some different field");
+    let d = Book {
+        meta: 0,
+        index: Rc::new(Index {
+            id: 1,
+            ..Default::default()
+        }),
+    };
     assert_ne!(a, d, "Only id different");
 }
 impl<T: Metadata> fmt::Debug for Book<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Book").field("id", &self.id).finish()
+        f.debug_struct("Book").field("index", &self.index).finish()
     }
 }
 #[test]
 fn book_fmt_debug() {
     let book = Book::<BlankMetadata>::default();
     let actual = format!("{:?}", book);
-    let expected = "Book { id: 0 }";
-    assert_eq!(actual, expected);
-    let book = Book::<BlankMetadata> {
-        id: 1,
-        ..Default::default()
-    };
-    let actual = format!("{:?}", book);
-    let expected = "Book { id: 1 }";
+    let expected = format!("Book {{ index: {:?} }}", book.index);
     assert_eq!(actual, expected);
 }
 struct Account<T: Metadata> {
     id: EntityId,
     meta: T::Account,
-    book: Rc<Book<T>>,
+    index: Rc<Index<T>>,
 }
 impl<T: Metadata> Account<T> {
-    fn new(book: &Rc<Book<T>>, meta: T::Account) -> Rc<Self> {
+    fn new(book: &Book<T>, meta: T::Account) -> Rc<Self> {
         let account = Rc::new(Self {
-            book: book.clone(),
-            id: Self::next_id(&book),
+            index: book.index.clone(),
+            id: Self::next_id(&book.index),
             meta,
         });
-        Self::register(&account, &book);
+        Self::register(&account, &book.index);
         account
     }
 }
@@ -134,18 +244,18 @@ fn account_new() {
     let book = Book::<((), u8, (), ())>::new(());
     let account_a = Account::new(&book, 9);
     assert_eq!(account_a.id, 0);
-    assert_eq!(account_a.book, book);
+    assert_eq!(account_a.index, book.index);
     assert_eq!(account_a.meta, 9);
     let account_b = Account::new(&book, 4);
     assert_eq!(account_b.id, 1);
-    assert_eq!(account_b.book, book);
+    assert_eq!(account_b.index, book.index);
     assert_eq!(account_b.meta, 4);
     let expected = btreeset! {
         account_a.clone(),
         account_b.clone()
     };
     assert_eq!(
-        *book.accounts.borrow(),
+        *book.index.accounts.borrow(),
         expected,
         "Accounts are in the book"
     );
@@ -170,16 +280,16 @@ fn account_fmt_debug() {
 struct Unit<T: Metadata> {
     id: EntityId,
     meta: T::Unit,
-    book: Rc<Book<T>>,
+    index: Rc<Index<T>>,
 }
 impl<T: Metadata> Unit<T> {
-    fn new(book: &Rc<Book<T>>, meta: T::Unit) -> Rc<Self> {
+    fn new(book: &Book<T>, meta: T::Unit) -> Rc<Self> {
         let unit = Rc::new(Self {
-            id: Self::next_id(&book),
-            book: book.clone(),
+            id: Self::next_id(&book.index),
+            index: book.index.clone(),
             meta,
         });
-        Self::register(&unit, &book);
+        Self::register(&unit, &book.index);
         unit
     }
 }
@@ -188,17 +298,21 @@ fn unit_new() {
     let book = Book::<((), (), u8, ())>::new(());
     let unit_a = Unit::new(&book, 50);
     assert_eq!(unit_a.id, 0);
-    assert_eq!(unit_a.book, book);
+    assert_eq!(unit_a.index, book.index);
     assert_eq!(unit_a.meta, 50);
     let unit_b = Unit::new(&book, 40);
     assert_eq!(unit_b.id, 1);
-    assert_eq!(unit_b.book, book);
+    assert_eq!(unit_b.index, book.index);
     assert_eq!(unit_b.meta, 40);
     let expected = btreeset! {
         unit_a.clone(),
         unit_b.clone()
     };
-    assert_eq!(*book.units.borrow(), expected, "Units are in the book");
+    assert_eq!(
+        *book.index.units.borrow(),
+        expected,
+        "Units are in the book"
+    );
 }
 impl<T: Metadata> fmt::Debug for Unit<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -416,7 +530,7 @@ fn balance_add_sum() {
 }
 #[derive(Debug)]
 struct Move<T: Metadata> {
-    book: Rc<Book<T>>,
+    index: Rc<Index<T>>,
     id: EntityId,
     meta: T::Move,
     debit_account: Rc<Account<T>>,
@@ -430,33 +544,33 @@ impl<T: Metadata> Move<T> {
         sum: &Sum<T>,
         meta: T::Move,
     ) -> Rc<Self> {
-        let book = {
-            let book = debit_account.book.clone();
+        let index = {
+            let index = debit_account.index.clone();
             assert_eq!(
-                book.id, credit_account.book.id,
+                index.id, credit_account.index.id,
                 "Debit and credit accounts are in different books."
             );
             assert!(
                 debit_account != credit_account,
                 "Debit and credit accounts are the same."
             );
-            book
+            index
         };
         sum.0.keys().for_each(|unit| {
             assert!(
-                book.units.borrow().contains(unit),
+                index.units.borrow().contains(unit),
                 "Some unit is not in the same book as accounts."
             );
         });
         let move_ = Rc::new(Self {
-            book: book.clone(),
-            id: Self::next_id(&book),
+            index: index.clone(),
+            id: Self::next_id(&index),
             meta,
             debit_account: debit_account.clone(),
             credit_account: credit_account.clone(),
             sum: sum.clone(),
         });
-        Self::register(&move_, &book);
+        Self::register(&move_, &index);
         move_
     }
     fn balance_in(
@@ -468,7 +582,7 @@ impl<T: Metadata> Move<T> {
             panic!("Provided account is not debit nor credit in this move.");
         }
         account
-            .book
+            .index
             .moves
             .borrow()
             .iter()
@@ -601,7 +715,7 @@ fn move_new() {
     let sum = Sum::of(&thb, 20).unit(&ils, 41).unit(&usd, 104);
     let move_a = Move::new(&debit, &credit, &sum, 45);
     let expected = Rc::new(Move {
-        book: book.clone(),
+        index: book.index.clone(),
         id: 0,
         meta: 45,
         debit_account: debit.clone(),
@@ -612,23 +726,23 @@ fn move_new() {
     let sum = Sum::of(&thb, 13).unit(&ils, 805).unit(&usd, 10);
     let move_b = Move::new(&debit, &credit, &sum, 0);
     assert_eq!(
-        *book.moves.borrow(),
+        *book.index.moves.borrow(),
         btreeset! { move_a.clone(), move_b.clone() }
     );
 }
 duplicate_inline! {
     [
-        Entity book_field;
+        Entity index_field;
         [Account] [accounts];
         [Unit] [units];
         [Move] [moves];
     ]
     impl<T: Metadata> Entity<T> {
-        fn next_id(book: &Book<T>) -> EntityId {
-            book.book_field.borrow().len()
+        fn next_id(index: &Index<T>) -> EntityId {
+            index.index_field.borrow().len()
         }
-        fn register(entity: &Rc<Self>, book: &Book<T>) {
-            book.book_field.borrow_mut().insert(entity.clone());
+        fn register(entity: &Rc<Self>, index: &Index<T>) {
+            index.index_field.borrow_mut().insert(entity.clone());
         }
     }
     impl<T: Metadata> Ord for Entity<T> {
@@ -643,7 +757,7 @@ duplicate_inline! {
     }
     impl<T: Metadata> PartialEq for Entity<T> {
         fn eq(&self, other: &Self) -> bool {
-            other.book == self.book && other.id == self.id
+            other.index == self.index && other.id == self.id
         }
     }
     impl<T: Metadata> Eq for Entity<T> {}
