@@ -1,5 +1,4 @@
 use duplicate::duplicate_inline;
-use maplit::{btreemap, btreeset};
 use std::{
     cell::RefCell,
     cmp::{Ord, Ordering},
@@ -10,7 +9,7 @@ use std::{
 };
 type EntityId = usize;
 static INDEX_COUNTER: AtomicUsize = AtomicUsize::new(0);
-trait Metadata: Clone {
+pub trait Metadata: Clone {
     type Book;
     type Account;
     type Unit;
@@ -108,12 +107,12 @@ fn index_fmt_debug() {
     assert_eq!(actual, expected);
 }
 #[derive(Default)]
-struct Book<T: Metadata> {
+pub struct Book<T: Metadata> {
     meta: T::Book,
     index: Rc<Index<T>>,
 }
 impl<T: Metadata> Book<T> {
-    fn new(meta: T::Book) -> Self {
+    pub fn new(meta: T::Book) -> Self {
         Self {
             meta,
             index: Index::new(),
@@ -223,13 +222,13 @@ fn book_fmt_debug() {
     let expected = format!("Book {{ index: {:?} }}", book.index);
     assert_eq!(actual, expected);
 }
-struct Account<T: Metadata> {
+pub struct Account<T: Metadata> {
     id: EntityId,
     meta: T::Account,
     index: Rc<Index<T>>,
 }
 impl<T: Metadata> Account<T> {
-    fn new(book: &Book<T>, meta: T::Account) -> Rc<Self> {
+    pub fn new(book: &Book<T>, meta: T::Account) -> Rc<Self> {
         let account = Rc::new(Self {
             index: book.index.clone(),
             id: Self::next_id(&book.index),
@@ -241,6 +240,7 @@ impl<T: Metadata> Account<T> {
 }
 #[test]
 fn account_new() {
+    use maplit::btreeset;
     let book = Book::<((), u8, (), ())>::new(());
     let account_a = Account::new(&book, 9);
     assert_eq!(account_a.id, 0);
@@ -277,13 +277,13 @@ fn account_fmt_debug() {
     let expected = "Account { id: 1 }";
     assert_eq!(actual, expected);
 }
-struct Unit<T: Metadata> {
+pub struct Unit<T: Metadata> {
     id: EntityId,
     meta: T::Unit,
     index: Rc<Index<T>>,
 }
 impl<T: Metadata> Unit<T> {
-    fn new(book: &Book<T>, meta: T::Unit) -> Rc<Self> {
+    pub fn new(book: &Book<T>, meta: T::Unit) -> Rc<Self> {
         let unit = Rc::new(Self {
             id: Self::next_id(&book.index),
             index: book.index.clone(),
@@ -295,6 +295,7 @@ impl<T: Metadata> Unit<T> {
 }
 #[test]
 fn unit_new() {
+    use maplit::btreeset;
     let book = Book::<((), (), u8, ())>::new(());
     let unit_a = Unit::new(&book, 50);
     assert_eq!(unit_a.id, 0);
@@ -332,15 +333,15 @@ fn unit_fmt_debug() {
     assert_eq!(actual, expected);
 }
 #[derive(Clone, PartialEq)]
-struct Sum<T: Metadata>(BTreeMap<Rc<Unit<T>>, u64>);
+pub struct Sum<T: Metadata>(BTreeMap<Rc<Unit<T>>, u64>);
 impl<T: Metadata> Sum<T> {
     fn new() -> Self {
         Self(Default::default())
     }
-    fn of(unit: &Rc<Unit<T>>, amount: u64) -> Self {
+    pub fn of(unit: &Rc<Unit<T>>, amount: u64) -> Self {
         Self::new().unit(&unit, amount)
     }
-    fn unit(mut self, unit: &Rc<Unit<T>>, amount: u64) -> Self {
+    pub fn unit(mut self, unit: &Rc<Unit<T>>, amount: u64) -> Self {
         self.0.insert(unit.clone(), amount);
         self
     }
@@ -393,7 +394,7 @@ fn sum_fmt_debug() {
     assert_eq!(actual, expected);
 }
 #[derive(Clone, PartialEq)]
-struct Balance<T: Metadata>(BTreeMap<Rc<Unit<T>>, i128>);
+pub struct Balance<T: Metadata>(BTreeMap<Rc<Unit<T>>, i128>);
 impl<T: Metadata> Balance<T> {
     fn new() -> Self {
         Self(Default::default())
@@ -417,6 +418,7 @@ fn balance_new() {
 }
 #[test]
 fn balance_operation() {
+    use maplit::btreemap;
     let mut actual = Balance::new();
     let book = Book::<BlankMetadata>::new(());
     let unit_a = Unit::new(&book, ());
@@ -463,6 +465,7 @@ impl<T: Metadata> ops::SubAssign<&Sum<T>> for Balance<T> {
 }
 #[test]
 fn balance_sub_assign_sum() {
+    use maplit::btreemap;
     let book = Book::<BlankMetadata>::new(());
     let unit = Unit::new(&book, ());
     let mut actual = Balance::new();
@@ -482,6 +485,7 @@ impl<T: Metadata> ops::Sub<&Sum<T>> for Balance<T> {
 }
 #[test]
 fn balance_sub_sum() {
+    use maplit::btreemap;
     let book = Book::<BlankMetadata>::new(());
     let unit = Unit::new(&book, ());
     let balance = Balance::new();
@@ -500,6 +504,7 @@ impl<T: Metadata> ops::AddAssign<&Sum<T>> for Balance<T> {
 }
 #[test]
 fn balance_add_assign_sum() {
+    use maplit::btreemap;
     let book = Book::<BlankMetadata>::new(());
     let unit = Unit::new(&book, ());
     let mut actual = Balance::new();
@@ -519,6 +524,7 @@ impl<T: Metadata> ops::Add<&Sum<T>> for Balance<T> {
 }
 #[test]
 fn balance_add_sum() {
+    use maplit::btreemap;
     let book = Book::<BlankMetadata>::new(());
     let unit = Unit::new(&book, ());
     let balance = Balance::new();
@@ -529,7 +535,7 @@ fn balance_add_sum() {
     assert_eq!(actual, expected);
 }
 #[derive(Debug)]
-struct Move<T: Metadata> {
+pub struct Move<T: Metadata> {
     index: Rc<Index<T>>,
     id: EntityId,
     meta: T::Move,
@@ -538,7 +544,7 @@ struct Move<T: Metadata> {
     sum: Sum<T>,
 }
 impl<T: Metadata> Move<T> {
-    fn new(
+    pub fn new(
         debit_account: &Rc<Account<T>>,
         credit_account: &Rc<Account<T>>,
         sum: &Sum<T>,
@@ -573,7 +579,7 @@ impl<T: Metadata> Move<T> {
         Self::register(&move_, &index);
         move_
     }
-    fn balance_in(
+    pub fn balance_in(
         &self,
         account: &Rc<Account<T>>,
         cmp: impl Fn(&T::Move, &T::Move) -> Ordering,
@@ -621,6 +627,7 @@ fn move_balance_in_unrelated_account() {
 }
 #[test]
 fn move_balance_in() {
+    use maplit::btreemap;
     let cmp = |a: &u8, b: &u8| a.cmp(&b);
     let book = Book::<((), (), (), u8)>::new(());
     let account_a = Account::new(&book, ());
@@ -706,6 +713,7 @@ fn move_new_panic_some_unit_is_not_in_the_same_book_as_accounts() {
 }
 #[test]
 fn move_new() {
+    use maplit::btreeset;
     let book = Book::<((), (), (), u8)>::new(());
     let debit = Account::new(&book, ());
     let credit = Account::new(&book, ());
