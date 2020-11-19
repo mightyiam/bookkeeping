@@ -1,6 +1,7 @@
 mod account;
 mod balance;
 mod book;
+mod index;
 mod metadata;
 mod move_;
 mod sum;

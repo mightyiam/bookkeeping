@@ -1,6 +1,6 @@
 use crate::account::Account;
 use crate::balance::Balance;
-use crate::book::{EntityId, Index};
+use crate::index::{EntityId, Index};
 use crate::metadata::Metadata;
 use crate::sum::Sum;
 use std::cmp::Ordering;

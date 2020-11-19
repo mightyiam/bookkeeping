@@ -1,4 +1,5 @@
-use crate::book::{Book, EntityId, Index};
+use crate::book::Book;
+use crate::index::{EntityId, Index};
 use crate::metadata::Metadata;
 use std::fmt;
 use std::rc::Rc;
