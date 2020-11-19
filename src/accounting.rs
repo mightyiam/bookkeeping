@@ -1,37 +1,36 @@
 use std::iter::FromIterator;
-use std::rc::Rc;
-use std::rc::Weak;
 
 use chrono::{DateTime, Utc};
 
 use super::monetary::*;
 
 #[derive(PartialEq, Eq, Debug)]
-pub struct Account {
-    name: String,
+pub struct Account<'a> {
+    name: &'a str,
 }
 
-impl<'a> Account {
-    pub fn new(name: &str) -> Self {
-        Self {
-            name: name.to_string(),
-        }
+impl<'a> Account<'a> {
+    pub fn new(name: &'a str) -> Self {
+        Self { name }
     }
 
-    pub fn balance<R>(&self, datetime: DateTime<Utc>, transactions: &[R]) -> Money
+    pub fn name(&self) -> &str {
+        self.name
+    }
+
+    pub fn balance<I>(&self, datetime: DateTime<Utc>, transactions: I) -> Money<'a>
     where
-        R: AsRef<Transaction>,
+        I: IntoIterator<Item = &'a Transaction<'a>>,
     {
         transactions
-            .iter()
-            .map(AsRef::as_ref)
+            .into_iter()
             .filter(|tx| tx.datetime <= datetime)
             .map(|tx| {
                 let mut money = Money::none();
-                if tx.to.upgrade().unwrap().as_ref() == self {
+                if tx.to == self {
                     money += tx.money.clone();
                 }
-                if tx.from.upgrade().unwrap().as_ref() == self {
+                if tx.from == self {
                     money -= tx.money.clone();
                 }
                 money
@@ -39,46 +38,45 @@ impl<'a> Account {
             .collect()
     }
 
-    pub fn running_balance<R, T>(&self, transactions: &'a [R]) -> T
+    pub fn running_balance<I>(
+        &'a self,
+        transactions: I,
+    ) -> impl Iterator<Item = (&'a Transaction<'a>, Money<'a>)>
     where
-        R: AsRef<Transaction> + ToOwned,
-        T: FromIterator<(<R as ToOwned>::Owned, Money)>,
+        I: Iterator<Item = &'a Transaction<'a>> + Clone,
     {
-        transactions
-            .iter()
-            .filter_map(|tx| {
-                let tx_r = tx.as_ref();
-                if tx_r.to.upgrade().unwrap().as_ref() == self
-                    || tx_r.from.upgrade().unwrap().as_ref() == self
-                {
-                    Some((tx.to_owned(), self.balance(tx_r.datetime, transactions)))
-                } else {
-                    None
-                }
-            })
-            .collect()
+        transactions.clone().filter_map(move |tx| {
+            if tx.to == self || tx.from == self {
+                Some((tx, self.balance(tx.datetime, transactions.clone())))
+            } else {
+                None
+            }
+        })
     }
 }
 
 #[derive(Debug)]
-pub struct Transaction {
+pub struct Transaction<'a> {
     pub(crate) datetime: DateTime<Utc>,
-    pub(crate) from: Weak<Account>,
-    pub(crate) to: Weak<Account>,
-    pub(crate) money: Money,
+    pub(crate) from: &'a Account<'a>,
+    pub(crate) to: &'a Account<'a>,
+    pub(crate) money: Money<'a>,
 }
 
-impl Transaction {
-    pub fn new(
+impl<'a> Transaction<'a> {
+    pub fn new(from: &'a Account, to: &'a Account, money: Money<'a>) -> Self {
+        Transaction::new_at(Utc::now(), from, to, money)
+    }
+    pub fn new_at(
         datetime: DateTime<Utc>,
-        from: &Rc<Account>,
-        to: &Rc<Account>,
-        money: Money,
+        from: &'a Account,
+        to: &'a Account,
+        money: Money<'a>,
     ) -> Self {
         Transaction {
             datetime,
-            from: Rc::downgrade(from),
-            to: Rc::downgrade(to),
+            from,
+            to,
             money,
         }
     }

@@ -7,7 +7,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 pub use book::{Book, Currency, DateTime, Money, Utc};
-
+/*
 #[derive(Debug)]
 pub struct BookHandle {
     book: Rc<RefCell<Book>>,
@@ -77,7 +77,8 @@ impl AccountHandle {
     }
 
     pub fn running_balance(&self) -> Vec<(TransactionHandle, Money)> {
-        self.book.borrow()
+        self.book
+            .borrow()
             .running_balance(&self.account)
             .into_iter()
             .map(|(transaction, money)| {
@@ -97,10 +98,14 @@ pub struct TransactionHandle {
 
 impl TransactionHandle {
     fn new(transaction: Rc<Transaction>, book: Rc<RefCell<Book>>) -> Self {
-        Self { transaction, _book: book }
+        Self {
+            transaction,
+            _book: book,
+        }
     }
 
     pub fn datetime(&self) -> DateTime<Utc> {
         self.transaction.datetime()
     }
 }
+*/

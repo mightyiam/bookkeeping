@@ -1,16 +1,16 @@
-pub use super::accounting::{Account, Transaction};
+use super::accounting::{Account, Transaction};
 pub use super::monetary::*;
 pub use chrono::{DateTime, Utc};
-use std::rc::Rc;
+pub use std::result::Result;
 
 #[derive(Debug)]
-pub struct Book {
-    accounts: Vec<Rc<Account>>,
-    transactions: Vec<Rc<Transaction>>,
+pub struct Book<'a> {
+    accounts: Vec<Account<'a>>,
+    transactions: Vec<Transaction<'a>>,
 }
 
 /// Resembles a datastore
-impl Book {
+impl<'a> Book<'a> {
     pub fn new() -> Self {
         Self {
             accounts: Vec::new(),
@@ -18,44 +18,46 @@ impl Book {
         }
     }
 
-    pub fn new_account(&mut self, name: &str) -> Rc<Account> {
-        let account = Rc::new(Account::new(name));
-        self.accounts.push(Rc::clone(&account));
-        account
+    pub fn new_account(&mut self, name: &'a str) -> Result<(), String> {
+        if self.accounts.iter().any(|acc| acc.name() == name) {
+            return Err(format!("account with name \"{}\" already exists", name));
+        }
+        self.accounts.push(Account::new(name));
+        Ok(())
     }
 
-    pub fn accounts(&self) -> Vec<Rc<Account>> {
-        self.accounts.clone()
-    }
-    pub fn transfer(
-        &mut self,
-        from: &Rc<Account>,
-        to: &Rc<Account>,
-        money: Money,
-    ) -> Rc<Transaction> {
-        self.transfer_at(Utc::now(), from, to, money)
+    pub fn accounts(&self) -> impl Iterator<Item = &Account> {
+        self.accounts.iter()
     }
 
-    pub fn transfer_at(
-        &mut self,
-        datetime: DateTime<Utc>,
-        from: &Rc<Account>,
-        to: &Rc<Account>,
-        money: Money,
-    ) -> Rc<Transaction> {
-        let transaction = Rc::new(Transaction::new(datetime, from, to, money));
-        self.transactions.push(Rc::clone(&transaction));
-        transaction
+    pub fn account_with_name(&self, name: &'_ str) -> Option<&Account> {
+        self.accounts.iter().find(|acc| acc.name() == name)
     }
 
-    pub fn balance(&self, account: &Account) -> Money {
+    pub fn transfer(&'a mut self, from: &str, to: &str, money: Money<'a>) {
+        /*if [from, to].iter().any(|acc| !self.account_exists(acc)) {
+            panic!("some accounts do not exist");
+        }*/
+        let from = self.accounts.iter().find(|acc| acc.name() == from).unwrap();
+        let to = self.accounts.iter().find(|acc| acc.name() == to).unwrap();
+        self.transactions.push(Transaction::new(from, to, money));
+    }
+
+    pub fn balance(&'a self, account: &'a Account) -> Money<'_> {
         self.balance_at(Utc::now(), account)
     }
-    pub fn balance_at(&self, datetime: DateTime<Utc>, account: &Account) -> Money {
-        account.balance(datetime, &self.transactions)
+    pub fn balance_at(&'a self, datetime: DateTime<Utc>, account: &'a Account) -> Money<'a> {
+        account.balance(datetime, self.transactions.iter())
     }
 
-    pub fn running_balance(&self, account: &Rc<Account>) -> Vec<(Rc<Transaction>, Money)> {
-        account.running_balance(&self.transactions)
+    pub fn running_balance(
+        &'a self,
+        account: &'a Account,
+    ) -> impl Iterator<Item = (&Transaction, Money)> {
+        account.running_balance(self.transactions.iter())
+    }
+
+    fn account_exists(&self, account: &Account) -> bool {
+        self.accounts.contains(account)
     }
 }

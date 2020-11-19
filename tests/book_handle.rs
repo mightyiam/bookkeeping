@@ -1,7 +1,6 @@
 use chrono::Duration;
 use envelope_system::*;
 
-
 /*
 #[test]
 fn adding_one_account() {
@@ -13,7 +12,7 @@ fn adding_one_account() {
         "they are the same account"
     );
 }
-*/
+
 
 #[test]
 fn transfer_own_account() {
@@ -93,3 +92,4 @@ fn running_balance() {
         vec![2000, 1600, 1300, 1100, 900, 800]
     );
 }
+*/
