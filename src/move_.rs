@@ -3,6 +3,7 @@ use crate::balance::Balance;
 use crate::index::{EntityId, Index};
 use crate::metadata::Metadata;
 use crate::sum::Sum;
+use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::ops;
 use std::rc::Rc;
@@ -10,7 +11,7 @@ use std::rc::Rc;
 pub struct Move<T: Metadata> {
     pub(crate) index: Rc<Index<T>>,
     pub(crate) id: EntityId,
-    meta: T::Move,
+    pub(crate) meta: RefCell<T::Move>,
     debit_account: Rc<Account<T>>,
     credit_account: Rc<Account<T>>,
     sum: Sum<T>,
@@ -43,7 +44,7 @@ impl<T: Metadata> Move<T> {
         let move_ = Rc::new(Self {
             index: index.clone(),
             id: Self::next_id(&index),
-            meta,
+            meta: RefCell::new(meta),
             debit_account: debit_account.clone(),
             credit_account: credit_account.clone(),
             sum: sum.clone(),
@@ -64,10 +65,12 @@ impl<T: Metadata> Move<T> {
             .moves
             .borrow()
             .iter()
-            .filter(|move_| match cmp(&self.meta, &move_.meta) {
-                Ordering::Less => false,
-                _ => true,
-            })
+            .filter(
+                |move_| match cmp(&self.meta.borrow(), &move_.meta.borrow()) {
+                    Ordering::Less => false,
+                    _ => true,
+                },
+            )
             .filter_map(|move_| -> Option<(fn(&mut Balance<T>, _), &Sum<T>)> {
                 if move_.debit_account == *account {
                     Some((ops::SubAssign::sub_assign, &move_.sum))
@@ -89,6 +92,7 @@ mod test {
     use super::Balance;
     use super::Move;
     use super::Rc;
+    use super::RefCell;
     use super::Sum;
     use crate::book::Book;
     use crate::metadata::BlankMetadata;
@@ -207,7 +211,7 @@ mod test {
         let expected = Rc::new(Move {
             index: book.index.clone(),
             id: 0,
-            meta: 45,
+            meta: RefCell::new(45),
             debit_account: debit.clone(),
             credit_account: credit.clone(),
             sum: sum.clone(),
@@ -219,5 +223,20 @@ mod test {
             *book.index.moves.borrow(),
             btreeset! { move_a.clone(), move_b.clone() }
         );
+    }
+    #[test]
+    fn metadata() {
+        let book = Book::<((), (), (), u8)>::new(());
+        let account_a = Account::new(&book, ());
+        let account_b = Account::new(&book, ());
+        let move_ = Move::new(
+            &account_a,
+            &account_b,
+            &Sum::of(&Unit::new(&book, ()), 0),
+            5,
+        );
+        assert_eq!(*move_.get_metadata(), 5);
+        move_.set_metadata(9);
+        assert_eq!(*move_.get_metadata(), 9);
     }
 }

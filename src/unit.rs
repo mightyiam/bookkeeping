@@ -1,11 +1,12 @@
 use crate::book::Book;
 use crate::index::{EntityId, Index};
 use crate::metadata::Metadata;
+use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
 pub struct Unit<T: Metadata> {
     pub(crate) id: EntityId,
-    meta: T::Unit,
+    pub(crate) meta: RefCell<T::Unit>,
     pub(crate) index: Rc<Index<T>>,
 }
 impl<T: Metadata> Unit<T> {
@@ -13,7 +14,7 @@ impl<T: Metadata> Unit<T> {
         let unit = Rc::new(Self {
             id: Self::next_id(&book.index),
             index: book.index.clone(),
-            meta,
+            meta: RefCell::new(meta),
         });
         Self::register(&unit, &book.index);
         unit
@@ -36,11 +37,11 @@ mod test {
         let unit_a = Unit::new(&book, 50);
         assert_eq!(unit_a.id, 0);
         assert_eq!(unit_a.index, book.index);
-        assert_eq!(unit_a.meta, 50);
+        assert_eq!(*unit_a.meta.borrow(), 50);
         let unit_b = Unit::new(&book, 40);
         assert_eq!(unit_b.id, 1);
         assert_eq!(unit_b.index, book.index);
-        assert_eq!(unit_b.meta, 40);
+        assert_eq!(*unit_b.meta.borrow(), 40);
         let expected = btreeset! {
             unit_a.clone(),
             unit_b.clone()
@@ -62,5 +63,13 @@ mod test {
         let actual = format!("{:?}", unit);
         let expected = "Unit { id: 1 }";
         assert_eq!(actual, expected);
+    }
+    #[test]
+    fn metadata() {
+        let book = Book::<((), (), u8, ())>::new(());
+        let unit = Unit::new(&book, 3);
+        assert_eq!(*unit.get_metadata(), 3);
+        unit.set_metadata(9);
+        assert_eq!(*unit.get_metadata(), 9);
     }
 }

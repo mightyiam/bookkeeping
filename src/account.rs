@@ -1,11 +1,12 @@
 use crate::book::Book;
 use crate::index::{EntityId, Index};
 use crate::metadata::Metadata;
+use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
 pub struct Account<T: Metadata> {
     pub(crate) id: EntityId,
-    meta: T::Account,
+    pub(crate) meta: RefCell<T::Account>,
     pub(crate) index: Rc<Index<T>>,
 }
 impl<T: Metadata> Account<T> {
@@ -13,7 +14,7 @@ impl<T: Metadata> Account<T> {
         let account = Rc::new(Self {
             index: book.index.clone(),
             id: Self::next_id(&book.index),
-            meta,
+            meta: RefCell::new(meta),
         });
         Self::register(&account, &book.index);
         account
@@ -36,11 +37,11 @@ mod test {
         let account_a = Account::new(&book, 9);
         assert_eq!(account_a.id, 0);
         assert_eq!(account_a.index, book.index);
-        assert_eq!(account_a.meta, 9);
+        assert_eq!(*account_a.meta.borrow(), 9);
         let account_b = Account::new(&book, 4);
         assert_eq!(account_b.id, 1);
         assert_eq!(account_b.index, book.index);
-        assert_eq!(account_b.meta, 4);
+        assert_eq!(*account_b.meta.borrow(), 4);
         let expected = btreeset! {
             account_a.clone(),
             account_b.clone()
@@ -62,5 +63,13 @@ mod test {
         let actual = format!("{:?}", account);
         let expected = "Account { id: 1 }";
         assert_eq!(actual, expected);
+    }
+    #[test]
+    fn metadata() {
+        let book = Book::<((), u8, (), ())>::new(());
+        let account = Account::new(&book, 3);
+        assert_eq!(*account.get_metadata(), 3);
+        account.set_metadata(9);
+        assert_eq!(*account.get_metadata(), 9);
     }
 }

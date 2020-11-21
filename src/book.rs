@@ -1,16 +1,17 @@
 use crate::index::Index;
 use crate::metadata::Metadata;
+use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
 #[derive(Default)]
 pub struct Book<T: Metadata> {
-    meta: T::Book,
+    pub(crate) meta: RefCell<T::Book>,
     pub(crate) index: Rc<Index<T>>,
 }
 impl<T: Metadata> Book<T> {
     pub fn new(meta: T::Book) -> Self {
         Self {
-            meta,
+            meta: RefCell::new(meta),
             index: Index::new(),
         }
     }
@@ -42,11 +43,12 @@ mod test {
     use crate::move_::Move;
     use crate::sum::Sum;
     use crate::unit::Unit;
+    use std::cell::RefCell;
     use std::mem;
     #[test]
     fn new() {
         let book = Book::<(u8, (), (), ())>::new(77);
-        assert_eq!(book.meta, 77);
+        assert_eq!(*book.meta.borrow(), 77);
         assert_ne!(book, Book::new(77));
     }
     #[test]
@@ -99,22 +101,22 @@ mod test {
             ..Default::default()
         });
         let a = Book::<(u8, (), (), ())> {
-            meta: 0,
+            meta: RefCell::new(0),
             index: index_0.clone(),
             ..Default::default()
         };
         let b = Book::<(u8, (), (), ())> {
-            meta: 0,
+            meta: RefCell::new(0),
             index: index_0.clone(),
         };
         assert_eq!(a, b, "All fields equal");
         let c = Book {
-            meta: 1,
+            meta: RefCell::new(1),
             index: index_0.clone(),
         };
         assert_eq!(a, c, "Same index, some different field");
         let d = Book {
-            meta: 0,
+            meta: RefCell::new(0),
             index: Rc::new(Index {
                 id: 1,
                 ..Default::default()
@@ -128,5 +130,14 @@ mod test {
         let actual = format!("{:?}", book);
         let expected = format!("Book {{ index: {:?} }}", book.index);
         assert_eq!(actual, expected);
+    }
+    #[test]
+    fn metadata() {
+        let book = Book::<(u8, (), (), ())>::new(3);
+        assert_eq!(*book.get_metadata(), 3);
+        book.set_metadata(20);
+        assert_eq!(*book.get_metadata(), 20);
+        book.set_metadata(9);
+        assert_eq!(*book.get_metadata(), 9);
     }
 }
