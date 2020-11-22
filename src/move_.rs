@@ -7,6 +7,7 @@ use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::ops;
 use std::rc::Rc;
+/// Represents a move of a [Sum] of [Unit](crate::Unit)s from one account to another.
 #[derive(Debug)]
 pub struct Move<T: Metadata> {
     pub(crate) index: Rc<Index<T>>,
@@ -17,6 +18,13 @@ pub struct Move<T: Metadata> {
     sum: Sum<T>,
 }
 impl<T: Metadata> Move<T> {
+    /// Creates a new move.
+    ///
+    /// ## Panics
+    ///
+    /// - `debit_account` and `credit_account` are in different books.
+    /// - `debit_account` and `credit_account` are the same.
+    /// - Some [Unit][crate::Unit] in the [Sum] is not in the same book as the accounts.
     pub fn new(
         debit_account: &Rc<Account<T>>,
         credit_account: &Rc<Account<T>>,
@@ -52,6 +60,11 @@ impl<T: Metadata> Move<T> {
         Self::register(&move_, &index);
         move_
     }
+    /// Calculates the balance that is the result of this move in an account according to a provided order of moves.
+    ///
+    /// ## Panics
+    ///
+    /// - `account` is not debit nor credit in this move.
     pub fn balance_in(
         &self,
         account: &Rc<Account<T>>,

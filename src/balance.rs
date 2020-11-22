@@ -5,6 +5,7 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::ops;
 use std::rc::Rc;
+/// Represents a [balance](https://en.wikipedia.org/wiki/Balance_(accounting)), yet not necessarily the current balance.
 #[derive(Clone, PartialEq)]
 pub struct Balance<T: Metadata>(pub(crate) BTreeMap<Rc<Unit<T>>, i128>);
 impl<T: Metadata> Balance<T> {

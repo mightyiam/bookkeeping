@@ -4,12 +4,14 @@ use crate::metadata::Metadata;
 use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
+/// Represents a unit of measurement. Will most commonly represent the minor unit of a currency.
 pub struct Unit<T: Metadata> {
     pub(crate) id: EntityId,
     pub(crate) meta: RefCell<T::Unit>,
     pub(crate) index: Rc<Index<T>>,
 }
 impl<T: Metadata> Unit<T> {
+    /// Creates a new unit.
     pub fn new(book: &Book<T>, meta: T::Unit) -> Rc<Self> {
         let unit = Rc::new(Self {
             id: Self::next_id(&book.index),

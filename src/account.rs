@@ -4,12 +4,14 @@ use crate::metadata::Metadata;
 use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
+/// Represents an [account](https://en.wikipedia.org/wiki/Account_(bookkeeping)).
 pub struct Account<T: Metadata> {
     pub(crate) id: EntityId,
     pub(crate) meta: RefCell<T::Account>,
     pub(crate) index: Rc<Index<T>>,
 }
 impl<T: Metadata> Account<T> {
+    /// Creates a new account.
     pub fn new(book: &Book<T>, meta: T::Account) -> Rc<Self> {
         let account = Rc::new(Self {
             index: book.index.clone(),

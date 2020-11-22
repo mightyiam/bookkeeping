@@ -3,12 +3,18 @@ use crate::metadata::Metadata;
 use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
+/// Entry point to the API and retains ownership of accounts, units and moves.
+///
+/// A reference to a book is an argument in any call to create a new account, unit or move.
+/// The new entity is both registered in the book and returned in an [std::rc::Rc].
+/// Since the book retains an `Rc` of that entity, the returned `Rc` may be dropped.
 #[derive(Default)]
 pub struct Book<T: Metadata> {
     pub(crate) meta: RefCell<T::Book>,
     pub(crate) index: Rc<Index<T>>,
 }
 impl<T: Metadata> Book<T> {
+    /// Creates a new book
     pub fn new(meta: T::Book) -> Self {
         Self {
             meta: RefCell::new(meta),
