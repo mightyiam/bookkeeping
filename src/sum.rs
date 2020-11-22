@@ -13,6 +13,7 @@ impl<T: Metadata> Sum<T> {
         Self::new().unit(&unit, amount)
     }
     pub fn unit(mut self, unit: &Rc<Unit<T>>, amount: u64) -> Self {
+        // TODO check that new unit is in same book as existing ones.
         self.0.insert(unit.clone(), amount);
         self
     }
