@@ -22,6 +22,7 @@ where
     type Unit = U;
     type Move = M;
 }
+#[cfg(test)]
 pub type BlankMetadata = ((), (), (), ());
 #[duplicate(Entity; [Book]; [Account]; [Unit]; [Move])]
 impl<T: Metadata> Entity<T> {
