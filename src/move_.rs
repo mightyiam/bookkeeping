@@ -18,46 +18,26 @@ pub struct Move<T: Metadata> {
     sum: Sum<T>,
 }
 impl<T: Metadata> Move<T> {
-    /// Creates a new move.
-    ///
-    /// ## Panics
-    ///
-    /// - `debit_account` and `credit_account` are in different books.
-    /// - `debit_account` and `credit_account` are the same.
-    /// - Some [Unit][crate::Unit] in the [Sum] is not in the same book as the accounts.
-    pub fn new(
+    pub(crate) fn new(
+        id: EntityId,
+        index: &Rc<Index<T>>,
         debit_account: &Rc<Account<T>>,
         credit_account: &Rc<Account<T>>,
         sum: &Sum<T>,
         meta: T::Move,
     ) -> Rc<Self> {
-        let index = {
-            let index = debit_account.index.clone();
-            assert_eq!(
-                index.id, credit_account.index.id,
-                "Debit and credit accounts are in different books."
-            );
-            assert!(
-                debit_account != credit_account,
-                "Debit and credit accounts are the same."
-            );
-            index
-        };
-        sum.0.keys().for_each(|unit| {
-            assert!(
-                index.units.borrow().contains(unit),
-                "Some unit is not in the same book as accounts."
-            );
-        });
+        assert!(
+            debit_account != credit_account,
+            "Debit and credit accounts are the same."
+        );
         let move_ = Rc::new(Self {
+            id,
             index: index.clone(),
-            id: Self::next_id(&index),
             meta: RefCell::new(meta),
             debit_account: debit_account.clone(),
             credit_account: credit_account.clone(),
             sum: sum.clone(),
         });
-        Self::register(&move_, &index);
         move_
     }
     /// Calculates the balance that is the result of this move in an account according to a provided order of moves.
@@ -112,10 +92,14 @@ mod test {
     #[should_panic(expected = "Provided account is not debit nor credit in this move.")]
     fn move_balance_in_unrelated_account() {
         let mut book = Book::<BlankMetadata>::new(());
+        let debit_account = book.new_account(());
+        let credit_account = book.new_account(());
         let move_ = Move::new(
-            &book.new_account(()),
-            &book.new_account(()),
-            &Sum::of(&book.new_unit(()), 123),
+            0,
+            &book.index,
+            &debit_account,
+            &credit_account,
+            &Sum::new(),
             (),
         );
         move_.balance_in(&book.new_account(()), |&(), &()| {
@@ -130,7 +114,7 @@ mod test {
         let account_a = book.new_account(());
         let account_b = book.new_account(());
         let unit = book.new_unit(());
-        let move_1 = Move::new(&account_a, &account_b, &Sum::of(&unit, 3), 1);
+        let move_1 = book.new_move(&account_a, &account_b, &Sum::of(&unit, 3), 1);
         assert_eq!(
             move_1.balance_in(&account_a, cmp),
             Balance(btreemap! { unit.clone() => -3 })
@@ -140,7 +124,7 @@ mod test {
             Balance(btreemap! { unit.clone() => 3 })
         );
 
-        let move_2 = Move::new(&account_a, &account_b, &Sum::of(&unit, 4), 2);
+        let move_2 = book.new_move(&account_a, &account_b, &Sum::of(&unit, 4), 2);
         assert_eq!(
             move_1.balance_in(&account_a, cmp),
             Balance(btreemap! { unit.clone() => -3 })
@@ -158,7 +142,7 @@ mod test {
             Balance(btreemap! { unit.clone() => 7 })
         );
 
-        let move_0 = Move::new(&account_a, &account_b, &Sum::of(&unit, 1), 0);
+        let move_0 = book.new_move(&account_a, &account_b, &Sum::of(&unit, 1), 0);
         assert_eq!(
             move_0.balance_in(&account_a, cmp),
             Balance(btreemap! { unit.clone() => -1 })
@@ -185,32 +169,14 @@ mod test {
         );
     }
     #[test]
-    #[should_panic(expected = "Debit and credit accounts are in different books.")]
-    fn move_new_panic_debit_and_credit_accounts_are_in_different_books() {
-        let debit = Book::<BlankMetadata>::new(()).new_account(());
-        let credit = Book::new(()).new_account(());
-        Move::new(&debit, &credit, &Sum::new(), ());
-    }
-    #[test]
     #[should_panic(expected = "Debit and credit accounts are the same.")]
     fn move_new_panic_debit_and_credit_accounts_are_the_same() {
         let mut book = Book::<BlankMetadata>::new(());
         let account = book.new_account(());
-        Move::new(&account, &account, &Sum::new(), ());
-    }
-    #[test]
-    #[should_panic(expected = "Some unit is not in the same book as accounts.")]
-    fn move_new_panic_some_unit_is_not_in_the_same_book_as_accounts() {
-        let mut book = Book::<BlankMetadata>::new(());
-        let debit = book.new_account(());
-        let credit = book.new_account(());
-        let unit = Book::new(()).new_unit(());
-        let sum = Sum::of(&unit, 0);
-        Move::new(&debit, &credit, &sum, ());
+        Move::new(0, &book.index, &account, &account, &Sum::new(), ());
     }
     #[test]
     fn new() {
-        use maplit::btreeset;
         let mut book = Book::<((), (), (), u8)>::new(());
         let debit = book.new_account(());
         let credit = book.new_account(());
@@ -218,7 +184,7 @@ mod test {
         let ils = book.new_unit(());
         let usd = book.new_unit(());
         let sum = Sum::of(&thb, 20).unit(&ils, 41).unit(&usd, 104);
-        let move_a = Move::new(&debit, &credit, &sum, 45);
+        let move_a = Move::new(0, &book.index, &debit, &credit, &sum, 45);
         let expected = Rc::new(Move {
             index: book.index.clone(),
             id: 0,
@@ -228,19 +194,13 @@ mod test {
             sum: sum.clone(),
         });
         assert_eq!(move_a, expected);
-        let sum = Sum::of(&thb, 13).unit(&ils, 805).unit(&usd, 10);
-        let move_b = Move::new(&debit, &credit, &sum, 0);
-        assert_eq!(
-            *book.index.moves.borrow(),
-            btreeset! { move_a.clone(), move_b.clone() }
-        );
     }
     #[test]
     fn metadata() {
         let mut book = Book::<((), (), (), u8)>::new(());
         let account_a = book.new_account(());
         let account_b = book.new_account(());
-        let move_ = Move::new(&account_a, &account_b, &Sum::of(&book.new_unit(()), 0), 5);
+        let move_ = Move::new(0, &book.index, &account_a, &account_b, &Sum::new(), 5);
         assert_eq!(*move_.get_metadata(), 5);
         move_.set_metadata(9);
         assert_eq!(*move_.get_metadata(), 9);

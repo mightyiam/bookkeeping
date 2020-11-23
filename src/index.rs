@@ -40,20 +40,7 @@ impl<T: Metadata> fmt::Debug for Index<T> {
     }
 }
 duplicate_inline! {
-    [
-        Entity index_field;
-        [Account] [accounts];
-        [Unit] [units];
-        [Move] [moves];
-    ]
-    impl<T: Metadata> Entity<T> {
-        pub(crate) fn next_id(index: &Index<T>) -> EntityId {
-            index.index_field.borrow().len()
-        }
-        pub(crate) fn register(entity: &Rc<Self>, index: &Index<T>) {
-            index.index_field.borrow_mut().insert(entity.clone());
-        }
-    }
+    [ Entity; [Account]; [Unit]; [Move]; ]
     impl<T: Metadata> Ord for Entity<T> {
         fn cmp(&self, other: &Self) -> Ordering {
             self.id.cmp(&other.id)
