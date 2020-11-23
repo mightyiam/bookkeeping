@@ -1,3 +1,4 @@
+use crate::account::Account;
 use crate::index::Index;
 use crate::metadata::Metadata;
 use std::cell::RefCell;
@@ -20,6 +21,12 @@ impl<T: Metadata> Book<T> {
             meta: RefCell::new(meta),
             index: Index::new(),
         }
+    }
+    /// Creates a new account.
+    pub fn new_account(&mut self, meta: T::Account) -> Rc<Account<T>> {
+        let account = Account::new(self.index.accounts.borrow().len(), &self.index, meta);
+        self.index.accounts.borrow_mut().insert(account.clone());
+        account
     }
 }
 impl<T: Metadata> Drop for Book<T> {
@@ -44,7 +51,6 @@ mod test {
     use super::Book;
     use super::Index;
     use super::Rc;
-    use crate::account::Account;
     use crate::metadata::BlankMetadata;
     use crate::move_::Move;
     use crate::sum::Sum;
@@ -58,14 +64,30 @@ mod test {
         assert_ne!(book, Book::new(77));
     }
     #[test]
+    fn new_account() {
+        use maplit::btreeset;
+        let mut book = Book::<BlankMetadata>::new(());
+        let account_a = book.new_account(());
+        let account_b = book.new_account(());
+        let expected = btreeset! {
+            account_a.clone(),
+            account_b.clone()
+        };
+        assert_eq!(
+            *book.index.accounts.borrow(),
+            expected,
+            "Accounts are in the book"
+        );
+    }
+    #[test]
     fn drop() {
         use std::rc::Rc;
-        let book = Book::<BlankMetadata>::new(());
+        let mut book = Book::<BlankMetadata>::new(());
         assert_eq!(Rc::strong_count(&book.index), 1, "book");
-        let account_a = Account::new(&book, ());
+        let account_a = book.new_account(());
         assert_eq!(Rc::strong_count(&account_a), 2, "account_a, book");
         assert_eq!(Rc::strong_count(&book.index), 2, "book, account_a");
-        let account_b = Account::new(&book, ());
+        let account_b = book.new_account(());
         assert_eq!(Rc::strong_count(&account_b), 2, "account_b, book");
         assert_eq!(
             Rc::strong_count(&book.index),

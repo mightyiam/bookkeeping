@@ -14,6 +14,7 @@ pub type EntityId = usize;
 #[derive(Default)]
 pub struct Index<T: Metadata> {
     pub(crate) id: usize,
+    // TODO not RefCell any more?
     pub(crate) accounts: RefCell<BTreeSet<Rc<Account<T>>>>,
     pub(crate) units: RefCell<BTreeSet<Rc<Unit<T>>>>,
     pub(crate) moves: RefCell<BTreeSet<Rc<Move<T>>>>,

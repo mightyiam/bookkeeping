@@ -1,4 +1,3 @@
-use crate::book::Book;
 use crate::index::{EntityId, Index};
 use crate::metadata::Metadata;
 use std::cell::RefCell;
@@ -11,14 +10,12 @@ pub struct Account<T: Metadata> {
     pub(crate) index: Rc<Index<T>>,
 }
 impl<T: Metadata> Account<T> {
-    /// Creates a new account.
-    pub fn new(book: &Book<T>, meta: T::Account) -> Rc<Self> {
+    pub(crate) fn new(id: EntityId, index: &Rc<Index<T>>, meta: T::Account) -> Rc<Self> {
         let account = Rc::new(Self {
-            index: book.index.clone(),
-            id: Self::next_id(&book.index),
+            index: index.clone(),
+            id,
             meta: RefCell::new(meta),
         });
-        Self::register(&account, &book.index);
         account
     }
 }
@@ -30,46 +27,36 @@ impl<T: Metadata> fmt::Debug for Account<T> {
 #[cfg(test)]
 mod test {
     use super::Account;
-    use super::Book;
+    use super::Index;
     use crate::metadata::BlankMetadata;
     #[test]
     fn new() {
-        use maplit::btreeset;
-        let book = Book::<((), u8, (), ())>::new(());
-        let account_a = Account::new(&book, 9);
+        let index = Index::<((), u8, (), ())>::new();
+        let account_a = Account::new(0, &index, 9);
         assert_eq!(account_a.id, 0);
-        assert_eq!(account_a.index, book.index);
+        assert_eq!(account_a.index, index);
         assert_eq!(*account_a.meta.borrow(), 9);
-        let account_b = Account::new(&book, 4);
+        let account_b = Account::new(1, &index, 4);
         assert_eq!(account_b.id, 1);
-        assert_eq!(account_b.index, book.index);
+        assert_eq!(account_b.index, index);
         assert_eq!(*account_b.meta.borrow(), 4);
-        let expected = btreeset! {
-            account_a.clone(),
-            account_b.clone()
-        };
-        assert_eq!(
-            *book.index.accounts.borrow(),
-            expected,
-            "Accounts are in the book"
-        );
     }
     #[test]
     fn fmt_debug() {
-        let book = Book::<BlankMetadata>::new(());
-        let account = Account::new(&book, ());
+        let index = Index::<BlankMetadata>::new();
+        let account = Account::new(0, &index, ());
         let actual = format!("{:?}", account);
         let expected = "Account { id: 0 }";
         assert_eq!(actual, expected);
-        let account = Account::new(&book, ());
+        let account = Account::new(1, &index, ());
         let actual = format!("{:?}", account);
         let expected = "Account { id: 1 }";
         assert_eq!(actual, expected);
     }
     #[test]
     fn metadata() {
-        let book = Book::<((), u8, (), ())>::new(());
-        let account = Account::new(&book, 3);
+        let index = Index::<((), u8, (), ())>::new();
+        let account = Account::new(0, &index, 3);
         assert_eq!(*account.get_metadata(), 3);
         account.set_metadata(9);
         assert_eq!(*account.get_metadata(), 9);
