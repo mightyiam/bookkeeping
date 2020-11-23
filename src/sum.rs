@@ -34,7 +34,6 @@ impl<T: Metadata> fmt::Debug for Sum<T> {
 mod test {
     use super::BTreeMap;
     use super::Sum;
-    use super::Unit;
     use crate::book::Book;
     use crate::metadata::BlankMetadata;
     #[test]
@@ -45,8 +44,8 @@ mod test {
     }
     #[test]
     fn of() {
-        let book = Book::<BlankMetadata>::new(());
-        let unit = Unit::new(&book, ());
+        let mut book = Book::<BlankMetadata>::new(());
+        let unit = book.new_unit(());
         let sum = Sum::of(&unit, 24);
         let mut expected = BTreeMap::new();
         expected.insert(unit.clone(), 24);
@@ -54,8 +53,8 @@ mod test {
     }
     #[test]
     fn unit() {
-        let book = Book::<BlankMetadata>::new(());
-        let unit = Unit::new(&book, ());
+        let mut book = Book::<BlankMetadata>::new(());
+        let unit = book.new_unit(());
         let sum = Sum::new().unit(&unit, 124);
         let mut expected = BTreeMap::new();
         expected.insert(unit.clone(), 124);
@@ -63,10 +62,10 @@ mod test {
     }
     #[test]
     fn fmt_debug() {
-        let book = Book::<BlankMetadata>::new(());
-        let unit_a = Unit::new(&book, ());
+        let mut book = Book::<BlankMetadata>::new(());
+        let unit_a = book.new_unit(());
         let amount_a = 76;
-        let unit_b = Unit::new(&book, ());
+        let unit_b = book.new_unit(());
         let amount_b = 45;
         let sum = Sum::of(&unit_a, amount_a).unit(&unit_b, amount_b);
         let actual = format!("{:?}", sum);

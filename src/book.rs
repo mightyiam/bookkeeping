@@ -1,6 +1,7 @@
 use crate::account::Account;
 use crate::index::Index;
 use crate::metadata::Metadata;
+use crate::unit::Unit;
 use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
@@ -28,6 +29,12 @@ impl<T: Metadata> Book<T> {
         self.index.accounts.borrow_mut().insert(account.clone());
         account
     }
+    /// Creates a new unit.
+    pub fn new_unit(&mut self, meta: T::Unit) -> Rc<Unit<T>> {
+        let unit = Unit::new(self.index.units.borrow().len(), &self.index, meta);
+        self.index.units.borrow_mut().insert(unit.clone());
+        unit
+    }
 }
 impl<T: Metadata> Drop for Book<T> {
     fn drop(&mut self) {
@@ -54,7 +61,6 @@ mod test {
     use crate::metadata::BlankMetadata;
     use crate::move_::Move;
     use crate::sum::Sum;
-    use crate::unit::Unit;
     use std::cell::RefCell;
     use std::mem;
     #[test]
@@ -80,6 +86,22 @@ mod test {
         );
     }
     #[test]
+    fn new_unit() {
+        use maplit::btreeset;
+        let mut book = Book::<BlankMetadata>::new(());
+        let unit_a = book.new_unit(());
+        let unit_b = book.new_unit(());
+        let expected = btreeset! {
+            unit_a.clone(),
+            unit_b.clone()
+        };
+        assert_eq!(
+            *book.index.units.borrow(),
+            expected,
+            "Units are in the book"
+        );
+    }
+    #[test]
     fn drop() {
         use std::rc::Rc;
         let mut book = Book::<BlankMetadata>::new(());
@@ -94,7 +116,7 @@ mod test {
             3,
             "book, account_a, account_b"
         );
-        let unit = Unit::new(&book, ());
+        let unit = book.new_unit(());
         assert_eq!(Rc::strong_count(&unit), 2, "unit, book");
         assert_eq!(
             Rc::strong_count(&book.index),

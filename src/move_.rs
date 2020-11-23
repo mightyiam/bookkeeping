@@ -108,7 +108,6 @@ mod test {
     use super::Sum;
     use crate::book::Book;
     use crate::metadata::BlankMetadata;
-    use crate::unit::Unit;
     #[test]
     #[should_panic(expected = "Provided account is not debit nor credit in this move.")]
     fn move_balance_in_unrelated_account() {
@@ -116,7 +115,7 @@ mod test {
         let move_ = Move::new(
             &book.new_account(()),
             &book.new_account(()),
-            &Sum::of(&Unit::new(&book, ()), 123),
+            &Sum::of(&book.new_unit(()), 123),
             (),
         );
         move_.balance_in(&book.new_account(()), |&(), &()| {
@@ -130,7 +129,7 @@ mod test {
         let mut book = Book::<((), (), (), u8)>::new(());
         let account_a = book.new_account(());
         let account_b = book.new_account(());
-        let unit = Unit::new(&book, ());
+        let unit = book.new_unit(());
         let move_1 = Move::new(&account_a, &account_b, &Sum::of(&unit, 3), 1);
         assert_eq!(
             move_1.balance_in(&account_a, cmp),
@@ -205,7 +204,7 @@ mod test {
         let mut book = Book::<BlankMetadata>::new(());
         let debit = book.new_account(());
         let credit = book.new_account(());
-        let unit = Unit::new(&Book::new(()), ());
+        let unit = Book::new(()).new_unit(());
         let sum = Sum::of(&unit, 0);
         Move::new(&debit, &credit, &sum, ());
     }
@@ -215,9 +214,9 @@ mod test {
         let mut book = Book::<((), (), (), u8)>::new(());
         let debit = book.new_account(());
         let credit = book.new_account(());
-        let thb = Unit::new(&book, ());
-        let ils = Unit::new(&book, ());
-        let usd = Unit::new(&book, ());
+        let thb = book.new_unit(());
+        let ils = book.new_unit(());
+        let usd = book.new_unit(());
         let sum = Sum::of(&thb, 20).unit(&ils, 41).unit(&usd, 104);
         let move_a = Move::new(&debit, &credit, &sum, 45);
         let expected = Rc::new(Move {
@@ -241,12 +240,7 @@ mod test {
         let mut book = Book::<((), (), (), u8)>::new(());
         let account_a = book.new_account(());
         let account_b = book.new_account(());
-        let move_ = Move::new(
-            &account_a,
-            &account_b,
-            &Sum::of(&Unit::new(&book, ()), 0),
-            5,
-        );
+        let move_ = Move::new(&account_a, &account_b, &Sum::of(&book.new_unit(()), 0), 5);
         assert_eq!(*move_.get_metadata(), 5);
         move_.set_metadata(9);
         assert_eq!(*move_.get_metadata(), 9);

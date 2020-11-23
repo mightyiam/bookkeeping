@@ -65,7 +65,6 @@ mod test {
     use super::BTreeMap;
     use super::Balance;
     use super::Sum;
-    use super::Unit;
     use crate::book::Book;
     use crate::metadata::BlankMetadata;
     #[test]
@@ -78,9 +77,9 @@ mod test {
     fn operation() {
         use maplit::btreemap;
         let mut actual = Balance::new();
-        let book = Book::<BlankMetadata>::new(());
-        let unit_a = Unit::new(&book, ());
-        let unit_b = Unit::new(&book, ());
+        let mut book = Book::<BlankMetadata>::new(());
+        let unit_a = book.new_unit(());
+        let unit_b = book.new_unit(());
         let sum = Sum::of(&unit_a, 2).unit(&unit_b, 3);
         actual.operation(&sum, |balance, amount| balance + amount as i128);
         let sum = Sum::of(&unit_a, 2).unit(&unit_b, 3);
@@ -93,10 +92,10 @@ mod test {
     }
     #[test]
     fn fmt_debug() {
-        let book = Book::<BlankMetadata>::new(());
-        let unit_a = Unit::new(&book, ());
+        let mut book = Book::<BlankMetadata>::new(());
+        let unit_a = book.new_unit(());
         let amount_a = 76;
-        let unit_b = Unit::new(&book, ());
+        let unit_b = book.new_unit(());
         let amount_b = 45;
         let sum = Sum::of(&unit_a, amount_a).unit(&unit_b, amount_b);
         let balance = Balance::new() + &sum;
@@ -110,8 +109,8 @@ mod test {
     #[test]
     fn sub_assign_sum() {
         use maplit::btreemap;
-        let book = Book::<BlankMetadata>::new(());
-        let unit = Unit::new(&book, ());
+        let mut book = Book::<BlankMetadata>::new(());
+        let unit = book.new_unit(());
         let mut actual = Balance::new();
         actual -= &Sum::of(&unit, 9);
         let expected = Balance(btreemap! {
@@ -122,8 +121,8 @@ mod test {
     #[test]
     fn sub_sum() {
         use maplit::btreemap;
-        let book = Book::<BlankMetadata>::new(());
-        let unit = Unit::new(&book, ());
+        let mut book = Book::<BlankMetadata>::new(());
+        let unit = book.new_unit(());
         let balance = Balance::new();
         let actual = balance - &Sum::of(&unit, 9);
         let expected = Balance(btreemap! {
@@ -134,8 +133,8 @@ mod test {
     #[test]
     fn add_assign_sum() {
         use maplit::btreemap;
-        let book = Book::<BlankMetadata>::new(());
-        let unit = Unit::new(&book, ());
+        let mut book = Book::<BlankMetadata>::new(());
+        let unit = book.new_unit(());
         let mut actual = Balance::new();
         actual += &Sum::of(&unit, 9);
         let expected = Balance(btreemap! {
@@ -146,8 +145,8 @@ mod test {
     #[test]
     fn add_sum() {
         use maplit::btreemap;
-        let book = Book::<BlankMetadata>::new(());
-        let unit = Unit::new(&book, ());
+        let mut book = Book::<BlankMetadata>::new(());
+        let unit = book.new_unit(());
         let balance = Balance::new();
         let actual = balance + &Sum::of(&unit, 9);
         let expected = Balance(btreemap! {
