@@ -1,11 +1,14 @@
 use crate::account::Account;
+use crate::balance::Balance;
 use crate::index::Index;
 use crate::metadata::Metadata;
 use crate::move_::Move;
 use crate::sum::Sum;
 use crate::unit::Unit;
 use std::cell::RefCell;
+use std::cmp::Ordering;
 use std::fmt;
+use std::ops;
 use std::rc::Rc;
 /// Entry point to the API and retains ownership of accounts, units and moves.
 ///
@@ -41,9 +44,9 @@ impl<T: Metadata> Book<T> {
     ///
     /// ## Panics
     ///
-    /// - `debit_account` and `credit_account` are in different books.
+    /// - `debit_account` or `credit_account` are in not in the book.
     /// - `debit_account` and `credit_account` are the same.
-    /// - Some [Unit][crate::Unit] in the [Sum] is not in the same book as the accounts.
+    /// - Some [Unit][crate::Unit] in the [Sum] is not in the book.
     pub fn new_move(
         &mut self,
         debit_account: &Rc<Account<T>>,
@@ -76,6 +79,45 @@ impl<T: Metadata> Book<T> {
         self.index.moves.borrow_mut().insert(move_.clone());
         move_
     }
+    /// Calculates the balance of a provided account at a provided move according to a provided order of moves.
+    ///
+    /// ## Panics
+    ///
+    /// - The account is not debit nor credit in the move.
+    pub fn account_balance_with_move(
+        &self,
+        account: &Rc<Account<T>>,
+        move_: &Rc<Move<T>>,
+        cmp: impl Fn(&T::Move, &T::Move) -> Ordering,
+    ) -> Balance<T> {
+        if ![&move_.debit_account, &move_.credit_account].contains(&account) {
+            panic!("Provided account is not debit nor credit in provided move.");
+        }
+        account
+            .index
+            .moves
+            .borrow()
+            .iter()
+            .filter(
+                |other_move| match cmp(&move_.meta.borrow(), &other_move.meta.borrow()) {
+                    Ordering::Less => false,
+                    _ => true,
+                },
+            )
+            .filter_map(|move_| -> Option<(fn(&mut Balance<T>, _), &Sum<T>)> {
+                if move_.debit_account == *account {
+                    Some((ops::SubAssign::sub_assign, &move_.sum))
+                } else if move_.credit_account == *account {
+                    Some((ops::AddAssign::add_assign, &move_.sum))
+                } else {
+                    None
+                }
+            })
+            .fold(Balance::new(), |mut balance, (operation, sum)| {
+                operation(&mut balance, sum);
+                balance
+            })
+    }
 }
 impl<T: Metadata> Drop for Book<T> {
     fn drop(&mut self) {
@@ -96,8 +138,10 @@ impl<T: Metadata> fmt::Debug for Book<T> {
 }
 #[cfg(test)]
 mod test {
+    use super::Balance;
     use super::Book;
     use super::Index;
+    use super::Move;
     use super::Rc;
     use crate::metadata::BlankMetadata;
     use crate::sum::Sum;
@@ -180,6 +224,87 @@ mod test {
         assert_eq!(
             *book.index.moves.borrow(),
             btreeset! { move_a.clone(), move_b.clone() }
+        );
+    }
+    #[test]
+    #[should_panic(expected = "Provided account is not debit nor credit in provided move.")]
+    fn move_account_balance_at_unrelated_account() {
+        let mut book = Book::<BlankMetadata>::new(());
+        let debit_account = book.new_account(());
+        let credit_account = book.new_account(());
+        let move_ = Move::new(
+            0,
+            &book.index,
+            &debit_account,
+            &credit_account,
+            &Sum::new(),
+            (),
+        );
+        let other_account = book.new_account(());
+        book.account_balance_with_move(&other_account, &move_, |&(), &()| {
+            panic!();
+        });
+    }
+    #[test]
+    fn account_balance_at() {
+        use maplit::btreemap;
+        let cmp = |a: &u8, b: &u8| a.cmp(&b);
+        let mut book = Book::<((), (), (), u8)>::new(());
+        let account_a = book.new_account(());
+        let account_b = book.new_account(());
+        let unit = book.new_unit(());
+        let move_1 = book.new_move(&account_a, &account_b, &Sum::of(&unit, 3), 1);
+        assert_eq!(
+            book.account_balance_with_move(&account_a, &move_1, cmp),
+            Balance(btreemap! { unit.clone() => -3 }),
+        );
+        assert_eq!(
+            book.account_balance_with_move(&account_b, &move_1, cmp),
+            Balance(btreemap! { unit.clone() => 3 }),
+        );
+
+        let move_2 = book.new_move(&account_a, &account_b, &Sum::of(&unit, 4), 2);
+        assert_eq!(
+            book.account_balance_with_move(&account_a, &move_1, cmp),
+            Balance(btreemap! { unit.clone() => -3 }),
+        );
+        assert_eq!(
+            book.account_balance_with_move(&account_b, &move_1, cmp),
+            Balance(btreemap! { unit.clone() => 3 }),
+        );
+        assert_eq!(
+            book.account_balance_with_move(&account_a, &move_2, cmp),
+            Balance(btreemap! { unit.clone() => -7 }),
+        );
+        assert_eq!(
+            book.account_balance_with_move(&account_b, &move_2, cmp),
+            Balance(btreemap! { unit.clone() => 7 }),
+        );
+
+        let move_0 = book.new_move(&account_a, &account_b, &Sum::of(&unit, 1), 0);
+        assert_eq!(
+            book.account_balance_with_move(&account_a, &move_0, cmp),
+            Balance(btreemap! { unit.clone() => -1 }),
+        );
+        assert_eq!(
+            book.account_balance_with_move(&account_b, &move_0, cmp),
+            Balance(btreemap! { unit.clone() => 1 }),
+        );
+        assert_eq!(
+            book.account_balance_with_move(&account_a, &move_1, cmp),
+            Balance(btreemap! { unit.clone() => -4 }),
+        );
+        assert_eq!(
+            book.account_balance_with_move(&account_b, &move_1, cmp),
+            Balance(btreemap! { unit.clone() => 4 }),
+        );
+        assert_eq!(
+            book.account_balance_with_move(&account_a, &move_2, cmp),
+            Balance(btreemap! { unit.clone() => -8 }),
+        );
+        assert_eq!(
+            book.account_balance_with_move(&account_b, &move_2, cmp),
+            Balance(btreemap! { unit.clone() => 8 }),
         );
     }
     #[test]
