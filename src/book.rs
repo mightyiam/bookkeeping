@@ -86,7 +86,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
         let move_ = Move::new(debit_account, credit_account, sum, meta);
         self.moves.insert(move_)
     }
-    /// Calculates the balance of a provided account at a provided move according to a provided order of moves.
+    /// Calculates the balance of an account at a move according to a provided order of moves.
     ///
     /// ## Panics
     ///
