@@ -89,12 +89,12 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// ## Panics
     ///
     /// - The account is not debit nor credit in the move.
-    pub fn account_balance_with_move(
-        &self,
+    pub fn account_balance_with_move<'a>(
+        &'a self,
         account: AccountKey,
         move_: MoveKey,
         cmp: impl Fn(&M, &M) -> Ordering,
-    ) -> Balance {
+    ) -> Balance<'a> {
         self.assert_exists(RecordKey::Account(account));
         self.assert_exists(RecordKey::Move(move_));
         let move_ = self.moves.get(move_).unwrap();
@@ -107,7 +107,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
                 Ordering::Less => false,
                 _ => true,
             })
-            .filter_map(|(_, move_)| -> Option<(fn(&mut Balance, _), &Sum)> {
+            .filter_map(|(_, move_)| -> Option<(fn(&mut Balance<'a>, _), &Sum)> {
                 if move_.debit_account == account {
                     Some((ops::SubAssign::sub_assign, &move_.sum))
                 } else if move_.credit_account == account {
@@ -242,7 +242,6 @@ mod test {
     }
     #[test]
     fn account_balance_at_move() {
-        use maplit::btreemap;
         let cmp = |a: &u8, b: &u8| a.cmp(&b);
         let mut book = Book::new(());
         let account_a = book.new_account(());
@@ -251,55 +250,55 @@ mod test {
         let move_1 = book.new_move(account_a, account_b, Sum::of(unit, 3), 1);
         assert_eq!(
             book.account_balance_with_move(account_a, move_1, cmp),
-            Balance(btreemap! { unit.clone() => -3 }),
+            Balance::new() - &Sum::of(unit, 3),
         );
         assert_eq!(
             book.account_balance_with_move(account_b, move_1, cmp),
-            Balance(btreemap! { unit.clone() => 3 }),
+            Balance::new() + &Sum::of(unit, 3),
         );
 
         let move_2 = book.new_move(account_a, account_b, Sum::of(unit, 4), 2);
         assert_eq!(
             book.account_balance_with_move(account_a, move_1, cmp),
-            Balance(btreemap! { unit.clone() => -3 }),
+            Balance::new() - &Sum::of(unit, 3),
         );
         assert_eq!(
             book.account_balance_with_move(account_b, move_1, cmp),
-            Balance(btreemap! { unit.clone() => 3 }),
+            Balance::new() + &Sum::of(unit, 3),
         );
         assert_eq!(
             book.account_balance_with_move(account_a, move_2, cmp),
-            Balance(btreemap! { unit.clone() => -7 }),
+            Balance::new() - &Sum::of(unit, 7),
         );
         assert_eq!(
             book.account_balance_with_move(account_b, move_2, cmp),
-            Balance(btreemap! { unit.clone() => 7 }),
+            Balance::new() + &Sum::of(unit, 7),
         );
 
         let move_0 = book.new_move(account_a, account_b, Sum::of(unit, 1), 0);
         assert_eq!(
             book.account_balance_with_move(account_a, move_0, cmp),
-            Balance(btreemap! { unit.clone() => -1 }),
+            Balance::new() - &Sum::of(unit, 1),
         );
         assert_eq!(
             book.account_balance_with_move(account_b, move_0, cmp),
-            Balance(btreemap! { unit.clone() => 1 }),
+            Balance::new() + &Sum::of(unit, 1),
         );
         assert_eq!(
             book.account_balance_with_move(account_a, move_1, cmp),
-            Balance(btreemap! { unit.clone() => -4 }),
+            Balance::new() - &Sum::of(unit, 4),
         );
         assert_eq!(
             book.account_balance_with_move(account_b, move_1, cmp),
-            Balance(btreemap! { unit.clone() => 4 }),
+            Balance::new() + &Sum::of(unit, 4),
         );
         assert_eq!(
             book.account_balance_with_move(account_a, move_2, cmp),
-            Balance(btreemap! { unit.clone() => -8 }),
+            Balance::new() - &Sum::of(unit, 8),
         );
         assert_eq!(
             book.account_balance_with_move(account_b, move_2, cmp),
-            Balance(btreemap! { unit.clone() => 8 }),
+            Balance::new() + &Sum::of(unit, 8),
         );
     }
     #[test]
@@ -338,3 +337,4 @@ mod test {
         assert_eq!(*book.get_move_metadata(move_), 5);
     }
 }
+// TODO document more panics
