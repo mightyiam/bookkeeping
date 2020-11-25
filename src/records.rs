@@ -1,3 +1,23 @@
+/// Represents an [account](https://en.wikipedia.org/wiki/Account_(bookkeeping)).
+pub struct Account<T> {
+    pub(crate) meta: T,
+}
+impl<T> Account<T> {
+    pub(crate) fn new(meta: T) -> Self {
+        Self { meta }
+    }
+}
+/// Represents a unit of measurement. Will most commonly represent the minor unit of a currency.
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+pub struct Unit<T> {
+    pub(crate) meta: T,
+}
+impl<T> Unit<T> {
+    /// Creates a new unit.
+    pub(crate) fn new(meta: T) -> Self {
+        Self { meta }
+    }
+}
 use crate::book::AccountKey;
 use crate::sum::Sum;
 /// Represents a move of a [Sum] of [Unit](crate::Unit)s from one account to another.

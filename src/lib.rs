@@ -20,15 +20,11 @@
 //! - Grouping of moves to represent transactions.
 //! - Editing/removing items other than metadata.
 //! - Caching of balance calculations.
-mod account;
 mod balance;
 mod book;
-mod move_;
+mod records;
 mod sum;
-mod unit;
-pub use account::Account;
 pub use balance::Balance;
 pub use book::Book;
-pub use move_::Move;
+pub use records::{Account, Move, Unit};
 pub use sum::Sum;
-pub use unit::Unit;
