@@ -10,7 +10,7 @@
 //!
 //! Imbalance is prevented as much as possible, first by the data structures and further entirely, by runtime.
 //!
-//! It attempts to provide an API that is nice to work with and also minimizes possible points of panic.
+//! It attempts to provide an API that is nice to work with and also minimizes points of failure.
 //!
 //! It is oblivious to the concept of a [currency](https://en.wikipedia.org/wiki/Currency).
 //! Therefore, there are no decimal places, minor and major units.
@@ -23,16 +23,12 @@
 mod account;
 mod balance;
 mod book;
-mod index;
-mod metadata;
 mod move_;
 mod sum;
 mod unit;
 pub use account::Account;
 pub use balance::Balance;
 pub use book::Book;
-pub use metadata::Metadata;
 pub use move_::Move;
 pub use sum::Sum;
 pub use unit::Unit;
-// TODO do not use nightly features

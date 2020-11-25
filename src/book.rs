@@ -1,44 +1,67 @@
 use crate::account::Account;
 use crate::balance::Balance;
-use crate::index::Index;
-use crate::metadata::Metadata;
 use crate::move_::Move;
 use crate::sum::Sum;
 use crate::unit::Unit;
-use std::cell::RefCell;
+use duplicate::duplicate;
+use slotmap::{new_key_type, DenseSlotMap};
 use std::cmp::Ordering;
-use std::fmt;
 use std::ops;
-use std::rc::Rc;
-/// Entry point to the API and retains ownership of accounts, units and moves.
-///
-/// A reference to a book is an argument in any call to create a new account, unit or move.
-/// The new entity is both registered in the book and returned in an [std::rc::Rc].
-/// Since the book retains an `Rc` of that entity, the returned `Rc` may be dropped.
-#[derive(Default)]
-pub struct Book<T: Metadata> {
-    pub(crate) meta: RefCell<T::Book>,
-    pub(crate) index: Rc<Index<T>>,
+new_key_type! {
+    pub struct AccountKey;
+    pub struct UnitKey;
+    pub struct MoveKey;
 }
-impl<T: Metadata> Book<T> {
+enum RecordKey {
+    Account(AccountKey),
+    Unit(UnitKey),
+    Move(MoveKey),
+}
+/// Represents a book.
+#[derive(Default)]
+pub struct Book<B, A, U, M> {
+    meta: B,
+    accounts: DenseSlotMap<AccountKey, Account<A>>,
+    units: DenseSlotMap<UnitKey, Unit<U>>,
+    moves: DenseSlotMap<MoveKey, Move<M>>,
+}
+impl<B, A, U, M> Book<B, A, U, M> {
     /// Creates a new book
-    pub fn new(meta: T::Book) -> Self {
+    pub fn new(meta: B) -> Self {
         Self {
-            meta: RefCell::new(meta),
-            index: Index::new(),
+            meta,
+            accounts: DenseSlotMap::<AccountKey, Account<A>>::with_key(),
+            units: DenseSlotMap::<UnitKey, Unit<U>>::with_key(),
+            moves: DenseSlotMap::<MoveKey, Move<M>>::with_key(),
         }
     }
+    /// Gets the book's metadata.
+    pub fn get_book_metadata(&self) -> &B {
+        &self.meta
+    }
+    /// Gets the book's metadata.
+    pub fn set_book_metadata(&mut self, meta: B) {
+        self.meta = meta;
+    }
     /// Creates a new account.
-    pub fn new_account(&mut self, meta: T::Account) -> Rc<Account<T>> {
-        let account = Account::new(self.index.accounts.borrow().len(), &self.index, meta);
-        self.index.accounts.borrow_mut().insert(account.clone());
-        account
+    pub fn new_account(&mut self, meta: A) -> AccountKey {
+        self.accounts.insert(Account::new(meta))
     }
     /// Creates a new unit.
-    pub fn new_unit(&mut self, meta: T::Unit) -> Rc<Unit<T>> {
-        let unit = Unit::new(self.index.units.borrow().len(), &self.index, meta);
-        self.index.units.borrow_mut().insert(unit.clone());
-        unit
+    pub fn new_unit(&mut self, meta: U) -> UnitKey {
+        self.units.insert(Unit::new(meta))
+    }
+    fn assert_exists(&self, key: RecordKey) {
+        let (contains, entity, key) = match key {
+            RecordKey::Account(key) => (
+                self.accounts.contains_key(key),
+                "account",
+                format!("{:?}", key),
+            ),
+            RecordKey::Unit(key) => (self.units.contains_key(key), "unit", format!("{:?}", key)),
+            RecordKey::Move(key) => (self.moves.contains_key(key), "move", format!("{:?}", key)),
+        };
+        assert!(contains, format!("No {} found for key {:?}", entity, key));
     }
     /// Creates a new move.
     ///
@@ -49,35 +72,19 @@ impl<T: Metadata> Book<T> {
     /// - Some [Unit][crate::Unit] in the [Sum] is not in the book.
     pub fn new_move(
         &mut self,
-        debit_account: &Rc<Account<T>>,
-        credit_account: &Rc<Account<T>>,
-        sum: &Sum<T>,
-        meta: T::Move,
-    ) -> Rc<Move<T>> {
-        assert_eq!(
-            self.index, debit_account.index,
-            "Debit account is not in the book."
-        );
-        assert_eq!(
-            self.index, credit_account.index,
-            "Credit account is not in the book."
-        );
-        sum.0.keys().for_each(|unit| {
-            assert!(
-                self.index.units.borrow().contains(unit),
-                "Some unit is not in the same book as accounts."
-            );
+        debit_account: AccountKey,
+        credit_account: AccountKey,
+        sum: Sum,
+        meta: M,
+    ) -> MoveKey {
+        [debit_account, credit_account].iter().for_each(|key| {
+            self.assert_exists(RecordKey::Account(*key));
         });
-        let move_ = Move::new(
-            self.index.moves.borrow().len(),
-            &self.index,
-            debit_account,
-            credit_account,
-            sum,
-            meta,
-        );
-        self.index.moves.borrow_mut().insert(move_.clone());
-        move_
+        sum.0.keys().for_each(|key| {
+            self.assert_exists(RecordKey::Unit(*key));
+        });
+        let move_ = Move::new(debit_account, credit_account, sum, meta);
+        self.moves.insert(move_)
     }
     /// Calculates the balance of a provided account at a provided move according to a provided order of moves.
     ///
@@ -86,28 +93,26 @@ impl<T: Metadata> Book<T> {
     /// - The account is not debit nor credit in the move.
     pub fn account_balance_with_move(
         &self,
-        account: &Rc<Account<T>>,
-        move_: &Rc<Move<T>>,
-        cmp: impl Fn(&T::Move, &T::Move) -> Ordering,
-    ) -> Balance<T> {
-        if ![&move_.debit_account, &move_.credit_account].contains(&account) {
+        account: AccountKey,
+        move_: MoveKey,
+        cmp: impl Fn(&M, &M) -> Ordering,
+    ) -> Balance {
+        self.assert_exists(RecordKey::Account(account));
+        self.assert_exists(RecordKey::Move(move_));
+        let move_ = self.moves.get(move_).unwrap();
+        if ![move_.debit_account, move_.credit_account].contains(&account) {
             panic!("Provided account is not debit nor credit in provided move.");
         }
-        account
-            .index
-            .moves
-            .borrow()
+        self.moves
             .iter()
-            .filter(
-                |other_move| match cmp(&move_.meta.borrow(), &other_move.meta.borrow()) {
-                    Ordering::Less => false,
-                    _ => true,
-                },
-            )
-            .filter_map(|move_| -> Option<(fn(&mut Balance<T>, _), &Sum<T>)> {
-                if move_.debit_account == *account {
+            .filter(|(_, other_move)| match cmp(&move_.meta, &other_move.meta) {
+                Ordering::Less => false,
+                _ => true,
+            })
+            .filter_map(|(_, move_)| -> Option<(fn(&mut Balance, _), &Sum)> {
+                if move_.debit_account == account {
                     Some((ops::SubAssign::sub_assign, &move_.sum))
-                } else if move_.credit_account == *account {
+                } else if move_.credit_account == account {
                     Some((ops::AddAssign::add_assign, &move_.sum))
                 } else {
                     None
@@ -119,281 +124,219 @@ impl<T: Metadata> Book<T> {
             })
     }
 }
-impl<T: Metadata> Drop for Book<T> {
-    fn drop(&mut self) {
-        self.index.accounts.borrow_mut().clear();
-        self.index.units.borrow_mut().clear();
-        self.index.moves.borrow_mut().clear();
+#[duplicate(
+    setter                 getter                 Key          T   field;
+    [set_account_metadata] [get_account_metadata] [AccountKey] [A] [accounts];
+    [set_unit_metadata]    [get_unit_metadata]    [UnitKey]    [U] [units];
+    [set_move_metadata]    [get_move_metadata]    [MoveKey]    [M] [moves];
+)]
+impl<B, A, U, M> Book<B, A, U, M> {
+    /// Sets the metadata value.
+    pub fn setter(&mut self, key: Key, meta: T) {
+        self.field
+            .get_mut(key)
+            .expect("No value found for this key.")
+            .meta = meta;
     }
-}
-impl<T: Metadata> PartialEq for Book<T> {
-    fn eq(&self, other: &Book<T>) -> bool {
-        other.index == self.index
-    }
-}
-impl<T: Metadata> fmt::Debug for Book<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Book").field("index", &self.index).finish()
+    /// Gets the metadata value on this entity.
+    pub fn getter(&self, key: Key) -> &T {
+        &self
+            .field
+            .get(key)
+            .expect("No value found for this key.")
+            .meta
     }
 }
 #[cfg(test)]
 mod test {
     use super::Balance;
     use super::Book;
-    use super::Index;
-    use super::Move;
-    use super::Rc;
-    use crate::metadata::BlankMetadata;
     use crate::sum::Sum;
-    use std::cell::RefCell;
-    use std::mem;
     #[test]
     fn new() {
-        let book = Book::<(u8, (), (), ())>::new(77);
-        assert_eq!(*book.meta.borrow(), 77);
-        assert_ne!(book, Book::new(77));
+        let book = Book::<(), (), (), ()>::new(());
+        assert_eq!(book.meta, ());
+        assert!(book.accounts.is_empty());
+        assert!(book.units.is_empty());
+        assert!(book.moves.is_empty());
     }
     #[test]
     fn new_account() {
-        use maplit::btreeset;
-        let mut book = Book::<BlankMetadata>::new(());
-        let account_a = book.new_account(());
-        let account_b = book.new_account(());
-        let expected = btreeset! {
-            account_a.clone(),
-            account_b.clone()
-        };
-        assert_eq!(
-            *book.index.accounts.borrow(),
-            expected,
-            "Accounts are in the book"
-        );
+        let mut book = Book::<(), (), (), ()>::new(());
+        book.new_account(());
+        assert_eq!(book.accounts.len(), 1);
     }
     #[test]
     fn new_unit() {
-        use maplit::btreeset;
-        let mut book = Book::<BlankMetadata>::new(());
-        let unit_a = book.new_unit(());
-        let unit_b = book.new_unit(());
-        let expected = btreeset! {
-            unit_a.clone(),
-            unit_b.clone()
-        };
-        assert_eq!(
-            *book.index.units.borrow(),
-            expected,
-            "Units are in the book"
-        );
+        let mut book = Book::<(), (), (), ()>::new(());
+        book.new_unit(());
+        assert_eq!(book.units.len(), 1,);
     }
     #[test]
-    #[should_panic(expected = "Debit account is not in the book.")]
-    fn move_new_panic_debit_account_is_not_in_the_book() {
-        let mut book = Book::<BlankMetadata>::new(());
-        let debit = Book::new(()).new_account(());
-        let credit = book.new_account(());
-        book.new_move(&debit, &credit, &Sum::new(), ());
-    }
-    #[test]
-    #[should_panic(expected = "Credit account is not in the book.")]
-    fn move_new_panic_credit_account_is_not_in_the_book() {
-        let mut book = Book::<BlankMetadata>::new(());
+    #[should_panic(expected = "No account found for key ")]
+    fn new_move_panic_debit_account_not_found() {
+        let mut book = Book::<_, _, (), _>::new(());
         let debit = book.new_account(());
-        let credit = Book::new(()).new_account(());
-        book.new_move(&debit, &credit, &Sum::new(), ());
+        book.accounts.remove(debit);
+        let credit = book.new_account(());
+        book.new_move(debit, credit, Sum::new(), ());
     }
     #[test]
-    #[should_panic(expected = "Some unit is not in the same book as accounts.")]
-    fn move_new_panic_some_unit_is_not_in_the_same_book_as_accounts() {
-        let mut book = Book::<BlankMetadata>::new(());
+    #[should_panic(expected = "No account found for key ")]
+    fn new_move_panic_credit_account_not_found() {
+        let mut book = Book::<_, _, (), _>::new(());
         let debit = book.new_account(());
         let credit = book.new_account(());
-        let unit = Book::new(()).new_unit(());
-        let sum = Sum::of(&unit, 0);
-        book.new_move(&debit, &credit, &sum, ());
+        book.accounts.remove(credit);
+        book.new_move(debit, credit, Sum::new(), ());
+    }
+    #[test]
+    #[should_panic(expected = "No unit found for key ")]
+    fn new_move_panic_unit_not_found() {
+        let mut book = Book::<_, _, _, _>::new(());
+        let debit = book.new_account(());
+        let credit = book.new_account(());
+        let unit = book.new_unit(());
+        book.units.remove(unit);
+        let sum = Sum::of(unit, 0);
+        book.new_move(debit, credit, sum, ());
     }
     #[test]
     fn new_move() {
-        use maplit::btreeset;
-        let mut book = Book::<BlankMetadata>::new(());
+        let mut book = Book::<_, _, (), _>::new(());
         let debit = book.new_account(());
         let credit = book.new_account(());
         let sum = Sum::new();
-        let move_a = book.new_move(&debit, &credit, &sum, ());
-        let sum = Sum::new();
-        let move_b = book.new_move(&debit, &credit, &sum, ());
-        assert_eq!(
-            *book.index.moves.borrow(),
-            btreeset! { move_a.clone(), move_b.clone() }
-        );
+        book.new_move(debit, credit, sum, ());
+        assert_eq!(book.moves.len(), 1);
+    }
+    #[test]
+    #[should_panic(expected = "No account found for key ")]
+    fn account_balance_at_move_account_not_found() {
+        let mut book = Book::<_, _, (), _>::new(());
+        let debit_account = book.new_account(());
+        let credit_account = book.new_account(());
+        let move_ = book.new_move(debit_account, credit_account, Sum::new(), ());
+        book.accounts.remove(debit_account);
+        book.account_balance_with_move(debit_account, move_, |&(), &()| panic!());
+    }
+    #[test]
+    #[should_panic(expected = "No move found for key ")]
+    fn account_balance_at_move_move_not_found() {
+        let mut book = Book::<_, _, (), _>::new(());
+        let debit_account = book.new_account(());
+        let credit_account = book.new_account(());
+        let move_ = book.new_move(debit_account, credit_account, Sum::new(), ());
+        book.moves.remove(move_);
+        book.account_balance_with_move(debit_account, move_, |&(), &()| panic!());
     }
     #[test]
     #[should_panic(expected = "Provided account is not debit nor credit in provided move.")]
-    fn move_account_balance_at_unrelated_account() {
-        let mut book = Book::<BlankMetadata>::new(());
+    fn account_balance_at_move_account_not_related_to_move() {
+        let mut book = Book::<_, _, (), _>::new(());
         let debit_account = book.new_account(());
         let credit_account = book.new_account(());
-        let move_ = Move::new(
-            0,
-            &book.index,
-            &debit_account,
-            &credit_account,
-            &Sum::new(),
-            (),
-        );
+        let move_ = book.new_move(debit_account, credit_account, Sum::new(), ());
         let other_account = book.new_account(());
-        book.account_balance_with_move(&other_account, &move_, |&(), &()| {
+        book.account_balance_with_move(other_account, move_, |&(), &()| {
             panic!();
         });
     }
     #[test]
-    fn account_balance_at() {
+    fn account_balance_at_move() {
         use maplit::btreemap;
         let cmp = |a: &u8, b: &u8| a.cmp(&b);
-        let mut book = Book::<((), (), (), u8)>::new(());
+        let mut book = Book::new(());
         let account_a = book.new_account(());
         let account_b = book.new_account(());
         let unit = book.new_unit(());
-        let move_1 = book.new_move(&account_a, &account_b, &Sum::of(&unit, 3), 1);
+        let move_1 = book.new_move(account_a, account_b, Sum::of(unit, 3), 1);
         assert_eq!(
-            book.account_balance_with_move(&account_a, &move_1, cmp),
+            book.account_balance_with_move(account_a, move_1, cmp),
             Balance(btreemap! { unit.clone() => -3 }),
         );
         assert_eq!(
-            book.account_balance_with_move(&account_b, &move_1, cmp),
+            book.account_balance_with_move(account_b, move_1, cmp),
             Balance(btreemap! { unit.clone() => 3 }),
         );
 
-        let move_2 = book.new_move(&account_a, &account_b, &Sum::of(&unit, 4), 2);
+        let move_2 = book.new_move(account_a, account_b, Sum::of(unit, 4), 2);
         assert_eq!(
-            book.account_balance_with_move(&account_a, &move_1, cmp),
+            book.account_balance_with_move(account_a, move_1, cmp),
             Balance(btreemap! { unit.clone() => -3 }),
         );
         assert_eq!(
-            book.account_balance_with_move(&account_b, &move_1, cmp),
+            book.account_balance_with_move(account_b, move_1, cmp),
             Balance(btreemap! { unit.clone() => 3 }),
         );
         assert_eq!(
-            book.account_balance_with_move(&account_a, &move_2, cmp),
+            book.account_balance_with_move(account_a, move_2, cmp),
             Balance(btreemap! { unit.clone() => -7 }),
         );
         assert_eq!(
-            book.account_balance_with_move(&account_b, &move_2, cmp),
+            book.account_balance_with_move(account_b, move_2, cmp),
             Balance(btreemap! { unit.clone() => 7 }),
         );
 
-        let move_0 = book.new_move(&account_a, &account_b, &Sum::of(&unit, 1), 0);
+        let move_0 = book.new_move(account_a, account_b, Sum::of(unit, 1), 0);
         assert_eq!(
-            book.account_balance_with_move(&account_a, &move_0, cmp),
+            book.account_balance_with_move(account_a, move_0, cmp),
             Balance(btreemap! { unit.clone() => -1 }),
         );
         assert_eq!(
-            book.account_balance_with_move(&account_b, &move_0, cmp),
+            book.account_balance_with_move(account_b, move_0, cmp),
             Balance(btreemap! { unit.clone() => 1 }),
         );
         assert_eq!(
-            book.account_balance_with_move(&account_a, &move_1, cmp),
+            book.account_balance_with_move(account_a, move_1, cmp),
             Balance(btreemap! { unit.clone() => -4 }),
         );
         assert_eq!(
-            book.account_balance_with_move(&account_b, &move_1, cmp),
+            book.account_balance_with_move(account_b, move_1, cmp),
             Balance(btreemap! { unit.clone() => 4 }),
         );
         assert_eq!(
-            book.account_balance_with_move(&account_a, &move_2, cmp),
+            book.account_balance_with_move(account_a, move_2, cmp),
             Balance(btreemap! { unit.clone() => -8 }),
         );
         assert_eq!(
-            book.account_balance_with_move(&account_b, &move_2, cmp),
+            book.account_balance_with_move(account_b, move_2, cmp),
             Balance(btreemap! { unit.clone() => 8 }),
         );
     }
     #[test]
-    fn drop() {
-        use std::rc::Rc;
-        let mut book = Book::<BlankMetadata>::new(());
-        assert_eq!(Rc::strong_count(&book.index), 1, "book");
-        let account_a = book.new_account(());
-        assert_eq!(Rc::strong_count(&account_a), 2, "account_a, book");
-        assert_eq!(Rc::strong_count(&book.index), 2, "book, account_a");
-        let account_b = book.new_account(());
-        assert_eq!(Rc::strong_count(&account_b), 2, "account_b, book");
-        assert_eq!(
-            Rc::strong_count(&book.index),
-            3,
-            "book, account_a, account_b"
-        );
-        let unit = book.new_unit(());
-        assert_eq!(Rc::strong_count(&unit), 2, "unit, book");
-        assert_eq!(
-            Rc::strong_count(&book.index),
-            4,
-            "book, account_a, account_b, unit"
-        );
-        assert_eq!(Rc::strong_count(&unit), 2, "unit, book");
-        let move_ = book.new_move(&account_a, &account_b, &Sum::of(&unit, 0), ());
-        assert_eq!(Rc::strong_count(&move_), 2, "move, book");
-        assert_eq!(
-            Rc::strong_count(&book.index),
-            5,
-            "book, account_a, account_b, unit, move_"
-        );
-        assert_eq!(Rc::strong_count(&account_a), 3, "account_a, book, move_");
-        assert_eq!(Rc::strong_count(&account_b), 3, "account_b, book, move_");
-        assert_eq!(Rc::strong_count(&unit), 3, "unit, book, move_.sum");
-        mem::drop(book);
-        assert_eq!(Rc::strong_count(&account_a), 2, "account_a, move_");
-        assert_eq!(Rc::strong_count(&account_b), 2, "account_b, move_");
-        assert_eq!(Rc::strong_count(&unit), 2, "unit, move_.sum");
-        assert_eq!(Rc::strong_count(&move_), 1, "move_");
-        mem::drop(move_);
-        assert_eq!(Rc::strong_count(&account_a), 1, "account_a");
-        assert_eq!(Rc::strong_count(&account_b), 1, "account_b");
-        assert_eq!(Rc::strong_count(&unit), 1, "unit");
-    }
-    #[test]
-    fn partial_eq() {
-        let index_0 = Rc::new(Index {
-            id: 0,
-            ..Default::default()
-        });
-        let a = Book::<(u8, (), (), ())> {
-            meta: RefCell::new(0),
-            index: index_0.clone(),
-            ..Default::default()
-        };
-        let b = Book::<(u8, (), (), ())> {
-            meta: RefCell::new(0),
-            index: index_0.clone(),
-        };
-        assert_eq!(a, b, "All fields equal");
-        let c = Book {
-            meta: RefCell::new(1),
-            index: index_0.clone(),
-        };
-        assert_eq!(a, c, "Same index, some different field");
-        let d = Book {
-            meta: RefCell::new(0),
-            index: Rc::new(Index {
-                id: 1,
-                ..Default::default()
-            }),
-        };
-        assert_ne!(a, d, "Only id different");
-    }
-    #[test]
-    fn fmt_debug() {
-        let book = Book::<BlankMetadata>::default();
-        let actual = format!("{:?}", book);
-        let expected = format!("Book {{ index: {:?} }}", book.index);
-        assert_eq!(actual, expected);
-    }
-    #[test]
     fn metadata() {
-        let book = Book::<(u8, (), (), ())>::new(3);
-        assert_eq!(*book.get_metadata(), 3);
-        book.set_metadata(20);
-        assert_eq!(*book.get_metadata(), 20);
-        book.set_metadata(9);
-        assert_eq!(*book.get_metadata(), 9);
+        let mut book = Book::<_, (), (), ()>::new(3);
+        assert_eq!(*book.get_book_metadata(), 3);
+        book.set_book_metadata(20);
+        assert_eq!(*book.get_book_metadata(), 20);
+        book.set_book_metadata(9);
+        assert_eq!(*book.get_book_metadata(), 9);
+    }
+    #[test]
+    fn set_account_metadata() {
+        let mut book = Book::<_, _, (), ()>::new(());
+        let account = book.new_account(3);
+        assert_eq!(*book.get_account_metadata(account), 3);
+        book.set_account_metadata(account, 5);
+        assert_eq!(*book.get_account_metadata(account), 5);
+    }
+    #[test]
+    fn set_unit_metadata() {
+        let mut book = Book::<_, (), _, ()>::new(());
+        let unit = book.new_unit(3);
+        assert_eq!(*book.get_unit_metadata(unit), 3);
+        book.set_unit_metadata(unit, 5);
+        assert_eq!(*book.get_unit_metadata(unit), 5);
+    }
+    #[test]
+    fn set_move_metadata() {
+        let mut book = Book::<_, _, (), _>::new(());
+        let debit = book.new_account(());
+        let credit = book.new_account(());
+        let move_ = book.new_move(debit, credit, Sum::new(), 7);
+        assert_eq!(*book.get_move_metadata(move_), 7);
+        book.set_move_metadata(move_, 5);
+        assert_eq!(*book.get_move_metadata(move_), 5);
     }
 }

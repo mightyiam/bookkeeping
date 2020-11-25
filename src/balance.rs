@@ -1,18 +1,16 @@
-use crate::metadata::Metadata;
+use crate::book::UnitKey;
 use crate::sum::Sum;
-use crate::unit::Unit;
 use std::collections::BTreeMap;
 use std::fmt;
 use std::ops;
-use std::rc::Rc;
 /// Represents a [balance](https://en.wikipedia.org/wiki/Balance_(accounting)), yet not necessarily the current balance.
 #[derive(Clone, PartialEq)]
-pub struct Balance<T: Metadata>(pub(crate) BTreeMap<Rc<Unit<T>>, i128>);
-impl<T: Metadata> Balance<T> {
+pub struct Balance(pub(crate) BTreeMap<UnitKey, i128>);
+impl Balance {
     pub(crate) fn new() -> Self {
         Self(Default::default())
     }
-    fn operation(&mut self, rhs: &Sum<T>, amount_op: fn(i128, u64) -> i128) {
+    fn operation(&mut self, rhs: &Sum, amount_op: fn(i128, u64) -> i128) {
         rhs.0.iter().for_each(|(unit, amount)| {
             self.0
                 .entry(unit.clone())
@@ -23,38 +21,38 @@ impl<T: Metadata> Balance<T> {
         });
     }
 }
-impl<T: Metadata> fmt::Debug for Balance<T> {
+impl fmt::Debug for Balance {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Balance(")?;
         f.debug_map().entries(self.0.clone()).finish()?;
         f.write_str(")")
     }
 }
-impl<T: Metadata> ops::SubAssign<&Sum<T>> for Balance<T> {
-    fn sub_assign(&mut self, sum: &Sum<T>) {
+impl ops::SubAssign<&Sum> for Balance {
+    fn sub_assign(&mut self, sum: &Sum) {
         self.operation(sum, |balance_amount, sum_amount| {
             balance_amount - sum_amount as i128
         });
     }
 }
-impl<T: Metadata> ops::Sub<&Sum<T>> for Balance<T> {
+impl ops::Sub<&Sum> for Balance {
     type Output = Self;
-    fn sub(self, sum: &Sum<T>) -> Self::Output {
+    fn sub(self, sum: &Sum) -> Self::Output {
         let mut result = self.clone();
         result -= sum;
         result
     }
 }
-impl<T: Metadata> ops::AddAssign<&Sum<T>> for Balance<T> {
-    fn add_assign(&mut self, sum: &Sum<T>) {
+impl ops::AddAssign<&Sum> for Balance {
+    fn add_assign(&mut self, sum: &Sum) {
         self.operation(sum, |balance_amount, sum_amount| {
             balance_amount + sum_amount as i128
         });
     }
 }
-impl<T: Metadata> ops::Add<&Sum<T>> for Balance<T> {
+impl ops::Add<&Sum> for Balance {
     type Output = Self;
-    fn add(self, sum: &Sum<T>) -> Self::Output {
+    fn add(self, sum: &Sum) -> Self::Output {
         let mut result = self.clone();
         result += sum;
         result
@@ -66,10 +64,9 @@ mod test {
     use super::Balance;
     use super::Sum;
     use crate::book::Book;
-    use crate::metadata::BlankMetadata;
     #[test]
     fn new() {
-        let actual = Balance::<BlankMetadata>::new();
+        let actual = Balance::new();
         let expected = Balance(BTreeMap::new());
         assert_eq!(actual, expected);
     }
@@ -77,12 +74,12 @@ mod test {
     fn operation() {
         use maplit::btreemap;
         let mut actual = Balance::new();
-        let mut book = Book::<BlankMetadata>::new(());
+        let mut book = Book::<_, (), _, ()>::new(());
         let unit_a = book.new_unit(());
         let unit_b = book.new_unit(());
-        let sum = Sum::of(&unit_a, 2).unit(&unit_b, 3);
+        let sum = Sum::of(unit_a, 2).unit(unit_b, 3);
         actual.operation(&sum, |balance, amount| balance + amount as i128);
-        let sum = Sum::of(&unit_a, 2).unit(&unit_b, 3);
+        let sum = Sum::of(unit_a, 2).unit(unit_b, 3);
         actual.operation(&sum, |balance, amount| balance * amount as i128);
         let expected = Balance(btreemap! {
             unit_a.clone() => 4,
@@ -92,12 +89,12 @@ mod test {
     }
     #[test]
     fn fmt_debug() {
-        let mut book = Book::<BlankMetadata>::new(());
+        let mut book = Book::<_, (), _, ()>::new(());
         let unit_a = book.new_unit(());
         let amount_a = 76;
         let unit_b = book.new_unit(());
         let amount_b = 45;
-        let sum = Sum::of(&unit_a, amount_a).unit(&unit_b, amount_b);
+        let sum = Sum::of(unit_a, amount_a).unit(unit_b, amount_b);
         let balance = Balance::new() + &sum;
         let actual = format!("{:?}", balance);
         let expected = format!(
@@ -109,10 +106,10 @@ mod test {
     #[test]
     fn sub_assign_sum() {
         use maplit::btreemap;
-        let mut book = Book::<BlankMetadata>::new(());
+        let mut book = Book::<_, (), _, ()>::new(());
         let unit = book.new_unit(());
         let mut actual = Balance::new();
-        actual -= &Sum::of(&unit, 9);
+        actual -= &Sum::of(unit, 9);
         let expected = Balance(btreemap! {
             unit.clone() => -9,
         });
@@ -121,10 +118,10 @@ mod test {
     #[test]
     fn sub_sum() {
         use maplit::btreemap;
-        let mut book = Book::<BlankMetadata>::new(());
+        let mut book = Book::<_, (), _, ()>::new(());
         let unit = book.new_unit(());
         let balance = Balance::new();
-        let actual = balance - &Sum::of(&unit, 9);
+        let actual = balance - &Sum::of(unit, 9);
         let expected = Balance(btreemap! {
             unit.clone() => -9,
         });
@@ -133,10 +130,10 @@ mod test {
     #[test]
     fn add_assign_sum() {
         use maplit::btreemap;
-        let mut book = Book::<BlankMetadata>::new(());
+        let mut book = Book::<_, (), _, ()>::new(());
         let unit = book.new_unit(());
         let mut actual = Balance::new();
-        actual += &Sum::of(&unit, 9);
+        actual += &Sum::of(unit, 9);
         let expected = Balance(btreemap! {
             unit.clone() => 9,
         });
@@ -145,10 +142,10 @@ mod test {
     #[test]
     fn add_sum() {
         use maplit::btreemap;
-        let mut book = Book::<BlankMetadata>::new(());
+        let mut book = Book::<_, (), _, ()>::new(());
         let unit = book.new_unit(());
         let balance = Balance::new();
-        let actual = balance + &Sum::of(&unit, 9);
+        let actual = balance + &Sum::of(unit, 9);
         let expected = Balance(btreemap! {
             unit.clone() => 9,
         });

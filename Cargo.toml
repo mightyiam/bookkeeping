@@ -13,3 +13,4 @@ license = "ISC"
 [dependencies]
 duplicate = "0.2.9"
 maplit = "1.0.2"
+slotmap = "0.4.0"
