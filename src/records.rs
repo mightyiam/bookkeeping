@@ -1,34 +1,33 @@
-use crate::book::Ak;
 use crate::sum::Sum;
 /// Represents an [account](https://en.wikipedia.org/wiki/Account_(bookkeeping)).
-pub struct Account<Am> {
-    pub(crate) meta: Am,
+pub struct Account<MA> {
+    pub(crate) meta: MA,
 }
-impl<Am> Account<Am> {
-    pub(crate) fn new(meta: Am) -> Self {
+impl<MA> Account<MA> {
+    pub(crate) fn new(meta: MA) -> Self {
         Self { meta }
     }
 }
 /// Represents a unit of measurement. Will most commonly represent the minor unit of a currency.
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct Unit<Um> {
-    pub(crate) meta: Um,
+pub struct Unit<MA> {
+    pub(crate) meta: MA,
 }
-impl<Um> Unit<Um> {
+impl<MA> Unit<MA> {
     /// Creates a new unit.
-    pub(crate) fn new(meta: Um) -> Self {
+    pub(crate) fn new(meta: MA) -> Self {
         Self { meta }
     }
 }
 /// Represents a move of a [Sum] of [Unit](crate::Unit)s from one account to another.
-pub struct Move<Mm> {
-    pub(crate) meta: Mm,
-    pub(crate) debit_account: Ak,
-    pub(crate) credit_account: Ak,
-    pub(crate) sum: Sum,
+pub struct Move<KA, KU: Ord, MM> {
+    pub(crate) meta: MM,
+    pub(crate) debit_account: KA,
+    pub(crate) credit_account: KA,
+    pub(crate) sum: Sum<KU>,
 }
-impl<Mm> Move<Mm> {
-    pub(crate) fn new(debit_account: Ak, credit_account: Ak, sum: Sum, meta: Mm) -> Self {
+impl<KA: PartialEq, KU: Ord, MM> Move<KA, KU, MM> {
+    pub(crate) fn new(debit_account: KA, credit_account: KA, sum: Sum<KU>, meta: MM) -> Self {
         assert!(
             debit_account != credit_account,
             "Debit and credit accounts are the same."
@@ -43,22 +42,21 @@ impl<Mm> Move<Mm> {
 }
 #[cfg(test)]
 mod test {
-    use super::Ak;
     use super::Move;
     use super::Sum;
-    use slotmap::DenseSlotMap;
+    use slotmap::{DefaultKey, DenseSlotMap};
     #[test]
     #[should_panic(expected = "Debit and credit accounts are the same.")]
     fn move_new_panic_debit_and_credit_accounts_are_the_same() {
-        let account_key = DenseSlotMap::<Ak, ()>::with_key().insert(());
-        Move::new(account_key, account_key, Sum::new(), ());
+        let account_key = DenseSlotMap::new().insert(());
+        Move::<_, DefaultKey, _>::new(account_key, account_key, Sum::new(), ());
     }
     #[test]
     fn new() {
-        let mut slot_map = DenseSlotMap::<Ak, ()>::with_key();
+        let mut slot_map = DenseSlotMap::new();
         let debit_account = slot_map.insert(());
         let credit_account = slot_map.insert(());
-        let sum = Sum::new();
+        let sum = Sum::<DefaultKey>::new();
         let move_ = Move::new(debit_account, credit_account, sum.clone(), ());
         assert_eq!(move_.debit_account, debit_account);
         assert_eq!(move_.credit_account, credit_account);

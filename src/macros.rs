@@ -2,6 +2,7 @@
 #[cfg(test)]
 macro_rules! test_book {
     ($Original:ident, $Concrete:ident) => {
-        type $Concrete = $Original<u8, u8, u8, u8>;
+        slotmap::new_key_type! { struct KA; struct KU; struct KM; }
+        type $Concrete = $Original<KA, KU, KM, u8, u8, u8, u8>;
     };
 }

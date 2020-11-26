@@ -1,4 +1,3 @@
-use crate::book::Uk;
 use crate::sum::Sum;
 use std::collections::BTreeMap;
 use std::fmt;
@@ -6,12 +5,12 @@ use std::marker::PhantomData;
 use std::ops;
 /// Represents a [balance](https://en.wikipedia.org/wiki/Balance_(accounting)), yet not necessarily the current balance.
 #[derive(Clone, PartialEq)]
-pub struct Balance<'a>(pub(crate) BTreeMap<Uk, i128>, PhantomData<&'a ()>);
-impl Balance<'_> {
+pub struct Balance<'a, KU>(pub(crate) BTreeMap<KU, i128>, PhantomData<&'a ()>);
+impl<KU: Ord + Clone> Balance<'_, KU> {
     pub(crate) fn new() -> Self {
         Self(Default::default(), Default::default())
     }
-    fn operation(&mut self, rhs: &Sum, amount_op: fn(i128, u64) -> i128) {
+    fn operation(&mut self, rhs: &Sum<KU>, amount_op: fn(i128, u64) -> i128) {
         rhs.0.iter().for_each(|(unit, amount)| {
             self.0
                 .entry(unit.clone())
@@ -22,38 +21,38 @@ impl Balance<'_> {
         });
     }
 }
-impl fmt::Debug for Balance<'_> {
+impl<KU: Clone + fmt::Debug> fmt::Debug for Balance<'_, KU> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Balance(")?;
         f.debug_map().entries(self.0.clone()).finish()?;
         f.write_str(")")
     }
 }
-impl ops::SubAssign<&Sum> for Balance<'_> {
-    fn sub_assign(&mut self, sum: &Sum) {
+impl<KU: Ord + Clone> ops::SubAssign<&Sum<KU>> for Balance<'_, KU> {
+    fn sub_assign(&mut self, sum: &Sum<KU>) {
         self.operation(sum, |balance_amount, sum_amount| {
             balance_amount - sum_amount as i128
         });
     }
 }
-impl ops::Sub<&Sum> for Balance<'_> {
+impl<KU: Ord + Clone> ops::Sub<&Sum<KU>> for Balance<'_, KU> {
     type Output = Self;
-    fn sub(self, sum: &Sum) -> Self::Output {
+    fn sub(self, sum: &Sum<KU>) -> Self::Output {
         let mut result = self.clone();
         result -= sum;
         result
     }
 }
-impl ops::AddAssign<&Sum> for Balance<'_> {
-    fn add_assign(&mut self, sum: &Sum) {
+impl<KU: Ord + Clone> ops::AddAssign<&Sum<KU>> for Balance<'_, KU> {
+    fn add_assign(&mut self, sum: &Sum<KU>) {
         self.operation(sum, |balance_amount, sum_amount| {
             balance_amount + sum_amount as i128
         });
     }
 }
-impl ops::Add<&Sum> for Balance<'_> {
+impl<KU: Ord + Clone> ops::Add<&Sum<KU>> for Balance<'_, KU> {
     type Output = Self;
-    fn add(self, sum: &Sum) -> Self::Output {
+    fn add(self, sum: &Sum<KU>) -> Self::Output {
         let mut result = self.clone();
         result += sum;
         result
@@ -68,7 +67,7 @@ mod test {
     use crate::book::Book;
     #[test]
     fn new() {
-        let actual = Balance::new();
+        let actual = Balance::<()>::new();
         let expected = Balance(BTreeMap::new(), PhantomData);
         assert_eq!(actual, expected);
     }

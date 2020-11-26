@@ -29,4 +29,5 @@ mod sum;
 pub use balance::Balance;
 pub use book::Book;
 pub use records::{Account, Move, Unit};
+pub use slotmap::new_key_type;
 pub use sum::Sum;

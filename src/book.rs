@@ -2,46 +2,52 @@ use crate::balance::Balance;
 use crate::records::{Account, Move, Unit};
 use crate::sum::Sum;
 use duplicate::duplicate;
-use slotmap::{new_key_type, DenseSlotMap};
+use slotmap::{DenseSlotMap, Key};
 use std::cmp::Ordering;
+use std::fmt;
 use std::ops;
-new_key_type! {
-    pub struct Ak;
-    pub struct Uk;
-    pub struct Mk;
-}
 /// Represents a book.
 #[derive(Default)]
-pub struct Book<Bm, Am, Um, Mm> {
-    meta: Bm,
-    accounts: DenseSlotMap<Ak, Account<Am>>,
-    units: DenseSlotMap<Uk, Unit<Um>>,
-    moves: DenseSlotMap<Mk, Move<Mm>>,
+pub struct Book<KA, KU, KM, MB, MA, MU, MM>
+where
+    KA: Key + fmt::Debug + PartialEq,
+    KU: Key + fmt::Debug + Ord,
+    KM: Key + fmt::Debug,
+{
+    meta: MB,
+    accounts: DenseSlotMap<KA, Account<MA>>,
+    units: DenseSlotMap<KU, Unit<MU>>,
+    moves: DenseSlotMap<KM, Move<KA, KU, MM>>,
 }
-impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
+impl<KA, KU, KM, MB, MA, MU, MM> Book<KA, KU, KM, MB, MA, MU, MM>
+where
+    KA: Key + fmt::Debug + Copy + PartialEq,
+    KU: Key + fmt::Debug + Copy + Ord,
+    KM: Key + fmt::Debug + Copy,
+{
     /// Creates a new book
-    pub fn new(meta: Bm) -> Self {
+    pub fn new(meta: MB) -> Self {
         Self {
             meta,
-            accounts: DenseSlotMap::<Ak, Account<Am>>::with_key(),
-            units: DenseSlotMap::<Uk, Unit<Um>>::with_key(),
-            moves: DenseSlotMap::<Mk, Move<Mm>>::with_key(),
+            accounts: DenseSlotMap::<KA, Account<MA>>::with_key(),
+            units: DenseSlotMap::<KU, Unit<MU>>::with_key(),
+            moves: DenseSlotMap::<KM, Move<KA, KU, MM>>::with_key(),
         }
     }
     /// Gets the book's metadata.
-    pub fn get_book_metadata(&self) -> &Bm {
+    pub fn get_book_metadata(&self) -> &MB {
         &self.meta
     }
     /// Gets the book's metadata.
-    pub fn set_book_metadata(&mut self, meta: Bm) {
+    pub fn set_book_metadata(&mut self, meta: MB) {
         self.meta = meta;
     }
     /// Creates a new account.
-    pub fn new_account(&mut self, meta: Am) -> Ak {
+    pub fn new_account(&mut self, meta: MA) -> KA {
         self.accounts.insert(Account::new(meta))
     }
     /// Creates a new unit.
-    pub fn new_unit(&mut self, meta: Um) -> Uk {
+    pub fn new_unit(&mut self, meta: MU) -> KU {
         self.units.insert(Unit::new(meta))
     }
     /// Creates a new move.
@@ -51,7 +57,13 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// - `debit_account` or `credit_account` are in not in the book.
     /// - `debit_account` and `credit_account` are the same.
     /// - Some [Unit][crate::Unit] in the [Sum] is not in the book.
-    pub fn new_move(&mut self, debit_account: Ak, credit_account: Ak, sum: Sum, meta: Mm) -> Mk {
+    pub fn new_move(
+        &mut self,
+        debit_account: KA,
+        credit_account: KA,
+        sum: Sum<KU>,
+        meta: MM,
+    ) -> KM {
         [debit_account, credit_account].iter().for_each(|key| {
             self.assert_has_account(*key);
         });
@@ -68,10 +80,10 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// - The account is not debit nor credit in the move.
     pub fn account_balance_with_move<'a>(
         &'a self,
-        account: Ak,
-        move_: Mk,
-        cmp: impl Fn(&Mm, &Mm) -> Ordering,
-    ) -> Balance<'a> {
+        account: KA,
+        move_: KM,
+        cmp: impl Fn(&MM, &MM) -> Ordering,
+    ) -> Balance<'a, KU> {
         self.assert_has_account(account);
         self.assert_has_move(move_);
         let move_ = self.moves.get(move_).unwrap();
@@ -84,15 +96,17 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
                 Ordering::Less => false,
                 _ => true,
             })
-            .filter_map(|(_, move_)| -> Option<(fn(&mut Balance<'a>, _), &Sum)> {
-                if move_.debit_account == account {
-                    Some((ops::SubAssign::sub_assign, &move_.sum))
-                } else if move_.credit_account == account {
-                    Some((ops::AddAssign::add_assign, &move_.sum))
-                } else {
-                    None
-                }
-            })
+            .filter_map(
+                |(_, move_)| -> Option<(fn(&mut Balance<'a, KU>, _), &Sum<KU>)> {
+                    if move_.debit_account == account {
+                        Some((ops::SubAssign::sub_assign, &move_.sum))
+                    } else if move_.credit_account == account {
+                        Some((ops::AddAssign::add_assign, &move_.sum))
+                    } else {
+                        None
+                    }
+                },
+            )
             .fold(Balance::new(), |mut balance, (operation, sum)| {
                 operation(&mut balance, sum);
                 balance
@@ -101,11 +115,16 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
 }
 #[duplicate(
     set_metadata           get_metadata           assert_has           K    M    field      string     ;
-    [set_account_metadata] [get_account_metadata] [assert_has_account] [Ak] [Am] [accounts] ["account"];
-    [set_unit_metadata]    [get_unit_metadata]    [assert_has_unit]    [Uk] [Um] [units]    ["unit"]   ;
-    [set_move_metadata]    [get_move_metadata]    [assert_has_move]    [Mk] [Mm] [moves]    ["move"]   ;
+    [set_account_metadata] [get_account_metadata] [assert_has_account] [KA] [MA] [accounts] ["account"];
+    [set_unit_metadata]    [get_unit_metadata]    [assert_has_unit]    [KU] [MU] [units]    ["unit"]   ;
+    [set_move_metadata]    [get_move_metadata]    [assert_has_move]    [KM] [MM] [moves]    ["move"]   ;
 )]
-impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
+impl<KA, KU, KM, MB, MA, MU, MM> Book<KA, KU, KM, MB, MA, MU, MM>
+where
+    KA: Key + fmt::Debug + Copy + PartialEq,
+    KU: Key + fmt::Debug + Copy + Ord,
+    KM: Key + fmt::Debug + Copy,
+{
     /// Sets the metadata value.
     pub fn set_metadata(&mut self, key: K, meta: M) {
         self.field
