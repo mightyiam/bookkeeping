@@ -10,11 +10,6 @@ new_key_type! {
     pub struct Uk;
     pub struct Mk;
 }
-enum RecordKey {
-    Account(Ak),
-    Unit(Uk),
-    Move(Mk),
-}
 /// Represents a book.
 #[derive(Default)]
 pub struct Book<Bm, Am, Um, Mm> {
@@ -49,18 +44,6 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     pub fn new_unit(&mut self, meta: Um) -> Uk {
         self.units.insert(Unit::new(meta))
     }
-    fn assert_exists(&self, key: RecordKey) {
-        let (contains, entity, key) = match key {
-            RecordKey::Account(key) => (
-                self.accounts.contains_key(key),
-                "account",
-                format!("{:?}", key),
-            ),
-            RecordKey::Unit(key) => (self.units.contains_key(key), "unit", format!("{:?}", key)),
-            RecordKey::Move(key) => (self.moves.contains_key(key), "move", format!("{:?}", key)),
-        };
-        assert!(contains, format!("No {} found for key {:?}", entity, key));
-    }
     /// Creates a new move.
     ///
     /// ## Panics
@@ -70,10 +53,10 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// - Some [Unit][crate::Unit] in the [Sum] is not in the book.
     pub fn new_move(&mut self, debit_account: Ak, credit_account: Ak, sum: Sum, meta: Mm) -> Mk {
         [debit_account, credit_account].iter().for_each(|key| {
-            self.assert_exists(RecordKey::Account(*key));
+            self.assert_has_account(*key);
         });
         sum.0.keys().for_each(|key| {
-            self.assert_exists(RecordKey::Unit(*key));
+            self.assert_has_unit(*key);
         });
         let move_ = Move::new(debit_account, credit_account, sum, meta);
         self.moves.insert(move_)
@@ -89,8 +72,8 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
         move_: Mk,
         cmp: impl Fn(&Mm, &Mm) -> Ordering,
     ) -> Balance<'a> {
-        self.assert_exists(RecordKey::Account(account));
-        self.assert_exists(RecordKey::Move(move_));
+        self.assert_has_account(account);
+        self.assert_has_move(move_);
         let move_ = self.moves.get(move_).unwrap();
         if ![move_.debit_account, move_.credit_account].contains(&account) {
             panic!("Provided account is not debit nor credit in provided move.");
@@ -117,26 +100,32 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     }
 }
 #[duplicate(
-    setter                 getter                 Key          Tm   field;
-    [set_account_metadata] [get_account_metadata] [Ak] [Am] [accounts];
-    [set_unit_metadata]    [get_unit_metadata]    [Uk]    [Um] [units];
-    [set_move_metadata]    [get_move_metadata]    [Mk]    [Mm] [moves];
+    set_metadata           get_metadata           assert_has           K    M    field      string     ;
+    [set_account_metadata] [get_account_metadata] [assert_has_account] [Ak] [Am] [accounts] ["account"];
+    [set_unit_metadata]    [get_unit_metadata]    [assert_has_unit]    [Uk] [Um] [units]    ["unit"]   ;
+    [set_move_metadata]    [get_move_metadata]    [assert_has_move]    [Mk] [Mm] [moves]    ["move"]   ;
 )]
 impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// Sets the metadata value.
-    pub fn setter(&mut self, key: Key, meta: Tm) {
+    pub fn set_metadata(&mut self, key: K, meta: M) {
         self.field
             .get_mut(key)
             .expect("No value found for this key.")
             .meta = meta;
     }
     /// Gets the metadata value on this entity.
-    pub fn getter(&self, key: Key) -> &Tm {
+    pub fn get_metadata(&self, key: K) -> &M {
         &self
             .field
             .get(key)
             .expect("No value found for this key.")
             .meta
+    }
+    fn assert_has(&self, key: K) {
+        assert!(
+            self.field.contains_key(key),
+            format!("No {} found for key {:?}", string, key),
+        );
     }
 }
 #[cfg(test)]
@@ -201,6 +190,32 @@ mod test {
         let sum = Sum::new();
         book.new_move(debit, credit, sum, ());
         assert_eq!(book.moves.len(), 1);
+    }
+    #[test]
+    #[should_panic(expected = "No account found for key ")]
+    fn assert_has_account() {
+        let mut book = Book::<_, _, (), ()>::new(());
+        let account = book.new_account(());
+        book.accounts.remove(account);
+        book.assert_has_account(account);
+    }
+    #[test]
+    #[should_panic(expected = "No unit found for key ")]
+    fn assert_has_unit() {
+        let mut book = Book::<_, (), _, ()>::new(());
+        let unit = book.new_unit(());
+        book.units.remove(unit);
+        book.assert_has_unit(unit);
+    }
+    #[test]
+    #[should_panic(expected = "No move found for key ")]
+    fn assert_has_move() {
+        let mut book = Book::<_, _, (), _>::new(());
+        let credit_account = book.new_account(());
+        let debit_account = book.new_account(());
+        let move_ = book.new_move(debit_account, credit_account, Sum::new(), ());
+        book.moves.remove(move_);
+        book.assert_has_move(move_);
     }
     #[test]
     #[should_panic(expected = "No account found for key ")]
