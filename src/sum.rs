@@ -1,20 +1,20 @@
-use crate::book::UnitKey;
+use crate::book::Uk;
 use std::collections::BTreeMap;
 use std::fmt;
 /// Represents amounts of any number of units.
 #[derive(Clone, PartialEq)]
-pub struct Sum(pub(crate) BTreeMap<UnitKey, u64>);
+pub struct Sum(pub(crate) BTreeMap<Uk, u64>);
 impl Sum {
     /// Creates an empty sum.
     pub fn new() -> Self {
         Self(BTreeMap::new())
     }
     /// Creates a sum with an amount of a single unit.
-    pub fn of(unit: UnitKey, amount: u64) -> Self {
+    pub fn of(unit: Uk, amount: u64) -> Self {
         Self::new().unit(unit, amount)
     }
     /// Sets the amount of a unit in a sum.
-    pub fn unit(mut self, unit: UnitKey, amount: u64) -> Self {
+    pub fn unit(mut self, unit: Uk, amount: u64) -> Self {
         // TODO check that new unit is in same book as existing ones.
         self.0.insert(unit.clone(), amount);
         self
@@ -32,7 +32,7 @@ impl fmt::Debug for Sum {
 mod test {
     use super::BTreeMap;
     use super::Sum;
-    use super::UnitKey;
+    use super::Uk;
     use slotmap::DenseSlotMap;
     #[test]
     fn new() {
@@ -42,7 +42,7 @@ mod test {
     }
     #[test]
     fn of() {
-        let mut slot_map = DenseSlotMap::<UnitKey, ()>::with_key();
+        let mut slot_map = DenseSlotMap::<Uk, ()>::with_key();
         let unit = slot_map.insert(());
         let actual = Sum::of(unit, 24);
         let mut expected = BTreeMap::new();
@@ -51,7 +51,7 @@ mod test {
     }
     #[test]
     fn unit() {
-        let mut slot_map = DenseSlotMap::<UnitKey, ()>::with_key();
+        let mut slot_map = DenseSlotMap::<Uk, ()>::with_key();
         let unit = slot_map.insert(());
         let sum = Sum::new().unit(unit, 124);
         let mut expected = BTreeMap::new();
@@ -60,7 +60,7 @@ mod test {
     }
     #[test]
     fn fmt_debug() {
-        let mut slot_map = DenseSlotMap::<UnitKey, ()>::with_key();
+        let mut slot_map = DenseSlotMap::<Uk, ()>::with_key();
         let unit_a = slot_map.insert(());
         let amount_a = 76;
         let unit_b = slot_map.insert(());

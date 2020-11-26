@@ -1,4 +1,4 @@
-use crate::book::UnitKey;
+use crate::book::Uk;
 use crate::sum::Sum;
 use std::collections::BTreeMap;
 use std::fmt;
@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 use std::ops;
 /// Represents a [balance](https://en.wikipedia.org/wiki/Balance_(accounting)), yet not necessarily the current balance.
 #[derive(Clone, PartialEq)]
-pub struct Balance<'a>(pub(crate) BTreeMap<UnitKey, i128>, PhantomData<&'a ()>);
+pub struct Balance<'a>(pub(crate) BTreeMap<Uk, i128>, PhantomData<&'a ()>);
 impl Balance<'_> {
     pub(crate) fn new() -> Self {
         Self(Default::default(), Default::default())

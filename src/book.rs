@@ -6,31 +6,31 @@ use slotmap::{new_key_type, DenseSlotMap};
 use std::cmp::Ordering;
 use std::ops;
 new_key_type! {
-    pub struct AccountKey;
-    pub struct UnitKey;
-    pub struct MoveKey;
+    pub struct Ak;
+    pub struct Uk;
+    pub struct Mk;
 }
 enum RecordKey {
-    Account(AccountKey),
-    Unit(UnitKey),
-    Move(MoveKey),
+    Account(Ak),
+    Unit(Uk),
+    Move(Mk),
 }
 /// Represents a book.
 #[derive(Default)]
 pub struct Book<Bm, Am, Um, Mm> {
     meta: Bm,
-    accounts: DenseSlotMap<AccountKey, Account<Am>>,
-    units: DenseSlotMap<UnitKey, Unit<Um>>,
-    moves: DenseSlotMap<MoveKey, Move<Mm>>,
+    accounts: DenseSlotMap<Ak, Account<Am>>,
+    units: DenseSlotMap<Uk, Unit<Um>>,
+    moves: DenseSlotMap<Mk, Move<Mm>>,
 }
 impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// Creates a new book
     pub fn new(meta: Bm) -> Self {
         Self {
             meta,
-            accounts: DenseSlotMap::<AccountKey, Account<Am>>::with_key(),
-            units: DenseSlotMap::<UnitKey, Unit<Um>>::with_key(),
-            moves: DenseSlotMap::<MoveKey, Move<Mm>>::with_key(),
+            accounts: DenseSlotMap::<Ak, Account<Am>>::with_key(),
+            units: DenseSlotMap::<Uk, Unit<Um>>::with_key(),
+            moves: DenseSlotMap::<Mk, Move<Mm>>::with_key(),
         }
     }
     /// Gets the book's metadata.
@@ -42,11 +42,11 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
         self.meta = meta;
     }
     /// Creates a new account.
-    pub fn new_account(&mut self, meta: Am) -> AccountKey {
+    pub fn new_account(&mut self, meta: Am) -> Ak {
         self.accounts.insert(Account::new(meta))
     }
     /// Creates a new unit.
-    pub fn new_unit(&mut self, meta: Um) -> UnitKey {
+    pub fn new_unit(&mut self, meta: Um) -> Uk {
         self.units.insert(Unit::new(meta))
     }
     fn assert_exists(&self, key: RecordKey) {
@@ -68,13 +68,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// - `debit_account` or `credit_account` are in not in the book.
     /// - `debit_account` and `credit_account` are the same.
     /// - Some [Unit][crate::Unit] in the [Sum] is not in the book.
-    pub fn new_move(
-        &mut self,
-        debit_account: AccountKey,
-        credit_account: AccountKey,
-        sum: Sum,
-        meta: Mm,
-    ) -> MoveKey {
+    pub fn new_move(&mut self, debit_account: Ak, credit_account: Ak, sum: Sum, meta: Mm) -> Mk {
         [debit_account, credit_account].iter().for_each(|key| {
             self.assert_exists(RecordKey::Account(*key));
         });
@@ -91,8 +85,8 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// - The account is not debit nor credit in the move.
     pub fn account_balance_with_move<'a>(
         &'a self,
-        account: AccountKey,
-        move_: MoveKey,
+        account: Ak,
+        move_: Mk,
         cmp: impl Fn(&Mm, &Mm) -> Ordering,
     ) -> Balance<'a> {
         self.assert_exists(RecordKey::Account(account));
@@ -124,9 +118,9 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
 }
 #[duplicate(
     setter                 getter                 Key          Tm   field;
-    [set_account_metadata] [get_account_metadata] [AccountKey] [Am] [accounts];
-    [set_unit_metadata]    [get_unit_metadata]    [UnitKey]    [Um] [units];
-    [set_move_metadata]    [get_move_metadata]    [MoveKey]    [Mm] [moves];
+    [set_account_metadata] [get_account_metadata] [Ak] [Am] [accounts];
+    [set_unit_metadata]    [get_unit_metadata]    [Uk]    [Um] [units];
+    [set_move_metadata]    [get_move_metadata]    [Mk]    [Mm] [moves];
 )]
 impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// Sets the metadata value.
