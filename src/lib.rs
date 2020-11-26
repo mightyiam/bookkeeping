@@ -20,6 +20,8 @@
 //! - Grouping of moves to represent transactions.
 //! - Editing/removing items other than metadata.
 //! - Caching of balance calculations.
+#[macro_use]
+mod macros;
 mod balance;
 mod book;
 mod records;
