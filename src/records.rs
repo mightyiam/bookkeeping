@@ -1,38 +1,38 @@
 /// Represents an [account](https://en.wikipedia.org/wiki/Account_(bookkeeping)).
-pub struct Account<T> {
-    pub(crate) meta: T,
+pub struct Account<Am> {
+    pub(crate) meta: Am,
 }
-impl<T> Account<T> {
-    pub(crate) fn new(meta: T) -> Self {
+impl<Am> Account<Am> {
+    pub(crate) fn new(meta: Am) -> Self {
         Self { meta }
     }
 }
 /// Represents a unit of measurement. Will most commonly represent the minor unit of a currency.
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct Unit<T> {
-    pub(crate) meta: T,
+pub struct Unit<Um> {
+    pub(crate) meta: Um,
 }
-impl<T> Unit<T> {
+impl<Um> Unit<Um> {
     /// Creates a new unit.
-    pub(crate) fn new(meta: T) -> Self {
+    pub(crate) fn new(meta: Um) -> Self {
         Self { meta }
     }
 }
 use crate::book::AccountKey;
 use crate::sum::Sum;
 /// Represents a move of a [Sum] of [Unit](crate::Unit)s from one account to another.
-pub struct Move<T> {
-    pub(crate) meta: T,
+pub struct Move<Mm> {
+    pub(crate) meta: Mm,
     pub(crate) debit_account: AccountKey,
     pub(crate) credit_account: AccountKey,
     pub(crate) sum: Sum,
 }
-impl<T> Move<T> {
+impl<Mm> Move<Mm> {
     pub(crate) fn new(
         debit_account: AccountKey,
         credit_account: AccountKey,
         sum: Sum,
-        meta: T,
+        meta: Mm,
     ) -> Self {
         assert!(
             debit_account != credit_account,

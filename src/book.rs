@@ -17,36 +17,36 @@ enum RecordKey {
 }
 /// Represents a book.
 #[derive(Default)]
-pub struct Book<B, A, U, M> {
-    meta: B,
-    accounts: DenseSlotMap<AccountKey, Account<A>>,
-    units: DenseSlotMap<UnitKey, Unit<U>>,
-    moves: DenseSlotMap<MoveKey, Move<M>>,
+pub struct Book<Bm, Am, Um, Mm> {
+    meta: Bm,
+    accounts: DenseSlotMap<AccountKey, Account<Am>>,
+    units: DenseSlotMap<UnitKey, Unit<Um>>,
+    moves: DenseSlotMap<MoveKey, Move<Mm>>,
 }
-impl<B, A, U, M> Book<B, A, U, M> {
+impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// Creates a new book
-    pub fn new(meta: B) -> Self {
+    pub fn new(meta: Bm) -> Self {
         Self {
             meta,
-            accounts: DenseSlotMap::<AccountKey, Account<A>>::with_key(),
-            units: DenseSlotMap::<UnitKey, Unit<U>>::with_key(),
-            moves: DenseSlotMap::<MoveKey, Move<M>>::with_key(),
+            accounts: DenseSlotMap::<AccountKey, Account<Am>>::with_key(),
+            units: DenseSlotMap::<UnitKey, Unit<Um>>::with_key(),
+            moves: DenseSlotMap::<MoveKey, Move<Mm>>::with_key(),
         }
     }
     /// Gets the book's metadata.
-    pub fn get_book_metadata(&self) -> &B {
+    pub fn get_book_metadata(&self) -> &Bm {
         &self.meta
     }
     /// Gets the book's metadata.
-    pub fn set_book_metadata(&mut self, meta: B) {
+    pub fn set_book_metadata(&mut self, meta: Bm) {
         self.meta = meta;
     }
     /// Creates a new account.
-    pub fn new_account(&mut self, meta: A) -> AccountKey {
+    pub fn new_account(&mut self, meta: Am) -> AccountKey {
         self.accounts.insert(Account::new(meta))
     }
     /// Creates a new unit.
-    pub fn new_unit(&mut self, meta: U) -> UnitKey {
+    pub fn new_unit(&mut self, meta: Um) -> UnitKey {
         self.units.insert(Unit::new(meta))
     }
     fn assert_exists(&self, key: RecordKey) {
@@ -73,7 +73,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
         debit_account: AccountKey,
         credit_account: AccountKey,
         sum: Sum,
-        meta: M,
+        meta: Mm,
     ) -> MoveKey {
         [debit_account, credit_account].iter().for_each(|key| {
             self.assert_exists(RecordKey::Account(*key));
@@ -93,7 +93,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
         &'a self,
         account: AccountKey,
         move_: MoveKey,
-        cmp: impl Fn(&M, &M) -> Ordering,
+        cmp: impl Fn(&Mm, &Mm) -> Ordering,
     ) -> Balance<'a> {
         self.assert_exists(RecordKey::Account(account));
         self.assert_exists(RecordKey::Move(move_));
@@ -123,21 +123,21 @@ impl<B, A, U, M> Book<B, A, U, M> {
     }
 }
 #[duplicate(
-    setter                 getter                 Key          T   field;
-    [set_account_metadata] [get_account_metadata] [AccountKey] [A] [accounts];
-    [set_unit_metadata]    [get_unit_metadata]    [UnitKey]    [U] [units];
-    [set_move_metadata]    [get_move_metadata]    [MoveKey]    [M] [moves];
+    setter                 getter                 Key          Tm   field;
+    [set_account_metadata] [get_account_metadata] [AccountKey] [Am] [accounts];
+    [set_unit_metadata]    [get_unit_metadata]    [UnitKey]    [Um] [units];
+    [set_move_metadata]    [get_move_metadata]    [MoveKey]    [Mm] [moves];
 )]
-impl<B, A, U, M> Book<B, A, U, M> {
+impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// Sets the metadata value.
-    pub fn setter(&mut self, key: Key, meta: T) {
+    pub fn setter(&mut self, key: Key, meta: Tm) {
         self.field
             .get_mut(key)
             .expect("No value found for this key.")
             .meta = meta;
     }
     /// Gets the metadata value on this entity.
-    pub fn getter(&self, key: Key) -> &T {
+    pub fn getter(&self, key: Key) -> &Tm {
         &self
             .field
             .get(key)
