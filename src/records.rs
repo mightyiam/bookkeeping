@@ -1,3 +1,5 @@
+use crate::book::Ak;
+use crate::sum::Sum;
 /// Represents an [account](https://en.wikipedia.org/wiki/Account_(bookkeeping)).
 pub struct Account<Am> {
     pub(crate) meta: Am,
@@ -18,8 +20,6 @@ impl<Um> Unit<Um> {
         Self { meta }
     }
 }
-use crate::book::Ak;
-use crate::sum::Sum;
 /// Represents a move of a [Sum] of [Unit](crate::Unit)s from one account to another.
 pub struct Move<Mm> {
     pub(crate) meta: Mm,
