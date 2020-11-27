@@ -349,13 +349,15 @@ mod test {
         );
     }
     #[test]
-    fn metadata() {
-        let mut book = test_book!(3);
-        assert_eq!(*book.get_book_metadata(), 3);
+    fn set_book_metadata() {
+        let mut book = test_book!(0);
         book.set_book_metadata(20);
-        assert_eq!(*book.get_book_metadata(), 20);
-        book.set_book_metadata(9);
-        assert_eq!(*book.get_book_metadata(), 9);
+        assert_eq!(book.meta, 20);
+    }
+    #[test]
+    fn get_book_metadata() {
+        let book = test_book!(3);
+        assert_eq!(*book.get_book_metadata(), 3);
     }
     #[test]
     fn set_account_metadata() {
