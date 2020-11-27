@@ -54,7 +54,7 @@ mod test {
         Move::new(account_key, account_key, Sum::new(), ());
     }
     #[test]
-    fn new() {
+    fn move_new() {
         let mut slot_map = DenseSlotMap::<Ak, ()>::with_key();
         let debit_account = slot_map.insert(());
         let credit_account = slot_map.insert(());
