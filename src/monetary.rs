@@ -8,16 +8,16 @@ use std::ops::Neg;
 pub type MinorAmount = i64;
 pub type MajorAmount = MinorAmount;
 
-#[derive(Debug, Hash, Eq, PartialEq, Clone, Copy)]
-pub struct Currency<'a> {
-    code: &'a str,
+#[derive(Debug, Hash, Eq, PartialEq, Clone)]
+pub struct Currency {
+    code: String,
     minor_to_major: u8,
 }
 
-impl<'a> Currency<'a> {
-    pub fn new(code: &'a str, minor_to_major: u8) -> Self {
+impl Currency {
+    pub fn new(code: &str, minor_to_major: u8) -> Self {
         Self {
-            code,
+            code: code.to_string(),
             minor_to_major,
         }
     }
@@ -27,7 +27,7 @@ impl<'a> Currency<'a> {
     }
 
     pub fn of_minor(&self, amount: MinorAmount) -> Money {
-        Money::none() + (*self, amount)
+        Money::none() + (self.clone(), amount)
     }
 
     pub fn of(&self, major_amount: MajorAmount, minor_amount: MinorAmount) -> Money {
@@ -37,14 +37,14 @@ impl<'a> Currency<'a> {
     }
 }
 
-pub const THB: fn() -> Currency<'static> = || Currency::new("THB", 100);
+pub const THB: fn() -> Currency = || Currency::new("THB", 100);
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Money<'a> {
-    pub(crate) amounts: HashMap<Currency<'a>, MinorAmount>,
+pub struct Money {
+    pub(crate) amounts: HashMap<Currency, MinorAmount>,
 }
 
-impl<'a> Money<'_> {
+impl Money {
     pub fn none() -> Self {
         Money {
             amounts: HashMap::new(),
@@ -55,16 +55,16 @@ impl<'a> Money<'_> {
     }
 }
 
-impl<'a> FromIterator<Money<'a>> for Money<'a> {
+impl FromIterator<Money> for Money {
     fn from_iter<I>(iter: I) -> Self
     where
-        I: IntoIterator<Item = Money<'a>>,
+        I: IntoIterator<Item = Money>,
     {
         iter.into_iter().sum()
     }
 }
 
-impl<'a> Add for Money<'a> {
+impl Add for Money {
     type Output = Self;
     fn add(mut self, rhs: Self) -> Self {
         self += rhs;
@@ -72,22 +72,22 @@ impl<'a> Add for Money<'a> {
     }
 }
 
-impl<'a> AddAssign for Money<'a> {
-    fn add_assign(&mut self, rhs: Money<'a>) {
+impl AddAssign for Money {
+    fn add_assign(&mut self, rhs: Money) {
         rhs.amounts.into_iter().for_each(|entry| {
             *self += entry;
         });
     }
 }
 
-impl<'a> std::ops::SubAssign for Money<'a> {
-    fn sub_assign(&mut self, rhs: Money<'a>) {
+impl std::ops::SubAssign for Money {
+    fn sub_assign(&mut self, rhs: Money) {
         *self += -rhs
     }
 }
 
-impl<'a> AddAssign<(Currency<'a>, MinorAmount)> for Money<'a> {
-    fn add_assign(&mut self, (currency, amount): (Currency<'a>, MinorAmount)) {
+impl AddAssign<(Currency, MinorAmount)> for Money {
+    fn add_assign(&mut self, (currency, amount): (Currency, MinorAmount)) {
         self.amounts
             .entry(currency)
             .and_modify(|this| *this += amount)
@@ -95,24 +95,24 @@ impl<'a> AddAssign<(Currency<'a>, MinorAmount)> for Money<'a> {
     }
 }
 
-impl<'a> Add<(Currency<'a>, MinorAmount)> for Money<'a> {
+impl Add<(Currency, MinorAmount)> for Money {
     type Output = Self;
-    fn add(mut self, entry: (Currency<'a>, MinorAmount)) -> Self {
+    fn add(mut self, entry: (Currency, MinorAmount)) -> Self {
         self += entry;
         self
     }
 }
 
-impl<'a> Sum<Money<'a>> for Money<'a> {
+impl Sum<Money> for Money {
     fn sum<I>(iter: I) -> Self
     where
-        I: Iterator<Item = Money<'a>>,
+        I: Iterator<Item = Money>,
     {
         iter.fold(Money::none(), Add::add)
     }
 }
 
-impl<'a> Neg for Money<'a> {
+impl Neg for Money {
     type Output = Self;
     fn neg(mut self) -> Self {
         self.amounts.iter_mut().for_each(|(_, amount)| {

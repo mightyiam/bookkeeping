@@ -1,36 +1,38 @@
-use std::iter::FromIterator;
+use std::ops::Deref;
 
 use chrono::{DateTime, Utc};
+use derive_more::Display;
 
 use super::monetary::*;
 
 #[derive(PartialEq, Eq, Debug)]
-pub struct Account<'a> {
-    name: &'a str,
+pub struct Account {
+    id: AccountId,
 }
 
-impl<'a> Account<'a> {
-    pub fn new(name: &'a str) -> Self {
-        Self { name }
+impl Account {
+    pub fn new(id: AccountId) -> Self {
+        Self { id }
     }
 
-    pub fn name(&self) -> &str {
-        self.name
+    pub fn id(&self) -> AccountId {
+        self.id.clone()
     }
 
-    pub fn balance<I>(&self, datetime: DateTime<Utc>, transactions: I) -> Money<'a>
-    where
-        I: IntoIterator<Item = &'a Transaction<'a>>,
-    {
+    pub fn transfer(&self, datetime: DateTime<Utc>, to: &Account, money: Money) -> Transaction {
+        Transaction::new(datetime, self.id(), to.id(), money)
+    }
+
+    pub fn balance(&self, datetime: DateTime<Utc>, transactions: &[Transaction]) -> Money {
         transactions
-            .into_iter()
+            .iter()
             .filter(|tx| tx.datetime <= datetime)
             .map(|tx| {
                 let mut money = Money::none();
-                if tx.to == self {
+                if tx.to == self.id() {
                     money += tx.money.clone();
                 }
-                if tx.from == self {
+                if tx.from == self.id() {
                     money -= tx.money.clone();
                 }
                 money
@@ -38,41 +40,55 @@ impl<'a> Account<'a> {
             .collect()
     }
 
-    pub fn running_balance<I>(
-        &'a self,
-        transactions: I,
-    ) -> impl Iterator<Item = (&'a Transaction<'a>, Money<'a>)>
-    where
-        I: Iterator<Item = &'a Transaction<'a>> + Clone,
-    {
-        transactions.clone().filter_map(move |tx| {
-            if tx.to == self || tx.from == self {
-                Some((tx, self.balance(tx.datetime, transactions.clone())))
-            } else {
-                None
-            }
-        })
+    pub fn running_balance<'a>(
+        &self,
+        transactions: &'a [Transaction],
+    ) -> Vec<(&'a Transaction, Money)> {
+        transactions
+            .iter()
+            .filter_map(|tx| {
+                if tx.to == self.id() || tx.from == self.id() {
+                    Some((tx, self.balance(tx.datetime, transactions)))
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 }
 
-#[derive(Debug)]
-pub struct Transaction<'a> {
+#[derive(Clone, Debug, Display, PartialEq, Eq)]
+pub struct AccountId(String);
+
+impl Deref for AccountId {
+    type Target = String;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl AccountId {
+    fn new(id: &str) -> Self {
+        AccountId(id.to_string())
+    }
+}
+
+impl From<&str> for AccountId {
+    fn from(name: &str) -> Self {
+        AccountId::new(name)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Transaction {
     pub(crate) datetime: DateTime<Utc>,
-    pub(crate) from: &'a Account<'a>,
-    pub(crate) to: &'a Account<'a>,
-    pub(crate) money: Money<'a>,
+    pub(crate) from: AccountId,
+    pub(crate) to: AccountId,
+    pub(crate) money: Money,
 }
 
-impl<'a> Transaction<'a> {
-    pub fn new(from: &'a Account, to: &'a Account, money: Money<'a>) -> Self {
-        Transaction::new_at(Utc::now(), from, to, money)
-    }
-    pub fn new_at(
-        datetime: DateTime<Utc>,
-        from: &'a Account,
-        to: &'a Account,
-        money: Money<'a>,
-    ) -> Self {
+impl Transaction {
+    pub fn new(datetime: DateTime<Utc>, from: AccountId, to: AccountId, money: Money) -> Self {
         Transaction {
             datetime,
             from,
