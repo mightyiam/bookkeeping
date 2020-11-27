@@ -40,6 +40,10 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     pub fn new_account(&mut self, meta: Am) -> Ak {
         self.accounts.insert(Account::new(meta))
     }
+    /// Gets an iterator of existing accounts.
+    pub fn accounts(&self) -> impl Iterator<Item = (Ak, &Am)> {
+        self.accounts.iter().map(|(k, a)| (k, &a.meta))
+    }
     /// Creates a new unit.
     pub fn new_unit(&mut self, meta: Um) -> Uk {
         self.units.insert(Unit::new(meta))
@@ -148,6 +152,18 @@ mod test {
         let mut book = TestBook::new(0);
         book.new_account(0);
         assert_eq!(book.accounts.len(), 1);
+    }
+    #[test]
+    fn accounts() {
+        test_book!(Book, TestBook);
+        let mut book = TestBook::new(0);
+        assert!(book.accounts().next().is_none());
+        let account = book.new_account(0);
+        let expected = (account, &0);
+        let mut accounts = book.accounts();
+        let actual = accounts.next().unwrap();
+        assert_eq!(actual, expected);
+        assert!(accounts.next().is_none());
     }
     #[test]
     fn new_unit() {
