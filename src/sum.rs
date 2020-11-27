@@ -15,11 +15,9 @@ impl Sum {
     }
     /// Sets the amount of a unit in a sum.
     pub fn unit(mut self, unit: Uk, amount: u64) -> Self {
-        // TODO check that new unit is in same book as existing ones.
         self.0.insert(unit.clone(), amount);
         self
     }
-    // TODO method `units`
 }
 impl fmt::Debug for Sum {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

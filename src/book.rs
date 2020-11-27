@@ -384,4 +384,3 @@ mod test {
         assert_eq!(*book.get_move_metadata(move_), 5);
     }
 }
-// TODO document more panics
