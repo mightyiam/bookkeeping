@@ -100,10 +100,10 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     }
 }
 #[duplicate(
-    set_metadata            assert_has           K    M    field      string     ;
-    [set_account_metadata]  [assert_has_account] [Ak] [Am] [accounts] ["account"];
-    [set_unit_metadata]     [assert_has_unit]    [Uk] [Um] [units]    ["unit"]   ;
-    [set_move_metadata]     [assert_has_move]    [Mk] [Mm] [moves]    ["move"]   ;
+    R             getter        set_metadata            assert_has           K    M    field      string     ;
+    [Account<Am>] [get_account] [set_account_metadata]  [assert_has_account] [Ak] [Am] [accounts] ["account"];
+    [Unit<Um>]    [get_unit]    [set_unit_metadata]     [assert_has_unit]    [Uk] [Um] [units]    ["unit"]   ;
+    [Move<Mm>]    [get_move]    [set_move_metadata]     [assert_has_move]    [Mk] [Mm] [moves]    ["move"]   ;
 )]
 impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// Sets the metadata value.
@@ -112,6 +112,15 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
             .get_mut(key)
             .expect("No value found for this key.")
             .meta = meta;
+    }
+    /// Gets a record using a key.
+    ///
+    /// ## Panics
+    ///
+    /// If a record of this key cannot be found.
+    pub fn getter(&self, key: K) -> &R {
+        self.assert_has(key);
+        self.field.get(key).unwrap()
     }
     fn assert_has(&self, key: K) {
         assert!(
@@ -176,6 +185,35 @@ mod test {
         let actual = moves.next().unwrap();
         assert_eq!(actual, expected);
         assert!(moves.next().is_none());
+    }
+    #[test]
+    fn get_account() {
+        let mut book = test_book!(0);
+        book.new_account(0);
+        let account = book.new_account(1);
+        book.new_account(0);
+        let account = book.get_account(account);
+        assert_eq!(*account.metadata(), 1);
+    }
+    #[test]
+    fn get_unit() {
+        let mut book = test_book!(0);
+        book.new_unit(0);
+        let unit = book.new_unit(1);
+        book.new_unit(0);
+        let unit = book.get_unit(unit);
+        assert_eq!(*unit.metadata(), 1);
+    }
+    #[test]
+    fn get_move() {
+        let mut book = test_book!(0);
+        let debit_account = book.new_account(0);
+        let credit_account = book.new_account(0);
+        book.new_move(debit_account, credit_account, Sum::new(), 0);
+        let move_ = book.new_move(debit_account, credit_account, Sum::new(), 1);
+        book.new_move(debit_account, credit_account, Sum::new(), 0);
+        let move_ = book.get_move(move_);
+        assert_eq!(*move_.metadata(), 1);
     }
     #[test]
     fn new_unit() {
