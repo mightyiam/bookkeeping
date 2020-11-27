@@ -100,10 +100,10 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     }
 }
 #[duplicate(
-    set_metadata           get_metadata           assert_has           K    M    field      string     ;
-    [set_account_metadata] [get_account_metadata] [assert_has_account] [Ak] [Am] [accounts] ["account"];
-    [set_unit_metadata]    [get_unit_metadata]    [assert_has_unit]    [Uk] [Um] [units]    ["unit"]   ;
-    [set_move_metadata]    [get_move_metadata]    [assert_has_move]    [Mk] [Mm] [moves]    ["move"]   ;
+    set_metadata            assert_has           K    M    field      string     ;
+    [set_account_metadata]  [assert_has_account] [Ak] [Am] [accounts] ["account"];
+    [set_unit_metadata]     [assert_has_unit]    [Uk] [Um] [units]    ["unit"]   ;
+    [set_move_metadata]     [assert_has_move]    [Mk] [Mm] [moves]    ["move"]   ;
 )]
 impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// Sets the metadata value.
@@ -112,14 +112,6 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
             .get_mut(key)
             .expect("No value found for this key.")
             .meta = meta;
-    }
-    /// Gets the metadata value on this entity.
-    pub fn get_metadata(&self, key: K) -> &M {
-        &self
-            .field
-            .get(key)
-            .expect("No value found for this key.")
-            .meta
     }
     fn assert_has(&self, key: K) {
         assert!(
@@ -363,17 +355,16 @@ mod test {
     fn set_account_metadata() {
         let mut book = test_book!(0);
         let account = book.new_account(3);
-        assert_eq!(*book.get_account_metadata(account), 3);
         book.set_account_metadata(account, 5);
-        assert_eq!(*book.get_account_metadata(account), 5);
+        assert_eq!(*book.accounts.get(account).unwrap().metadata(), 5);
     }
     #[test]
     fn set_unit_metadata() {
         let mut book = test_book!(0);
         let unit = book.new_unit(3);
-        assert_eq!(*book.get_unit_metadata(unit), 3);
+        assert_eq!(*book.units.get(unit).unwrap().metadata(), 3);
         book.set_unit_metadata(unit, 5);
-        assert_eq!(*book.get_unit_metadata(unit), 5);
+        assert_eq!(*book.units.get(unit).unwrap().metadata(), 5);
     }
     #[test]
     fn set_move_metadata() {
@@ -381,8 +372,8 @@ mod test {
         let debit = book.new_account(0);
         let credit = book.new_account(0);
         let move_ = book.new_move(debit, credit, Sum::new(), 7);
-        assert_eq!(*book.get_move_metadata(move_), 7);
+        assert_eq!(*book.moves.get(move_).unwrap().metadata(), 7);
         book.set_move_metadata(move_, 5);
-        assert_eq!(*book.get_move_metadata(move_), 5);
+        assert_eq!(*book.moves.get(move_).unwrap().metadata(), 5);
     }
 }

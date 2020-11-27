@@ -1,5 +1,6 @@
 use crate::book::Ak;
 use crate::sum::Sum;
+use duplicate::duplicate;
 /// Represents an [account](https://en.wikipedia.org/wiki/Account_(bookkeeping)).
 pub struct Account<Am> {
     pub(crate) meta: Am,
@@ -41,12 +42,36 @@ impl<Mm> Move<Mm> {
         }
     }
 }
+#[duplicate(
+    Record    M   ;
+    [Account] [Ma];
+    [Unit]    [Mu];
+    [Move]    [Mm];
+)]
+impl<M> Record<M> {
+    /// Gets the metadata of the record.
+    pub fn metadata(&self) -> &M {
+        &self.meta
+    }
+}
 #[cfg(test)]
 mod test {
+    use super::Account;
     use super::Ak;
     use super::Move;
     use super::Sum;
+    use super::Unit;
     use slotmap::DenseSlotMap;
+    #[test]
+    fn account_metadata() {
+        let account = Account::new(5);
+        assert_eq!(*account.metadata(), 5);
+    }
+    #[test]
+    fn unit_metadata() {
+        let unit = Unit::new(5);
+        assert_eq!(*unit.metadata(), 5);
+    }
     #[test]
     #[should_panic(expected = "Debit and credit accounts are the same.")]
     fn move_new_panic_debit_and_credit_accounts_are_the_same() {
@@ -63,5 +88,14 @@ mod test {
         assert_eq!(move_.debit_account, debit_account);
         assert_eq!(move_.credit_account, credit_account);
         assert_eq!(move_.sum, sum);
+    }
+    #[test]
+    fn move_metadata() {
+        let mut slot_map = DenseSlotMap::<Ak, ()>::with_key();
+        let debit_account = slot_map.insert(());
+        let credit_account = slot_map.insert(());
+        let sum = Sum::new();
+        let move_ = Move::new(debit_account, credit_account, sum.clone(), 5);
+        assert_eq!(*move_.metadata(), 5);
     }
 }
