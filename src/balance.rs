@@ -75,9 +75,9 @@ mod test {
     fn operation() {
         use maplit::btreemap;
         let mut balance = Balance::new();
-        let mut book = test_book!(0);
-        let unit_a = book.new_unit(0);
-        let unit_b = book.new_unit(0);
+        let mut book = test_book!("");
+        let unit_a = book.new_unit("");
+        let unit_b = book.new_unit("");
         let sum = Sum::of(unit_a, 2).unit(unit_b, 3);
         balance.operation(&sum, |balance, amount| balance + amount as i128);
         let sum = Sum::of(unit_a, 2).unit(unit_b, 3);
@@ -90,10 +90,10 @@ mod test {
     }
     #[test]
     fn fmt_debug() {
-        let mut book = test_book!(0);
-        let unit_a = book.new_unit(0);
+        let mut book = test_book!("");
+        let unit_a = book.new_unit("");
         let amount_a = 76;
-        let unit_b = book.new_unit(0);
+        let unit_b = book.new_unit("");
         let amount_b = 45;
         let sum = Sum::of(unit_a, amount_a).unit(unit_b, amount_b);
         let balance = Balance::new() + &sum;
@@ -107,8 +107,8 @@ mod test {
     #[test]
     fn sub_assign_sum() {
         use maplit::btreemap;
-        let mut book = test_book!(0);
-        let unit = book.new_unit(0);
+        let mut book = test_book!("");
+        let unit = book.new_unit("");
         let mut balance = Balance::new();
         balance -= &Sum::of(unit, 9);
         let expected = btreemap! {
@@ -119,8 +119,8 @@ mod test {
     #[test]
     fn sub_sum() {
         use maplit::btreemap;
-        let mut book = test_book!(0);
-        let unit = book.new_unit(0);
+        let mut book = test_book!("");
+        let unit = book.new_unit("");
         let balance = Balance::new();
         let balance = balance - &Sum::of(unit, 9);
         let expected = btreemap! {
@@ -131,8 +131,8 @@ mod test {
     #[test]
     fn add_assign_sum() {
         use maplit::btreemap;
-        let mut book = test_book!(0);
-        let unit = book.new_unit(0);
+        let mut book = test_book!("");
+        let unit = book.new_unit("");
         let mut balance = Balance::new();
         balance += &Sum::of(unit, 9);
         let expected = btreemap! {
@@ -143,8 +143,8 @@ mod test {
     #[test]
     fn add_sum() {
         use maplit::btreemap;
-        let mut book = test_book!(0);
-        let unit = book.new_unit(0);
+        let mut book = test_book!("");
+        let unit = book.new_unit("");
         let balance = Balance::new();
         let balance = balance + &Sum::of(unit, 9);
         let expected = btreemap! {

@@ -2,6 +2,6 @@
 #[cfg(test)]
 macro_rules! test_book {
     ($meta:expr) => {
-        crate::book::Book::<u8, u8, u8, u8>::new($meta)
+        crate::book::Book::<&str, &str, &str, &str>::new($meta)
     };
 }
