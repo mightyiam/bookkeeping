@@ -65,7 +65,6 @@ mod test {
     use super::Balance;
     use super::PhantomData;
     use super::Sum;
-    use crate::book::Book;
     #[test]
     fn new() {
         let actual = Balance::new();
@@ -74,10 +73,9 @@ mod test {
     }
     #[test]
     fn operation() {
-        test_book!(Book, TestBook);
         use maplit::btreemap;
         let mut balance = Balance::new();
-        let mut book = TestBook::new(0);
+        let mut book = test_book!(0);
         let unit_a = book.new_unit(0);
         let unit_b = book.new_unit(0);
         let sum = Sum::of(unit_a, 2).unit(unit_b, 3);
@@ -92,8 +90,7 @@ mod test {
     }
     #[test]
     fn fmt_debug() {
-        test_book!(Book, TestBook);
-        let mut book = TestBook::new(0);
+        let mut book = test_book!(0);
         let unit_a = book.new_unit(0);
         let amount_a = 76;
         let unit_b = book.new_unit(0);
@@ -109,9 +106,8 @@ mod test {
     }
     #[test]
     fn sub_assign_sum() {
-        test_book!(Book, TestBook);
         use maplit::btreemap;
-        let mut book = TestBook::new(0);
+        let mut book = test_book!(0);
         let unit = book.new_unit(0);
         let mut balance = Balance::new();
         balance -= &Sum::of(unit, 9);
@@ -122,9 +118,8 @@ mod test {
     }
     #[test]
     fn sub_sum() {
-        test_book!(Book, TestBook);
         use maplit::btreemap;
-        let mut book = TestBook::new(0);
+        let mut book = test_book!(0);
         let unit = book.new_unit(0);
         let balance = Balance::new();
         let balance = balance - &Sum::of(unit, 9);
@@ -135,9 +130,8 @@ mod test {
     }
     #[test]
     fn add_assign_sum() {
-        test_book!(Book, TestBook);
         use maplit::btreemap;
-        let mut book = TestBook::new(0);
+        let mut book = test_book!(0);
         let unit = book.new_unit(0);
         let mut balance = Balance::new();
         balance += &Sum::of(unit, 9);
@@ -148,9 +142,8 @@ mod test {
     }
     #[test]
     fn add_sum() {
-        test_book!(Book, TestBook);
         use maplit::btreemap;
-        let mut book = TestBook::new(0);
+        let mut book = test_book!(0);
         let unit = book.new_unit(0);
         let balance = Balance::new();
         let balance = balance + &Sum::of(unit, 9);
