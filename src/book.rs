@@ -40,10 +40,6 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     pub fn new_account(&mut self, meta: Am) -> Ak {
         self.accounts.insert(Account::new(meta))
     }
-    /// Gets an iterator of existing accounts.
-    pub fn accounts(&self) -> impl Iterator<Item = (Ak, &Am)> {
-        self.accounts.iter().map(|(k, a)| (k, &a.meta))
-    }
     /// Creates a new unit.
     pub fn new_unit(&mut self, meta: Um) -> Uk {
         self.units.insert(Unit::new(meta))
@@ -131,6 +127,10 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
             format!("No {} found for key {:?}", string, key),
         );
     }
+    /// Gets an iterator of existing records.
+    pub fn field(&self) -> impl Iterator<Item = (K, &M)> {
+        self.field.iter().map(|(k, a)| (k, &a.meta))
+    }
 }
 #[cfg(test)]
 mod test {
@@ -160,6 +160,30 @@ mod test {
         let actual = accounts.next().unwrap();
         assert_eq!(actual, expected);
         assert!(accounts.next().is_none());
+    }
+    #[test]
+    fn units() {
+        let mut book = test_book!(0);
+        assert!(book.units().next().is_none());
+        let unit = book.new_unit(0);
+        let expected = (unit, &0);
+        let mut units = book.units();
+        let actual = units.next().unwrap();
+        assert_eq!(actual, expected);
+        assert!(units.next().is_none());
+    }
+    #[test]
+    fn moves() {
+        let mut book = test_book!(0);
+        assert!(book.moves().next().is_none());
+        let credit_account = book.new_account(0);
+        let debit_account = book.new_account(0);
+        let move_ = book.new_move(debit_account, credit_account, Sum::new(), 0);
+        let expected = (move_, &0);
+        let mut moves = book.moves();
+        let actual = moves.next().unwrap();
+        assert_eq!(actual, expected);
+        assert!(moves.next().is_none());
     }
     #[test]
     fn new_unit() {
