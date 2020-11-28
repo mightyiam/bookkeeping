@@ -5,12 +5,12 @@
 //!
 //! This crate tries to model the very basics of the [bookkeeping](https://en.wikipedia.org/wiki/Bookkeeping) activity.
 //!
-//! It doesn't make assumptions regarding what metadata is attached to anything and allows you to define your own types for that.
+//! It doesn't make assumptions regarding what metadata is attached to anything and allows you to provide your own types for that.
 //! It also lets you determine how moves in an account are sorted, by providing your own sorting implementation that is based on your metadata.
 //!
 //! Imbalance is prevented as much as possible, first by the data structures and further entirely, by runtime.
 //!
-//! It attempts to provide an API that is nice to work with and also minimizes points of failure.
+//! It attempts to provide an API that is nice to work with and to minimize user facing invariants.
 //!
 //! It is oblivious to the concept of a [currency](https://en.wikipedia.org/wiki/Currency).
 //! Therefore, there are no decimal places, minor and major units.

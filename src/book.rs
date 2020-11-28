@@ -48,9 +48,9 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     ///
     /// ## Panics
     ///
-    /// - `debit_account` or `credit_account` are in not in the book.
-    /// - `debit_account` and `credit_account` are the same.
-    /// - Some [Unit][crate::Unit] in the [Sum] is not in the book.
+    /// - Some of `debit_account` or `credit_account` are not in the book.
+    /// - `debit_account` and `credit_account` are equal.
+    /// - Some units that are in the sum are not in the book.
     pub fn new_move(&mut self, debit_account: Ak, credit_account: Ak, sum: Sum, meta: Mm) -> Mk {
         [debit_account, credit_account].iter().for_each(|key| {
             self.assert_has_account(*key);
@@ -65,6 +65,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     ///
     /// ## Panics
     ///
+    /// - The account is not in the book.
     /// - The account is not debit nor credit in the move.
     pub fn account_balance_with_move<'a>(
         &'a self,
@@ -117,7 +118,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     ///
     /// ## Panics
     ///
-    /// If a record of this key cannot be found.
+    /// - No such record in the book.
     pub fn getter(&self, key: K) -> &R {
         self.assert_has(key);
         self.field.get(key).unwrap()
@@ -128,7 +129,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
             format!("No {} found for key {:?}", string, key),
         );
     }
-    /// Gets an iterator of existing records.
+    /// Gets an iterator of existing records in order of creation.
     pub fn field(&self) -> impl Iterator<Item = (K, &M)> {
         self.field.iter().map(|(k, a)| (k, &a.meta))
     }
