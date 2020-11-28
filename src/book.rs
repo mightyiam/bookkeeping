@@ -29,7 +29,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
         }
     }
     /// Gets the book's metadata.
-    pub fn get_book_metadata(&self) -> &Bm {
+    pub fn book_metadata(&self) -> &Bm {
         &self.meta
     }
     /// Gets the book's metadata.
@@ -385,9 +385,9 @@ mod test {
         assert_eq!(book.meta, "!");
     }
     #[test]
-    fn get_book_metadata() {
+    fn book_metadata() {
         let book = test_book!("!");
-        assert_eq!(*book.get_book_metadata(), "!");
+        assert_eq!(*book.book_metadata(), "!");
     }
     #[test]
     fn set_account_metadata() {
