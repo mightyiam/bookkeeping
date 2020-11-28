@@ -30,8 +30,6 @@ impl fmt::Debug for Sum {
 mod test {
     use super::BTreeMap;
     use super::Sum;
-    use super::Uk;
-    use slotmap::DenseSlotMap;
     #[test]
     fn new() {
         let actual = Sum::new();
@@ -40,28 +38,28 @@ mod test {
     }
     #[test]
     fn of() {
-        let mut slot_map = DenseSlotMap::<Uk, ()>::with_key();
-        let unit = slot_map.insert(());
+        let mut book = test_book!("");
+        let unit = book.new_unit("");
         let actual = Sum::of(unit, 24);
-        let mut expected = BTreeMap::new();
-        expected.insert(unit, 24);
-        assert_eq!(actual.0, expected);
+        let mut expected = Sum(BTreeMap::new());
+        expected.0.insert(unit, 24);
+        assert_eq!(actual, expected);
     }
     #[test]
     fn unit() {
-        let mut slot_map = DenseSlotMap::<Uk, ()>::with_key();
-        let unit = slot_map.insert(());
+        let mut book = test_book!("");
+        let unit = book.new_unit("");
         let sum = Sum::new().unit(unit, 124);
-        let mut expected = BTreeMap::new();
-        expected.insert(unit, 124);
-        assert_eq!(sum.0, expected);
+        let mut expected = Sum(BTreeMap::new());
+        expected.0.insert(unit, 124);
+        assert_eq!(sum, expected);
     }
     #[test]
     fn fmt_debug() {
-        let mut slot_map = DenseSlotMap::<Uk, ()>::with_key();
-        let unit_a = slot_map.insert(());
+        let mut book = test_book!("");
+        let unit_a = book.new_unit("");
         let amount_a = 76;
-        let unit_b = slot_map.insert(());
+        let unit_b = book.new_unit("");
         let amount_b = 45;
         let sum = Sum::of(unit_a, amount_a).unit(unit_b, amount_b);
         let actual = format!("{:?}", sum);

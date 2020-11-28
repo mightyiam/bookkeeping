@@ -74,19 +74,22 @@ mod test {
     #[test]
     fn operation() {
         use maplit::btreemap;
-        let mut balance = Balance::new();
+        let mut actual = Balance::new();
         let mut book = test_book!("");
         let unit_a = book.new_unit("");
         let unit_b = book.new_unit("");
         let sum = Sum::of(unit_a, 2).unit(unit_b, 3);
-        balance.operation(&sum, |balance, amount| balance + amount as i128);
+        actual.operation(&sum, |balance, amount| balance + amount as i128);
         let sum = Sum::of(unit_a, 2).unit(unit_b, 3);
-        balance.operation(&sum, |balance, amount| balance * amount as i128);
-        let expected = btreemap! {
-            unit_a => 4,
-            unit_b => 9,
-        };
-        assert_eq!(balance.0, expected);
+        actual.operation(&sum, |balance, amount| balance * amount as i128);
+        let expected = Balance(
+            btreemap! {
+                unit_a => 4,
+                unit_b => 9,
+            },
+            PhantomData,
+        );
+        assert_eq!(actual, expected);
     }
     #[test]
     fn fmt_debug() {
@@ -109,47 +112,59 @@ mod test {
         use maplit::btreemap;
         let mut book = test_book!("");
         let unit = book.new_unit("");
-        let mut balance = Balance::new();
-        balance -= &Sum::of(unit, 9);
-        let expected = btreemap! {
-            unit.clone() => -9,
-        };
-        assert_eq!(balance.0, expected);
+        let mut actual = Balance::new();
+        actual -= &Sum::of(unit, 9);
+        let expected = Balance(
+            btreemap! {
+                unit.clone() => -9,
+            },
+            PhantomData,
+        );
+        assert_eq!(actual, expected);
     }
     #[test]
     fn sub_sum() {
         use maplit::btreemap;
         let mut book = test_book!("");
         let unit = book.new_unit("");
-        let balance = Balance::new();
-        let balance = balance - &Sum::of(unit, 9);
-        let expected = btreemap! {
-            unit.clone() => -9,
-        };
-        assert_eq!(balance.0, expected);
+        let immutable = Balance::new();
+        let actual = immutable - &Sum::of(unit, 9);
+        let expected = Balance(
+            btreemap! {
+                unit.clone() => -9,
+            },
+            PhantomData,
+        );
+        assert_eq!(actual, expected);
     }
     #[test]
     fn add_assign_sum() {
         use maplit::btreemap;
         let mut book = test_book!("");
         let unit = book.new_unit("");
-        let mut balance = Balance::new();
-        balance += &Sum::of(unit, 9);
-        let expected = btreemap! {
-            unit.clone() => 9,
-        };
-        assert_eq!(balance.0, expected);
+        let mut actual = Balance::new();
+        actual += &Sum::of(unit, 9);
+        let expected = Balance(
+            btreemap! {
+                unit.clone() => 9,
+            },
+            PhantomData,
+        );
+        assert_eq!(actual, expected);
     }
     #[test]
     fn add_sum() {
         use maplit::btreemap;
         let mut book = test_book!("");
         let unit = book.new_unit("");
-        let balance = Balance::new();
-        let balance = balance + &Sum::of(unit, 9);
-        let expected = btreemap! {
-            unit.clone() => 9,
-        };
-        assert_eq!(balance.0, expected);
+        let immutable = Balance::new();
+        let actual = immutable + &Sum::of(unit, 9);
+        let expected = Balance(
+            btreemap! {
+                unit.clone() => 9,
+            },
+            PhantomData,
+        );
+        assert_eq!(actual, expected);
     }
 }
