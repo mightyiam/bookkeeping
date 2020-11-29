@@ -50,7 +50,7 @@ impl<Mm> Move<Mm> {
 )]
 impl<M> Record<M> {
     /// Gets the metadata of the record.
-    pub fn metadata(&self) -> &M {
+    pub fn get_metadata(&self) -> &M {
         &self.meta
     }
 }
@@ -63,14 +63,14 @@ mod test {
     use super::Unit;
     use slotmap::DenseSlotMap;
     #[test]
-    fn account_metadata() {
+    fn account_get_metadata() {
         let account = Account::new(5);
-        assert_eq!(*account.metadata(), 5);
+        assert_eq!(*account.get_metadata(), 5);
     }
     #[test]
-    fn unit_metadata() {
+    fn unit_get_metadata() {
         let unit = Unit::new(5);
-        assert_eq!(*unit.metadata(), 5);
+        assert_eq!(*unit.get_metadata(), 5);
     }
     #[test]
     #[should_panic(expected = "Debit and credit accounts are the same.")]
@@ -90,12 +90,12 @@ mod test {
         assert_eq!(move_.sum, sum);
     }
     #[test]
-    fn move_metadata() {
+    fn move_get_metadata() {
         let mut slot_map = DenseSlotMap::<Ak, ()>::with_key();
         let debit_account = slot_map.insert(());
         let credit_account = slot_map.insert(());
         let sum = Sum::new();
         let move_ = Move::new(debit_account, credit_account, sum.clone(), 5);
-        assert_eq!(*move_.metadata(), 5);
+        assert_eq!(*move_.get_metadata(), 5);
     }
 }

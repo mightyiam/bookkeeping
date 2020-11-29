@@ -29,11 +29,11 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
         }
     }
     /// Gets the book's metadata.
-    pub fn book_metadata(&self) -> &Bm {
+    pub fn get_metadata(&self) -> &Bm {
         &self.meta
     }
     /// Gets the book's metadata.
-    pub fn set_book_metadata(&mut self, meta: Bm) {
+    pub fn set_metadata(&mut self, meta: Bm) {
         self.meta = meta;
     }
     /// Creates a new account.
@@ -232,7 +232,7 @@ mod test {
         let account = book.new_account("!");
         book.new_account("");
         let account = book.get_account(account);
-        assert_eq!(*account.metadata(), "!");
+        assert_eq!(*account.get_metadata(), "!");
     }
     #[test]
     fn get_unit() {
@@ -241,7 +241,7 @@ mod test {
         let unit = book.new_unit("!");
         book.new_unit("");
         let unit = book.get_unit(unit);
-        assert_eq!(*unit.metadata(), "!");
+        assert_eq!(*unit.get_metadata(), "!");
     }
     #[test]
     fn get_move() {
@@ -252,7 +252,7 @@ mod test {
         let move_ = book.new_move(debit_account, credit_account, Sum::new(), "!");
         book.new_move(debit_account, credit_account, Sum::new(), "");
         let move_ = book.get_move(move_);
-        assert_eq!(*move_.metadata(), "!");
+        assert_eq!(*move_.get_metadata(), "!");
     }
     #[test]
     #[should_panic(expected = "No account found for key ")]
@@ -374,30 +374,30 @@ mod test {
         );
     }
     #[test]
-    fn set_book_metadata() {
+    fn set_metadata() {
         let mut book = test_book!("");
-        book.set_book_metadata("!");
+        book.set_metadata("!");
         assert_eq!(book.meta, "!");
     }
     #[test]
-    fn book_metadata() {
+    fn get_metadata() {
         let book = test_book!("!");
-        assert_eq!(*book.book_metadata(), "!");
+        assert_eq!(*book.get_metadata(), "!");
     }
     #[test]
     fn set_account_metadata() {
         let mut book = test_book!("");
         let account = book.new_account("");
         book.set_account_metadata(account, "!");
-        assert_eq!(*book.accounts.get(account).unwrap().metadata(), "!");
+        assert_eq!(*book.accounts.get(account).unwrap().get_metadata(), "!");
     }
     #[test]
     fn set_unit_metadata() {
         let mut book = test_book!("");
         let unit = book.new_unit("");
-        assert_eq!(*book.units.get(unit).unwrap().metadata(), "");
+        assert_eq!(*book.units.get(unit).unwrap().get_metadata(), "");
         book.set_unit_metadata(unit, "!");
-        assert_eq!(*book.units.get(unit).unwrap().metadata(), "!");
+        assert_eq!(*book.units.get(unit).unwrap().get_metadata(), "!");
     }
     #[test]
     fn set_move_metadata() {
@@ -405,8 +405,8 @@ mod test {
         let debit = book.new_account("");
         let credit = book.new_account("");
         let move_ = book.new_move(debit, credit, Sum::new(), "");
-        assert_eq!(*book.moves.get(move_).unwrap().metadata(), "");
+        assert_eq!(*book.moves.get(move_).unwrap().get_metadata(), "");
         book.set_move_metadata(move_, "!");
-        assert_eq!(*book.moves.get(move_).unwrap().metadata(), "!");
+        assert_eq!(*book.moves.get(move_).unwrap().get_metadata(), "!");
     }
 }
