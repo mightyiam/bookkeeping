@@ -20,12 +20,9 @@ impl Sum {
     /// Creates a sum with an amount of a unit.
     #[cfg(test)]
     pub(crate) fn of(amount: u64, unit: Uk) -> Self {
-        Self::new().and(amount, unit)
-    }
-    #[cfg(test)]
-    pub(crate) fn and(mut self, amount: u64, unit: Uk) -> Self {
-        self.0.insert(unit.clone(), amount);
-        self
+        let mut sum = Self::new();
+        sum.set_amount_for_unit(amount, unit);
+        sum
     }
     /// Sets the amount of a unit in a sum.
     /// ```
@@ -39,6 +36,13 @@ impl Sum {
     /// ```
     pub fn set_amount_for_unit(&mut self, amount: u64, unit: Uk) {
         self.0.insert(unit, amount);
+    }
+    #[cfg(test)]
+    pub(crate) fn from_entries(entries: impl IntoIterator<Item = (u64, Uk)>) -> Self {
+        Sum(entries
+            .into_iter()
+            .map(|(amount, unit)| (unit, amount))
+            .collect())
     }
     /// Gets the amounts of all units in undefined order.
     /// ```
@@ -85,11 +89,15 @@ mod test {
         assert_eq!(actual, expected);
     }
     #[test]
-    fn and() {
+    fn from_entries() {
         let mut book = test_book!("");
-        let unit = book.new_unit("");
-        let actual = Sum::new().and(124, unit);
-        let expected = Sum(btreemap! { unit => 124 });
+        let thb = book.new_unit("");
+        let usd = book.new_unit("");
+        let actual = Sum::from_entries(vec![(100, thb), (200, usd)]);
+        let expected = Sum(btreemap! {
+            thb => 100,
+            usd => 200,
+        });
         assert_eq!(actual, expected);
     }
     #[test]
@@ -106,7 +114,7 @@ mod test {
         let mut book = test_book!("");
         let thb = book.new_unit("THB");
         let usd = book.new_unit("USD");
-        let sum = Sum::of(3, thb).and(10, usd);
+        let sum = Sum::from_entries(vec![(3, thb), (10, usd)]);
         let actual = sum.get_all_amounts().collect::<Vec<_>>();
         let expected = vec![(&thb, &3), (&usd, &10)];
         assert_eq!(actual, expected);
@@ -118,7 +126,7 @@ mod test {
         let amount_a = 76;
         let unit_b = book.new_unit("");
         let amount_b = 45;
-        let sum = Sum::of(amount_a, unit_a).and(amount_b, unit_b);
+        let sum = Sum::from_entries(vec![(amount_a, unit_a), (amount_b, unit_b)]);
         let actual = format!("{:?}", sum);
         let expected = format!(
             "Sum({{{:?}: {:?}, {:?}: {:?}}})",
