@@ -201,22 +201,18 @@ mod test {
         let mut book = test_book!("");
         assert!(book.accounts().next().is_none());
         let account = book.new_account("");
-        let expected = (account, &"");
-        let mut accounts = book.accounts();
-        let actual = accounts.next().unwrap();
+        let expected = vec![(account, &"")];
+        let actual = book.accounts().collect::<Vec<_>>();
         assert_eq!(actual, expected);
-        assert!(accounts.next().is_none());
     }
     #[test]
     fn units() {
         let mut book = test_book!("");
         assert!(book.units().next().is_none());
         let unit = book.new_unit("");
-        let expected = (unit, &"");
-        let mut units = book.units();
-        let actual = units.next().unwrap();
+        let expected = vec![(unit, &"")];
+        let actual = book.units().collect::<Vec<_>>();
         assert_eq!(actual, expected);
-        assert!(units.next().is_none());
     }
     #[test]
     fn moves() {
@@ -225,11 +221,9 @@ mod test {
         let credit_account = book.new_account("");
         let debit_account = book.new_account("");
         let move_ = book.new_move(debit_account, credit_account, Sum::new(), "");
-        let expected = (move_, &"");
-        let mut moves = book.moves();
-        let actual = moves.next().unwrap();
+        let expected = vec![(move_, &"")];
+        let actual = book.moves().collect::<Vec<_>>();
         assert_eq!(actual, expected);
-        assert!(moves.next().is_none());
     }
     #[test]
     fn get_account() {
