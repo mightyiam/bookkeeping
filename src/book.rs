@@ -51,7 +51,13 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// - Some of `debit_account` or `credit_account` are not in the book.
     /// - `debit_account` and `credit_account` are equal.
     /// - Some units that are in the sum are not in the book.
-    pub fn new_move(&mut self, debit_account: Ak, credit_account: Ak, sum: Sum, meta: Mm) -> Mk {
+    pub fn new_move(
+        &mut self,
+        debit_account: Ak,
+        credit_account: Ak,
+        sum: Sum,
+        meta: Mm,
+    ) -> Mk {
         [debit_account, credit_account].iter().for_each(|key| {
             self.assert_has_account(*key);
         });
@@ -77,23 +83,29 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
         self.assert_has_move(move_);
         let move_ = self.moves.get(move_).unwrap();
         if ![move_.debit_account, move_.credit_account].contains(&account) {
-            panic!("Provided account is not debit nor credit in provided move.");
+            panic!(
+                "Provided account is not debit nor credit in provided move."
+            );
         }
         self.moves
             .iter()
-            .filter(|(_, other_move)| match cmp(&move_.meta, &other_move.meta) {
-                Ordering::Less => false,
-                _ => true,
-            })
-            .filter_map(|(_, move_)| -> Option<(fn(&mut Balance<'a>, _), &Sum)> {
-                if move_.debit_account == account {
-                    Some((ops::SubAssign::sub_assign, &move_.sum))
-                } else if move_.credit_account == account {
-                    Some((ops::AddAssign::add_assign, &move_.sum))
-                } else {
-                    None
+            .filter(|(_, other_move)| {
+                match cmp(&move_.meta, &other_move.meta) {
+                    Ordering::Less => false,
+                    _ => true,
                 }
             })
+            .filter_map(
+                |(_, move_)| -> Option<(fn(&mut Balance<'a>, _), &Sum)> {
+                    if move_.debit_account == account {
+                        Some((ops::SubAssign::sub_assign, &move_.sum))
+                    } else if move_.credit_account == account {
+                        Some((ops::AddAssign::add_assign, &move_.sum))
+                    } else {
+                        None
+                    }
+                },
+            )
             .fold(Balance::new(), |mut balance, (operation, sum)| {
                 operation(&mut balance, sum);
                 balance
@@ -220,7 +232,8 @@ mod test {
         assert!(book.moves_iter().next().is_none());
         let credit_account = book.new_account("");
         let debit_account = book.new_account("");
-        let move_ = book.new_move(debit_account, credit_account, Sum::new(), "");
+        let move_ =
+            book.new_move(debit_account, credit_account, Sum::new(), "");
         let expected = vec![(move_, &"")];
         let actual = book.moves_iter().collect::<Vec<_>>();
         assert_eq!(actual, expected);
@@ -249,7 +262,8 @@ mod test {
         let debit_account = book.new_account("");
         let credit_account = book.new_account("");
         book.new_move(debit_account, credit_account, Sum::new(), "");
-        let move_ = book.new_move(debit_account, credit_account, Sum::new(), "!");
+        let move_ =
+            book.new_move(debit_account, credit_account, Sum::new(), "!");
         book.new_move(debit_account, credit_account, Sum::new(), "");
         let move_ = book.get_move(move_);
         assert_eq!(*move_.get_metadata(), "!");
@@ -276,7 +290,8 @@ mod test {
         let mut book = test_book!("");
         let credit_account = book.new_account("");
         let debit_account = book.new_account("");
-        let move_ = book.new_move(debit_account, credit_account, Sum::new(), "");
+        let move_ =
+            book.new_move(debit_account, credit_account, Sum::new(), "");
         book.moves.remove(move_);
         book.assert_has_move(move_);
     }
@@ -286,7 +301,8 @@ mod test {
         let mut book = test_book!("");
         let debit_account = book.new_account("");
         let credit_account = book.new_account("");
-        let move_ = book.new_move(debit_account, credit_account, Sum::new(), "");
+        let move_ =
+            book.new_move(debit_account, credit_account, Sum::new(), "");
         book.accounts.remove(debit_account);
         book.account_balance_with_move(debit_account, move_, |_, _| panic!());
     }
@@ -296,17 +312,21 @@ mod test {
         let mut book = test_book!("");
         let debit_account = book.new_account("");
         let credit_account = book.new_account("");
-        let move_ = book.new_move(debit_account, credit_account, Sum::new(), "");
+        let move_ =
+            book.new_move(debit_account, credit_account, Sum::new(), "");
         book.moves.remove(move_);
         book.account_balance_with_move(debit_account, move_, |_, _| panic!());
     }
     #[test]
-    #[should_panic(expected = "Provided account is not debit nor credit in provided move.")]
+    #[should_panic(
+        expected = "Provided account is not debit nor credit in provided move."
+    )]
     fn account_balance_at_move_account_not_related_to_move() {
         let mut book = test_book!("");
         let debit_account = book.new_account("");
         let credit_account = book.new_account("");
-        let move_ = book.new_move(debit_account, credit_account, Sum::new(), "");
+        let move_ =
+            book.new_move(debit_account, credit_account, Sum::new(), "");
         let other_account = book.new_account("");
         book.account_balance_with_move(other_account, move_, |_, _| {
             panic!();

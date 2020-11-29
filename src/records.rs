@@ -29,7 +29,12 @@ pub struct Move<Mm> {
     pub(crate) sum: Sum,
 }
 impl<Mm> Move<Mm> {
-    pub(crate) fn new(debit_account: Ak, credit_account: Ak, sum: Sum, meta: Mm) -> Self {
+    pub(crate) fn new(
+        debit_account: Ak,
+        credit_account: Ak,
+        sum: Sum,
+        meta: Mm,
+    ) -> Self {
         assert!(
             debit_account != credit_account,
             "Debit and credit accounts are the same."

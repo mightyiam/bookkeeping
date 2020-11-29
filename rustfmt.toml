@@ -1,0 +1,8 @@
+#wrap_comments = true
+edition = "2018"
+max_width = 80
+#merge_imports = true
+#normalize_comments = true
+#normalize_doc_attributes = true
+#reorder_impl_items = true
+#group_imports = "StdExternalCrate"
