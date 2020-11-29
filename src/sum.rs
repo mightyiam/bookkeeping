@@ -6,17 +6,57 @@ use std::fmt;
 pub struct Sum(pub(crate) BTreeMap<Uk, u64>);
 impl Sum {
     /// Creates an empty sum.
+    /// ```
+    /// # use bookkeeping::Book;
+    /// # use bookkeeping::Sum;
+    /// # let mut book = Book::<&str, &str, &str, &str>::new("");
+    /// # let usd = book.new_unit("USD");
+    /// let mut sum = Sum::new();
+    /// # assert!(sum.get_all_amounts().next().is_none());
+    /// ```
     pub fn new() -> Self {
         Self(BTreeMap::new())
     }
-    /// Creates a sum with an amount of a single unit.
-    pub fn of(unit: Uk, amount: u64) -> Self {
-        Self::new().unit(unit, amount)
+    /// Creates a sum with an amount of a unit.
+    #[cfg(test)]
+    pub(crate) fn of(unit: Uk, amount: u64) -> Self {
+        Self::new().and(unit, amount)
     }
-    /// Sets the amount of a unit in a sum.
-    pub fn unit(mut self, unit: Uk, amount: u64) -> Self {
+    #[cfg(test)]
+    pub(crate) fn and(mut self, unit: Uk, amount: u64) -> Self {
         self.0.insert(unit.clone(), amount);
         self
+    }
+    /// Sets the amount of a unit in a sum.
+    /// ```
+    /// # use bookkeeping::Book;
+    /// # use bookkeeping::Sum;
+    /// # let mut book = Book::<&str, &str, &str, &str>::new("");
+    /// # let usd = book.new_unit("USD");
+    /// # let mut sum = Sum::new();
+    /// sum.set_amount_for_unit(usd, 500);
+    /// # assert_eq!(sum.get_all_amounts().collect::<Vec<_>>(), vec![(&usd, &500)]);
+    /// ```
+    pub fn set_amount_for_unit(&mut self, unit: Uk, amount: u64) {
+        self.0.insert(unit, amount);
+    }
+    /// Gets the amounts of all units.
+    /// ```
+    /// # use bookkeeping::Book;
+    /// # use bookkeeping::Sum;
+    /// # let mut book = Book::<&str, &str, &str, &str>::new("");
+    /// # let usd = book.new_unit("USD");
+    /// # let thb = book.new_unit("THB");
+    /// # let mut sum = Sum::new();
+    /// # sum.set_amount_for_unit(usd, 500);
+    /// # sum.set_amount_for_unit(thb, 900);
+    /// assert_eq!(
+    ///     sum.get_all_amounts().collect::<Vec<_>>(),
+    ///     vec![(&usd, &500), (&thb, &900)],
+    /// );
+    /// ```
+    pub fn get_all_amounts(&self) -> impl Iterator<Item = (&Uk, &u64)> {
+        self.0.iter()
     }
 }
 impl fmt::Debug for Sum {
@@ -46,13 +86,33 @@ mod test {
         assert_eq!(actual, expected);
     }
     #[test]
-    fn unit() {
+    fn and() {
         let mut book = test_book!("");
         let unit = book.new_unit("");
-        let sum = Sum::new().unit(unit, 124);
+        let sum = Sum::new().and(unit, 124);
         let mut expected = Sum(BTreeMap::new());
         expected.0.insert(unit, 124);
         assert_eq!(sum, expected);
+    }
+    #[test]
+    fn set_amount_for_unit() {
+        let mut book = test_book!("");
+        let unit = book.new_unit("");
+        let mut sum = Sum::new();
+        sum.set_amount_for_unit(unit, 3);
+        let mut expected = Sum(BTreeMap::new());
+        expected.0.insert(unit, 3);
+        assert_eq!(sum, expected);
+    }
+    #[test]
+    fn get_all_amounts() {
+        let mut book = test_book!("");
+        let thb = book.new_unit("THB");
+        let usd = book.new_unit("USD");
+        let sum = Sum::of(thb, 3).and(usd, 10);
+        let actual = sum.get_all_amounts().collect::<Vec<_>>();
+        let expected = vec![(&thb, &3), (&usd, &10)];
+        assert_eq!(actual, expected);
     }
     #[test]
     fn fmt_debug() {
@@ -61,7 +121,7 @@ mod test {
         let amount_a = 76;
         let unit_b = book.new_unit("");
         let amount_b = 45;
-        let sum = Sum::of(unit_a, amount_a).unit(unit_b, amount_b);
+        let sum = Sum::of(unit_a, amount_a).and(unit_b, amount_b);
         let actual = format!("{:?}", sum);
         let expected = format!(
             "Sum({{{:?}: {:?}, {:?}: {:?}}})",

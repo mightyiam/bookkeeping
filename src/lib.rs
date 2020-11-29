@@ -3,7 +3,7 @@
 //#![deny(private_intra_doc_links)]
 #![deny(missing_crate_level_docs)]
 #![deny(missing_doc_code_examples)]
-#![deny(private_doc_tests)]
+//#![deny(private_doc_tests)]
 #![deny(invalid_codeblock_attributes)]
 //! _This is a new rustacean's first open source crate.
 //! It is made with the intention of serving as the go-to bookkeeping crate.

@@ -78,9 +78,9 @@ mod test {
         let mut book = test_book!("");
         let unit_a = book.new_unit("");
         let unit_b = book.new_unit("");
-        let sum = Sum::of(unit_a, 2).unit(unit_b, 3);
+        let sum = Sum::of(unit_a, 2).and(unit_b, 3);
         actual.operation(&sum, |balance, amount| balance + amount as i128);
-        let sum = Sum::of(unit_a, 2).unit(unit_b, 3);
+        let sum = Sum::of(unit_a, 2).and(unit_b, 3);
         actual.operation(&sum, |balance, amount| balance * amount as i128);
         let expected = Balance(
             btreemap! {
@@ -98,7 +98,7 @@ mod test {
         let amount_a = 76;
         let unit_b = book.new_unit("");
         let amount_b = 45;
-        let sum = Sum::of(unit_a, amount_a).unit(unit_b, amount_b);
+        let sum = Sum::of(unit_a, amount_a).and(unit_b, amount_b);
         let balance = Balance::new() + &sum;
         let actual = format!("{:?}", balance);
         let expected = format!(
