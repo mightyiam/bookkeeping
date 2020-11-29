@@ -68,12 +68,12 @@ impl fmt::Debug for Sum {
 }
 #[cfg(test)]
 mod test {
-    use super::BTreeMap;
     use super::Sum;
+    use maplit::btreemap;
     #[test]
     fn new() {
         let actual = Sum::new();
-        let expected = Sum(BTreeMap::new());
+        let expected = Sum(btreemap! {});
         assert_eq!(actual, expected);
     }
     #[test]
@@ -81,8 +81,7 @@ mod test {
         let mut book = test_book!("");
         let unit = book.new_unit("");
         let actual = Sum::of(unit, 24);
-        let mut expected = Sum(BTreeMap::new());
-        expected.0.insert(unit, 24);
+        let expected = Sum(btreemap! { unit => 24 });
         assert_eq!(actual, expected);
     }
     #[test]
@@ -90,8 +89,7 @@ mod test {
         let mut book = test_book!("");
         let unit = book.new_unit("");
         let sum = Sum::new().and(unit, 124);
-        let mut expected = Sum(BTreeMap::new());
-        expected.0.insert(unit, 124);
+        let expected = Sum(btreemap! { unit => 124 });
         assert_eq!(sum, expected);
     }
     #[test]
@@ -100,8 +98,7 @@ mod test {
         let unit = book.new_unit("");
         let mut sum = Sum::new();
         sum.set_amount_for_unit(unit, 3);
-        let mut expected = Sum(BTreeMap::new());
-        expected.0.insert(unit, 3);
+        let expected = Sum(btreemap! { unit => 3 });
         assert_eq!(sum, expected);
     }
     #[test]
