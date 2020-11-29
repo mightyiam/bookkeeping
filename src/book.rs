@@ -184,7 +184,7 @@ mod test {
         let credit = book.new_account("");
         let unit = book.new_unit("");
         book.units.remove(unit);
-        let sum = Sum::of(unit, 0);
+        let sum = Sum::of(0, unit);
         book.new_move(debit, credit, sum, "");
     }
     #[test]
@@ -319,58 +319,58 @@ mod test {
         let account_a = book.new_account("");
         let account_b = book.new_account("");
         let unit = book.new_unit("");
-        let move_1 = book.new_move(account_a, account_b, Sum::of(unit, 3), 1);
+        let move_1 = book.new_move(account_a, account_b, Sum::of(3, unit), 1);
         assert_eq!(
             book.account_balance_with_move(account_a, move_1, cmp),
-            Balance::new() - &Sum::of(unit, 3),
+            Balance::new() - &Sum::of(3, unit),
         );
         assert_eq!(
             book.account_balance_with_move(account_b, move_1, cmp),
-            Balance::new() + &Sum::of(unit, 3),
+            Balance::new() + &Sum::of(3, unit),
         );
 
-        let move_2 = book.new_move(account_a, account_b, Sum::of(unit, 4), 2);
+        let move_2 = book.new_move(account_a, account_b, Sum::of(4, unit), 2);
         assert_eq!(
             book.account_balance_with_move(account_a, move_1, cmp),
-            Balance::new() - &Sum::of(unit, 3),
+            Balance::new() - &Sum::of(3, unit),
         );
         assert_eq!(
             book.account_balance_with_move(account_b, move_1, cmp),
-            Balance::new() + &Sum::of(unit, 3),
+            Balance::new() + &Sum::of(3, unit),
         );
         assert_eq!(
             book.account_balance_with_move(account_a, move_2, cmp),
-            Balance::new() - &Sum::of(unit, 7),
+            Balance::new() - &Sum::of(7, unit),
         );
         assert_eq!(
             book.account_balance_with_move(account_b, move_2, cmp),
-            Balance::new() + &Sum::of(unit, 7),
+            Balance::new() + &Sum::of(7, unit),
         );
 
-        let move_0 = book.new_move(account_a, account_b, Sum::of(unit, 1), 0);
+        let move_0 = book.new_move(account_a, account_b, Sum::of(1, unit), 0);
         assert_eq!(
             book.account_balance_with_move(account_a, move_0, cmp),
-            Balance::new() - &Sum::of(unit, 1),
+            Balance::new() - &Sum::of(1, unit),
         );
         assert_eq!(
             book.account_balance_with_move(account_b, move_0, cmp),
-            Balance::new() + &Sum::of(unit, 1),
+            Balance::new() + &Sum::of(1, unit),
         );
         assert_eq!(
             book.account_balance_with_move(account_a, move_1, cmp),
-            Balance::new() - &Sum::of(unit, 4),
+            Balance::new() - &Sum::of(4, unit),
         );
         assert_eq!(
             book.account_balance_with_move(account_b, move_1, cmp),
-            Balance::new() + &Sum::of(unit, 4),
+            Balance::new() + &Sum::of(4, unit),
         );
         assert_eq!(
             book.account_balance_with_move(account_a, move_2, cmp),
-            Balance::new() - &Sum::of(unit, 8),
+            Balance::new() - &Sum::of(8, unit),
         );
         assert_eq!(
             book.account_balance_with_move(account_b, move_2, cmp),
-            Balance::new() + &Sum::of(unit, 8),
+            Balance::new() + &Sum::of(8, unit),
         );
     }
     #[test]

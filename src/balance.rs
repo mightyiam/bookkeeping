@@ -78,9 +78,9 @@ mod test {
         let mut book = test_book!("");
         let unit_a = book.new_unit("");
         let unit_b = book.new_unit("");
-        let sum = Sum::of(unit_a, 2).and(unit_b, 3);
+        let sum = Sum::of(2, unit_a).and(3, unit_b);
         actual.operation(&sum, |balance, amount| balance + amount as i128);
-        let sum = Sum::of(unit_a, 2).and(unit_b, 3);
+        let sum = Sum::of(2, unit_a).and(3, unit_b);
         actual.operation(&sum, |balance, amount| balance * amount as i128);
         let expected = Balance(
             btreemap! {
@@ -98,7 +98,7 @@ mod test {
         let amount_a = 76;
         let unit_b = book.new_unit("");
         let amount_b = 45;
-        let sum = Sum::of(unit_a, amount_a).and(unit_b, amount_b);
+        let sum = Sum::of(amount_a, unit_a).and(amount_b, unit_b);
         let balance = Balance::new() + &sum;
         let actual = format!("{:?}", balance);
         let expected = format!(
@@ -113,7 +113,7 @@ mod test {
         let mut book = test_book!("");
         let unit = book.new_unit("");
         let mut actual = Balance::new();
-        actual -= &Sum::of(unit, 9);
+        actual -= &Sum::of(9, unit);
         let expected = Balance(
             btreemap! {
                 unit.clone() => -9,
@@ -128,7 +128,7 @@ mod test {
         let mut book = test_book!("");
         let unit = book.new_unit("");
         let immutable = Balance::new();
-        let actual = immutable - &Sum::of(unit, 9);
+        let actual = immutable - &Sum::of(9, unit);
         let expected = Balance(
             btreemap! {
                 unit.clone() => -9,
@@ -143,7 +143,7 @@ mod test {
         let mut book = test_book!("");
         let unit = book.new_unit("");
         let mut actual = Balance::new();
-        actual += &Sum::of(unit, 9);
+        actual += &Sum::of(9, unit);
         let expected = Balance(
             btreemap! {
                 unit.clone() => 9,
@@ -158,7 +158,7 @@ mod test {
         let mut book = test_book!("");
         let unit = book.new_unit("");
         let immutable = Balance::new();
-        let actual = immutable + &Sum::of(unit, 9);
+        let actual = immutable + &Sum::of(9, unit);
         let expected = Balance(
             btreemap! {
                 unit.clone() => 9,

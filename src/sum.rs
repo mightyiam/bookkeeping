@@ -19,11 +19,11 @@ impl Sum {
     }
     /// Creates a sum with an amount of a unit.
     #[cfg(test)]
-    pub(crate) fn of(unit: Uk, amount: u64) -> Self {
-        Self::new().and(unit, amount)
+    pub(crate) fn of(amount: u64, unit: Uk) -> Self {
+        Self::new().and(amount, unit)
     }
     #[cfg(test)]
-    pub(crate) fn and(mut self, unit: Uk, amount: u64) -> Self {
+    pub(crate) fn and(mut self, amount: u64, unit: Uk) -> Self {
         self.0.insert(unit.clone(), amount);
         self
     }
@@ -34,13 +34,13 @@ impl Sum {
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
     /// # let usd = book.new_unit("USD");
     /// # let mut sum = Sum::new();
-    /// sum.set_amount_for_unit(usd, 500);
+    /// sum.set_amount_for_unit(500, usd);
     /// # assert_eq!(sum.get_all_amounts().collect::<Vec<_>>(), vec![(&usd, &500)]);
     /// ```
-    pub fn set_amount_for_unit(&mut self, unit: Uk, amount: u64) {
+    pub fn set_amount_for_unit(&mut self, amount: u64, unit: Uk) {
         self.0.insert(unit, amount);
     }
-    /// Gets the amounts of all units.
+    /// Gets the amounts of all units in undefined order.
     /// ```
     /// # use bookkeeping::Book;
     /// # use bookkeeping::Sum;
@@ -48,8 +48,8 @@ impl Sum {
     /// # let usd = book.new_unit("USD");
     /// # let thb = book.new_unit("THB");
     /// # let mut sum = Sum::new();
-    /// # sum.set_amount_for_unit(usd, 500);
-    /// # sum.set_amount_for_unit(thb, 900);
+    /// # sum.set_amount_for_unit(500, usd);
+    /// # sum.set_amount_for_unit(900, thb);
     /// assert_eq!(
     ///     sum.get_all_amounts().collect::<Vec<_>>(),
     ///     vec![(&usd, &500), (&thb, &900)],
@@ -80,7 +80,7 @@ mod test {
     fn of() {
         let mut book = test_book!("");
         let unit = book.new_unit("");
-        let actual = Sum::of(unit, 24);
+        let actual = Sum::of(24, unit);
         let expected = Sum(btreemap! { unit => 24 });
         assert_eq!(actual, expected);
     }
@@ -88,7 +88,7 @@ mod test {
     fn and() {
         let mut book = test_book!("");
         let unit = book.new_unit("");
-        let actual = Sum::new().and(unit, 124);
+        let actual = Sum::new().and(124, unit);
         let expected = Sum(btreemap! { unit => 124 });
         assert_eq!(actual, expected);
     }
@@ -97,7 +97,7 @@ mod test {
         let mut book = test_book!("");
         let unit = book.new_unit("");
         let mut actual = Sum::new();
-        actual.set_amount_for_unit(unit, 3);
+        actual.set_amount_for_unit(3, unit);
         let expected = Sum(btreemap! { unit => 3 });
         assert_eq!(actual, expected);
     }
@@ -106,7 +106,7 @@ mod test {
         let mut book = test_book!("");
         let thb = book.new_unit("THB");
         let usd = book.new_unit("USD");
-        let sum = Sum::of(thb, 3).and(usd, 10);
+        let sum = Sum::of(3, thb).and(10, usd);
         let actual = sum.get_all_amounts().collect::<Vec<_>>();
         let expected = vec![(&thb, &3), (&usd, &10)];
         assert_eq!(actual, expected);
@@ -118,7 +118,7 @@ mod test {
         let amount_a = 76;
         let unit_b = book.new_unit("");
         let amount_b = 45;
-        let sum = Sum::of(unit_a, amount_a).and(unit_b, amount_b);
+        let sum = Sum::of(amount_a, unit_a).and(amount_b, unit_b);
         let actual = format!("{:?}", sum);
         let expected = format!(
             "Sum({{{:?}: {:?}, {:?}: {:?}}})",
