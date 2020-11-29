@@ -189,7 +189,7 @@ fn running_balance() {
     txs.into_iter()
         .for_each(|tx| book.transfer(tx.0, tx.1, tx.2).unwrap());
 
-    let mut running_balance = book.running_balance(bank).unwrap();
+    let mut running_balance = book.running_balance(bank).unwrap().collect::<Vec<_>>();
     running_balance.sort_by_key(|(tx, _)| tx.datetime());
     assert_eq!(
         running_balance

@@ -1,12 +1,16 @@
-use super::accounting::{Account, AccountId, Transaction};
+use super::accounting;
 pub use super::monetary::*;
+use accounting::Account;
 pub use chrono::{DateTime, Utc};
+use derive_more::Display;
+use std::collections::HashMap;
+use std::ops::Deref;
 pub use std::result::Result;
 use thiserror::Error;
 
 #[derive(Debug)]
 pub struct Book {
-    accounts: Vec<Account>,
+    accounts: HashMap<AccountId, Account>,
     transactions: Vec<Transaction>,
 }
 
@@ -14,7 +18,7 @@ pub struct Book {
 impl Book {
     pub fn new() -> Self {
         Self {
-            accounts: Vec::new(),
+            accounts: HashMap::new(),
             transactions: Vec::new(),
         }
     }
@@ -24,19 +28,18 @@ impl Book {
         if self.account_exists(&acc_id) {
             Err(CreateAccountError::AlreadyExists(acc_id))
         } else {
-            self.accounts.push(Account::new(acc_id.clone()));
+            self.accounts.insert(acc_id.clone(), Account::new());
             Ok(acc_id)
         }
     }
 
     pub fn accounts(&self) -> impl Iterator<Item = &Account> {
-        self.accounts.iter()
+        self.accounts.values()
     }
 
     pub fn lookup_account(&self, id: &AccountId) -> Result<&Account, LookupAccountError> {
         self.accounts
-            .iter()
-            .find(|acc| acc.id() == *id)
+            .get(id)
             .ok_or(LookupAccountError::DoesNotExist(id.clone()))
     }
 
@@ -56,16 +59,16 @@ impl Book {
         to: &AccountId,
         money: Money,
     ) -> Result<(), TransferError> {
-        let from = self
-            .lookup_account(from)
-            .map_err(TransferError::CannotTransferFromAccount)?
-            .id();
-        let to = self
-            .lookup_account(to)
-            .map_err(TransferError::CannotTransferToAccount)?
-            .id();
-        self.transactions
-            .push(Transaction::new(datetime, from, to, money));
+        self.lookup_account(from)
+            .map_err(TransferError::CannotTransferFromAccount)?;
+        self.lookup_account(to)
+            .map_err(TransferError::CannotTransferToAccount)?;
+        self.transactions.push(Transaction {
+            datetime,
+            from: from.clone(),
+            to: to.clone(),
+            money,
+        });
         Ok(())
     }
 
@@ -79,19 +82,75 @@ impl Book {
         acc: &AccountId,
     ) -> Result<Money, LookupAccountError> {
         self.lookup_account(acc)
-            .map(|acc| acc.balance(datetime, &self.transactions))
+            .map(|acc| acc.balance(datetime, &self.accounting_transactions()))
     }
 
-    pub fn running_balance(
-        &self,
-        id: &AccountId,
-    ) -> Result<Vec<(&Transaction, Money)>, LookupAccountError> {
-        self.lookup_account(id)
-            .map(|acc| acc.running_balance(&self.transactions))
+    pub fn running_balance<'a>(
+        &'a self,
+        id: &'a AccountId,
+    ) -> Result<impl Iterator<Item = (&Transaction, Money)> + 'a, LookupAccountError> {
+        self.lookup_account(id).map(move |_| {
+            self.transactions.iter().filter_map(move |tx| {
+                if tx.to == *id || tx.from == *id {
+                    Some((tx, self.balance_at(tx.datetime, id).unwrap()))
+                } else {
+                    None
+                }
+            })
+        })
     }
 
     fn account_exists(&self, acc: &AccountId) -> bool {
-        self.accounts.iter().any(|account| account.id() == *acc)
+        self.accounts.contains_key(acc)
+    }
+
+    fn accounting_transactions(&self) -> Vec<accounting::Transaction> {
+        self.transactions
+            .iter()
+            .map(|tx| {
+                self.lookup_account(&tx.from).unwrap().transfer(
+                    tx.datetime,
+                    self.lookup_account(&tx.to).unwrap(),
+                    tx.money.clone(),
+                )
+            })
+            .collect()
+    }
+}
+
+#[derive(Hash, Clone, Debug, Display, PartialEq, Eq)]
+pub struct AccountId(String);
+
+impl Deref for AccountId {
+    type Target = String;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl AccountId {
+    fn new(id: &str) -> Self {
+        AccountId(id.to_string())
+    }
+}
+
+impl From<&str> for AccountId {
+    fn from(name: &str) -> Self {
+        AccountId::new(name)
+    }
+}
+
+#[derive(Debug)]
+pub struct Transaction {
+    datetime: DateTime<Utc>,
+    from: AccountId,
+    to: AccountId,
+    money: Money,
+}
+
+impl Transaction {
+    pub fn datetime(&self) -> DateTime<Utc> {
+        self.datetime
     }
 }
 

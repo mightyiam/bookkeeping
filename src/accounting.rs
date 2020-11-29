@@ -1,26 +1,31 @@
-use std::ops::Deref;
-
 use chrono::{DateTime, Utc};
-use derive_more::Display;
 
 use super::monetary::*;
 
 #[derive(PartialEq, Eq, Debug)]
 pub struct Account {
-    id: AccountId,
+    id: usize,
 }
 
 impl Account {
-    pub fn new(id: AccountId) -> Self {
-        Self { id }
+    pub fn new() -> Self {
+
+        fn get_id() -> usize {
+            use std::sync::atomic::{AtomicUsize, Ordering};
+            static COUNTER: AtomicUsize = AtomicUsize::new(1);
+            COUNTER.fetch_add(1, Ordering::Relaxed)
+        }
+
+        Self { id: get_id() }
     }
 
-    pub fn id(&self) -> AccountId {
-        self.id.clone()
-    }
-
-    pub fn transfer(&self, datetime: DateTime<Utc>, to: &Account, money: Money) -> Transaction {
-        Transaction::new(datetime, self.id(), to.id(), money)
+    pub fn transfer<'a>(
+        &'a self,
+        datetime: DateTime<Utc>,
+        to: &'a Account,
+        money: Money,
+    ) -> Transaction {
+        Transaction::new(datetime, self, to, money)
     }
 
     pub fn balance(&self, datetime: DateTime<Utc>, transactions: &[Transaction]) -> Money {
@@ -29,67 +34,29 @@ impl Account {
             .filter(|tx| tx.datetime <= datetime)
             .map(|tx| {
                 let mut money = Money::none();
-                if tx.to == self.id() {
+                if tx.to == self {
                     money += tx.money.clone();
                 }
-                if tx.from == self.id() {
+                if tx.from == self {
                     money -= tx.money.clone();
                 }
                 money
             })
             .collect()
     }
-
-    pub fn running_balance<'a>(
-        &self,
-        transactions: &'a [Transaction],
-    ) -> Vec<(&'a Transaction, Money)> {
-        transactions
-            .iter()
-            .filter_map(|tx| {
-                if tx.to == self.id() || tx.from == self.id() {
-                    Some((tx, self.balance(tx.datetime, transactions)))
-                } else {
-                    None
-                }
-            })
-            .collect()
-    }
-}
-
-#[derive(Clone, Debug, Display, PartialEq, Eq)]
-pub struct AccountId(String);
-
-impl Deref for AccountId {
-    type Target = String;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl AccountId {
-    fn new(id: &str) -> Self {
-        AccountId(id.to_string())
-    }
-}
-
-impl From<&str> for AccountId {
-    fn from(name: &str) -> Self {
-        AccountId::new(name)
-    }
 }
 
 #[derive(Clone, Debug)]
-pub struct Transaction {
-    pub(crate) datetime: DateTime<Utc>,
-    pub(crate) from: AccountId,
-    pub(crate) to: AccountId,
-    pub(crate) money: Money,
+pub struct Transaction<'a> {
+    pub(self) datetime: DateTime<Utc>,
+    pub(self) from: &'a Account,
+    pub(self) to: &'a Account,
+    pub(self) money: Money,
 }
 
-impl Transaction {
-    pub fn new(datetime: DateTime<Utc>, from: AccountId, to: AccountId, money: Money) -> Self {
-        Transaction {
+impl<'a> Transaction<'a> {
+    pub fn new(datetime: DateTime<Utc>, from: &'a Account, to: &'a Account, money: Money) -> Self {
+        Self {
             datetime,
             from,
             to,
@@ -99,5 +66,22 @@ impl Transaction {
 
     pub fn datetime(&self) -> DateTime<Utc> {
         self.datetime
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use chrono::Utc;
+
+    use super::*;
+
+    #[test]
+    fn transfer() {
+        let acc1 = Account::new();
+        let acc2 = Account::new();
+        let ref thb = THB();
+        let transactions = vec![acc1.transfer(Utc::now(), &acc2, thb.of_major(50))];
+        assert_eq!(acc1.balance(Utc::now(), &transactions), thb.of_major(-50));
+        assert_eq!(acc2.balance(Utc::now(), &transactions), thb.of_major(50));
     }
 }
