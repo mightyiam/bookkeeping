@@ -88,18 +88,18 @@ mod test {
     fn and() {
         let mut book = test_book!("");
         let unit = book.new_unit("");
-        let sum = Sum::new().and(unit, 124);
+        let actual = Sum::new().and(unit, 124);
         let expected = Sum(btreemap! { unit => 124 });
-        assert_eq!(sum, expected);
+        assert_eq!(actual, expected);
     }
     #[test]
     fn set_amount_for_unit() {
         let mut book = test_book!("");
         let unit = book.new_unit("");
-        let mut sum = Sum::new();
-        sum.set_amount_for_unit(unit, 3);
+        let mut actual = Sum::new();
+        actual.set_amount_for_unit(unit, 3);
         let expected = Sum(btreemap! { unit => 3 });
-        assert_eq!(sum, expected);
+        assert_eq!(actual, expected);
     }
     #[test]
     fn get_all_amounts() {
