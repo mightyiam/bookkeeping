@@ -1,4 +1,10 @@
-#![warn(missing_docs)]
+#![deny(missing_docs)]
+#![deny(broken_intra_doc_links)]
+//#![deny(private_intra_doc_links)]
+#![deny(missing_crate_level_docs)]
+#![deny(missing_doc_code_examples)]
+#![deny(private_doc_tests)]
+#![deny(invalid_codeblock_attributes)]
 //! _This is a new rustacean's first open source crate.
 //! It is made with the intention of serving as the go-to bookkeeping crate.
 //! To get there, reviews from knowledgeable rustaceans seem necessary, so if you are one, then consider giving this crate your full attention for a while and leave your comments as a contribution to the community._
