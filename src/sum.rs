@@ -7,10 +7,7 @@ pub struct Sum(pub(crate) BTreeMap<Uk, u64>);
 impl Sum {
     /// Creates an empty sum.
     /// ```
-    /// # use bookkeeping::Book;
     /// # use bookkeeping::Sum;
-    /// # let mut book = Book::<&str, &str, &str, &str>::new("");
-    /// # let usd = book.new_unit("USD");
     /// let mut sum = Sum::new();
     /// # assert!(sum.get_all_amounts().next().is_none());
     /// ```
