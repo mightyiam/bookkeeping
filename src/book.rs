@@ -142,6 +142,79 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
         let move_ = Move::new(debit_account, credit_account, sum, meta);
         self.moves.insert(move_)
     }
+    /// Gets an account using a key.
+    ///
+    /// ## Panics
+    ///
+    /// - No such account in the book.
+    ///
+    /// ```
+    /// # use bookkeeping::{ Book, Sum };
+    /// # use chrono::{ DateTime, Utc };
+    /// # struct BookMetadata { id: u8 }
+    /// # struct AccountMetadata { name: String }
+    /// # struct UnitMetadata { currency_code: String }
+    /// # struct MoveMetadata { date: DateTime<Utc> }
+    /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
+    /// #     BookMetadata { id: 0 },
+    /// # );
+    /// # let wallet_key = book.new_account(AccountMetadata { name: String::from("Wallet") });
+    /// let wallet = book.get_account(wallet_key);
+    /// ```
+    pub fn get_account(&self, key: AccountKey) -> &Account<Am> {
+        self.assert_has_account(key);
+        self.accounts.get(key).unwrap()
+    }
+    /// Gets a unit using a key.
+    ///
+    /// ## Panics
+    ///
+    /// - No such unit in the book.
+    ///
+    /// ```
+    /// # use bookkeeping::{ Book, Sum };
+    /// # use chrono::{ DateTime, Utc };
+    /// # struct BookMetadata { id: u8 }
+    /// # struct AccountMetadata { name: String }
+    /// # struct UnitMetadata { currency_code: String }
+    /// # struct MoveMetadata { date: DateTime<Utc> }
+    /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
+    /// #     BookMetadata { id: 0 },
+    /// # );
+    /// # let usd_key = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
+    /// let usd = book.get_unit(usd_key);
+    /// ```
+    pub fn get_unit(&self, key: UnitKey) -> &Unit<Um> {
+        self.assert_has_unit(key);
+        self.units.get(key).unwrap()
+    }
+    /// Gets a move using a key.
+    ///
+    /// ## Panics
+    ///
+    /// - No such move in the book.
+    ///
+    /// ```
+    /// # use bookkeeping::{ Book, Sum };
+    /// # use chrono::{ DateTime, Utc };
+    /// # struct BookMetadata { id: u8 }
+    /// # struct AccountMetadata { name: String }
+    /// # struct UnitMetadata { currency_code: String }
+    /// # struct MoveMetadata { date: DateTime<Utc> }
+    /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
+    /// #     BookMetadata { id: 0 },
+    /// # );
+    /// # let wallet = book.new_account(AccountMetadata { name: String::from("Wallet") });
+    /// # let bank = book.new_account(AccountMetadata { name: String::from("Bank") });
+    /// # let usd = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
+    /// # let sum = Sum::new();
+    /// # let move_key = book.new_move(bank, wallet, sum, MoveMetadata { date: Utc::now() });
+    /// let move_ = book.get_move(move_key);
+    /// ```
+    pub fn get_move(&self, key: MoveKey) -> &Move<Mm> {
+        self.assert_has_move(key);
+        self.moves.get(key).unwrap()
+    }
     /// Calculates the balance of an account at a move according to a provided order of moves.
     ///
     /// ## Panics
@@ -207,10 +280,10 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     }
 }
 #[duplicate(
-    R             getter        set_metadata             assert_has           Key          M    plural      string    ;
-    [Account<Am>] [get_account] [set_account_metadata]   [assert_has_account] [AccountKey] [Am] [accounts] ["account"];
-    [Unit<Um>]    [get_unit]    [set_unit_metadata]      [assert_has_unit]    [UnitKey]    [Um] [units]    ["unit"]   ;
-    [Move<Mm>]    [get_move]    [set_move_metadata]      [assert_has_move]    [MoveKey]    [Mm] [moves]    ["move"]   ;
+    set_metadata             assert_has           Key          M    plural      string    ;
+    [set_account_metadata]   [assert_has_account] [AccountKey] [Am] [accounts] ["account"];
+    [set_unit_metadata]      [assert_has_unit]    [UnitKey]    [Um] [units]    ["unit"]   ;
+    [set_move_metadata]      [assert_has_move]    [MoveKey]    [Mm] [moves]    ["move"]   ;
 )]
 impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// Sets the metadata value.
@@ -219,15 +292,6 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
             .get_mut(key)
             .expect("No value found for this key.")
             .meta = meta;
-    }
-    /// Gets a record using a key.
-    ///
-    /// ## Panics
-    ///
-    /// - No such record in the book.
-    pub fn getter(&self, key: Key) -> &R {
-        self.assert_has(key);
-        self.plural.get(key).unwrap()
     }
     fn assert_has(&self, key: Key) {
         assert!(
