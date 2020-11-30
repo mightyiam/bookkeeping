@@ -83,6 +83,21 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
         self.accounts.insert(Account::new(meta))
     }
     /// Creates a new unit.
+    ///
+    /// ```
+    /// # use bookkeeping::Book;
+    /// # use chrono::{ DateTime, Utc };
+    /// # struct BookMetadata { id: u8 }
+    /// # struct AccountMetadata { name: String }
+    /// struct UnitMetadata { currency_code: String }
+    /// # struct MoveMetadata { date: DateTime<Utc> }
+    /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
+    /// #     BookMetadata { id: 0 },
+    /// # );
+    /// let usd = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
+    /// let thb = book.new_unit(UnitMetadata { currency_code: String::from("THB") });
+    /// let ils = book.new_unit(UnitMetadata { currency_code: String::from("ILS") });
+    /// ```
     pub fn new_unit(&mut self, meta: Um) -> UnitKey {
         self.units.insert(Unit::new(meta))
     }
