@@ -48,6 +48,19 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
         &self.meta
     }
     /// Sets the book's metadata.
+    ///
+    /// ```
+    /// # use bookkeeping::Book;
+    /// # use chrono::{ DateTime, Utc };
+    /// struct BookMetadata { id: u8 }
+    /// # struct AccountMetadata { name: String }
+    /// # struct UnitMetadata { currency_code: String }
+    /// # struct MoveMetadata { date: DateTime<Utc> }
+    /// let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
+    ///     BookMetadata { id: 0 },
+    /// );
+    /// book.set_metadata(BookMetadata{ id: 1 });
+    /// ```
     pub fn set_metadata(&mut self, meta: Bm) {
         self.meta = meta;
     }
