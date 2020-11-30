@@ -189,20 +189,22 @@ fn running_balance() {
     txs.into_iter()
         .for_each(|tx| book.transfer(tx.0, tx.1, tx.2).unwrap());
 
-    let mut running_balance = book.running_balance(bank).unwrap().collect::<Vec<_>>();
-    running_balance.sort_by_key(|(tx, _)| tx.datetime());
-    assert_eq!(
-        running_balance
-            .iter()
-            .map(|(_, m)| m.to_owned())
-            .collect::<Vec<_>>(),
-        [10, 6, 3, 1, 0]
-            .iter()
-            .map(|&n| thb.of_major(n))
-            .collect::<Vec<_>>()
-    );
-    println!("running balance of {:?}", bank);
-    running_balance.iter().for_each(|bal| {
-        println!("{:?}", bal);
+    assert_matches!(book.running_balance(bank), Ok(running_balance) => {
+        let mut running_balance = running_balance.collect::<Vec<_>>();
+        running_balance.sort_by_key(|(tx, _)| tx.datetime());
+        assert_eq!(
+            running_balance
+                .iter()
+                .map(|(_, m)| m.to_owned())
+                .collect::<Vec<_>>(),
+            [10, 6, 3, 1, 0]
+                .iter()
+                .map(|&n| thb.of_major(n))
+                .collect::<Vec<_>>()
+        );
+        println!("running balance of {:#?}", bank);
+        running_balance.iter().for_each(|bal| {
+            println!("{:#?}", bal);
+        });
     });
 }

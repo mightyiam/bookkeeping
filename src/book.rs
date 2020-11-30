@@ -4,6 +4,7 @@ use accounting::Account;
 pub use chrono::{DateTime, Utc};
 use derive_more::Display;
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::ops::Deref;
 pub use std::result::Result;
 use thiserror::Error;
@@ -81,21 +82,20 @@ impl Book {
         datetime: DateTime<Utc>,
         acc: &AccountId,
     ) -> Result<Money, LookupAccountError> {
-        self.lookup_account(acc)
-            .map(|acc| acc.balance(datetime, &self.accounting_transactions()))
+        self.lookup_account(acc).and_then(|acc| {
+            acc.balance_with(datetime, &self.transactions, move |t| {
+                self.into_accounting_transaction(t)
+            })
+        })
     }
 
     pub fn running_balance<'a>(
         &'a self,
         id: &'a AccountId,
-    ) -> Result<impl Iterator<Item = (&Transaction, Money)> + 'a, LookupAccountError> {
-        self.lookup_account(id).map(move |_| {
-            self.transactions.iter().filter_map(move |tx| {
-                if tx.to == *id || tx.from == *id {
-                    Some((tx, self.balance_at(tx.datetime, id).unwrap()))
-                } else {
-                    None
-                }
+    ) -> Result<impl Iterator<Item = (&Transaction, Money)> + Debug + 'a, LookupAccountError> {
+        self.lookup_account(id).and_then(move |acc| {
+            acc.running_balance_with(&self.transactions, move |tx| {
+                self.into_accounting_transaction(tx)
             })
         })
     }
@@ -104,17 +104,14 @@ impl Book {
         self.accounts.contains_key(acc)
     }
 
-    fn accounting_transactions(&self) -> Vec<accounting::Transaction> {
-        self.transactions
-            .iter()
-            .map(|tx| {
-                self.lookup_account(&tx.from).unwrap().transfer(
-                    tx.datetime,
-                    self.lookup_account(&tx.to).unwrap(),
-                    tx.money.clone(),
-                )
-            })
-            .collect()
+    fn into_accounting_transaction(
+        &self,
+        tx: &Transaction,
+    ) -> Result<accounting::Transaction, LookupAccountError> {
+        self.lookup_account(&tx.from).and_then(|from| {
+            self.lookup_account(&tx.to)
+                .map(|to| from.transfer_to(tx.datetime, to, tx.money.clone()))
+        })
     }
 }
 
