@@ -23,6 +23,18 @@ pub struct Book<Bm, Am, Um, Mm> {
 }
 impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// Creates a new book
+    ///
+    /// ```
+    /// # use bookkeeping::Book;
+    /// # use chrono::{ DateTime, Utc };
+    /// struct BookMetadata { id: u8 }
+    /// struct AccountMetadata { name: String }
+    /// struct UnitMetadata { currency_code: String }
+    /// struct MoveMetadata { date: DateTime<Utc> }
+    /// let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
+    ///     BookMetadata { id: 0 },
+    /// );
+    /// ```
     pub fn new(meta: Bm) -> Self {
         Self {
             meta,

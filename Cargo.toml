@@ -16,5 +16,6 @@ duplicate = "0.2.9"
 slotmap = "0.4.0"
 
 [dev_dependencies]
+chrono = "0.4.19"
 maplit = "1.0.2"
 rusty-hook = "0.11.2"
