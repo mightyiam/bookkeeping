@@ -9,7 +9,7 @@ impl Sum {
     /// ```
     /// # use bookkeeping::Sum;
     /// let mut sum = Sum::new();
-    /// # assert!(sum.get_all_amounts().next().is_none());
+    /// # assert!(sum.amounts().next().is_none());
     /// ```
     pub fn new() -> Self {
         Self(BTreeMap::new())
@@ -29,7 +29,7 @@ impl Sum {
     /// # let usd = book.new_unit("USD");
     /// # let mut sum = Sum::new();
     /// sum.set_amount_for_unit(500, usd);
-    /// # assert_eq!(sum.get_all_amounts().collect::<Vec<_>>(), vec![(&usd, &500)]);
+    /// # assert_eq!(sum.amounts().collect::<Vec<_>>(), vec![(&usd, &500)]);
     /// ```
     pub fn set_amount_for_unit(&mut self, amount: u64, unit: Uk) {
         self.0.insert(unit, amount);
@@ -45,11 +45,11 @@ impl Sum {
     /// # sum.set_amount_for_unit(500, usd);
     /// # sum.set_amount_for_unit(900, thb);
     /// assert_eq!(
-    ///     sum.get_all_amounts().collect::<Vec<_>>(),
+    ///     sum.amounts().collect::<Vec<_>>(),
     ///     vec![(&usd, &500), (&thb, &900)],
     /// );
     /// ```
-    pub fn get_all_amounts(&self) -> impl Iterator<Item = (&Uk, &u64)> {
+    pub fn amounts(&self) -> impl Iterator<Item = (&Uk, &u64)> {
         self.0.iter()
     }
 }
@@ -100,12 +100,12 @@ mod test {
         assert_eq!(actual, expected);
     }
     #[test]
-    fn get_all_amounts() {
+    fn amounts() {
         let mut book = test_book!("");
         let thb = book.new_unit("THB");
         let usd = book.new_unit("USD");
         let sum = sum!(3, thb; 10, usd);
-        let actual = sum.get_all_amounts().collect::<Vec<_>>();
+        let actual = sum.amounts().collect::<Vec<_>>();
         let expected = vec![(&thb, &3), (&usd, &10)];
         assert_eq!(actual, expected);
     }
