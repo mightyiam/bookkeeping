@@ -65,6 +65,20 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
         self.meta = meta;
     }
     /// Creates a new account.
+    ///
+    /// ```
+    /// # use bookkeeping::Book;
+    /// # use chrono::{ DateTime, Utc };
+    /// # struct BookMetadata { id: u8 }
+    /// struct AccountMetadata { name: String }
+    /// # struct UnitMetadata { currency_code: String }
+    /// # struct MoveMetadata { date: DateTime<Utc> }
+    /// let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
+    ///     BookMetadata { id: 0 },
+    /// );
+    /// let wallet = book.new_account(AccountMetadata { name: String::from("Wallet") });
+    /// let bank = book.new_account(AccountMetadata { name: String::from("Bank") });
+    /// ```
     pub fn new_account(&mut self, meta: Am) -> AccountKey {
         self.accounts.insert(Account::new(meta))
     }
