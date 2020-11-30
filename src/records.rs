@@ -1,4 +1,4 @@
-use crate::book::Ak;
+use crate::book::AccountKey;
 use crate::sum::Sum;
 use duplicate::duplicate;
 /// Represents an [account](https://en.wikipedia.org/wiki/Account_(bookkeeping)).
@@ -24,14 +24,14 @@ impl<Um> Unit<Um> {
 /// Represents a move of a [Sum] of [Unit](crate::Unit)s from one account to another.
 pub struct Move<Mm> {
     pub(crate) meta: Mm,
-    pub(crate) debit_account: Ak,
-    pub(crate) credit_account: Ak,
+    pub(crate) debit_account: AccountKey,
+    pub(crate) credit_account: AccountKey,
     pub(crate) sum: Sum,
 }
 impl<Mm> Move<Mm> {
     pub(crate) fn new(
-        debit_account: Ak,
-        credit_account: Ak,
+        debit_account: AccountKey,
+        credit_account: AccountKey,
         sum: Sum,
         meta: Mm,
     ) -> Self {
@@ -62,7 +62,7 @@ impl<M> Record<M> {
 #[cfg(test)]
 mod test {
     use super::Account;
-    use super::Ak;
+    use super::AccountKey;
     use super::Move;
     use super::Sum;
     use super::Unit;
@@ -80,12 +80,12 @@ mod test {
     #[test]
     #[should_panic(expected = "Debit and credit accounts are the same.")]
     fn move_new_panic_debit_and_credit_accounts_are_the_same() {
-        let account_key = DenseSlotMap::<Ak, ()>::with_key().insert(());
+        let account_key = DenseSlotMap::<AccountKey, ()>::with_key().insert(());
         Move::new(account_key, account_key, Sum::new(), ());
     }
     #[test]
     fn move_new() {
-        let mut slot_map = DenseSlotMap::<Ak, ()>::with_key();
+        let mut slot_map = DenseSlotMap::<AccountKey, ()>::with_key();
         let debit_account = slot_map.insert(());
         let credit_account = slot_map.insert(());
         let sum = Sum::new();
@@ -96,7 +96,7 @@ mod test {
     }
     #[test]
     fn move_metadata() {
-        let mut slot_map = DenseSlotMap::<Ak, ()>::with_key();
+        let mut slot_map = DenseSlotMap::<AccountKey, ()>::with_key();
         let debit_account = slot_map.insert(());
         let credit_account = slot_map.insert(());
         let sum = Sum::new();

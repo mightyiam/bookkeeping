@@ -33,6 +33,6 @@ mod book;
 mod records;
 mod sum;
 pub use balance::Balance;
-pub use book::Book;
+pub use book::{AccountKey, Book, MoveKey, UnitKey};
 pub use records::{Account, Move, Unit};
 pub use sum::Sum;

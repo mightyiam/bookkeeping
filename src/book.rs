@@ -6,26 +6,29 @@ use slotmap::{new_key_type, DenseSlotMap};
 use std::cmp::Ordering;
 use std::ops;
 new_key_type! {
-    pub struct Ak;
-    pub struct Uk;
-    pub struct Mk;
+    /// A key type for referencing accounts.
+    pub struct AccountKey;
+    /// A key type for referencing units.
+    pub struct UnitKey;
+    /// A key type for referencing moves.
+    pub struct MoveKey;
 }
 /// Represents a book.
 #[derive(Default)]
 pub struct Book<Bm, Am, Um, Mm> {
     meta: Bm,
-    accounts: DenseSlotMap<Ak, Account<Am>>,
-    units: DenseSlotMap<Uk, Unit<Um>>,
-    moves: DenseSlotMap<Mk, Move<Mm>>,
+    accounts: DenseSlotMap<AccountKey, Account<Am>>,
+    units: DenseSlotMap<UnitKey, Unit<Um>>,
+    moves: DenseSlotMap<MoveKey, Move<Mm>>,
 }
 impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// Creates a new book
     pub fn new(meta: Bm) -> Self {
         Self {
             meta,
-            accounts: DenseSlotMap::<Ak, Account<Am>>::with_key(),
-            units: DenseSlotMap::<Uk, Unit<Um>>::with_key(),
-            moves: DenseSlotMap::<Mk, Move<Mm>>::with_key(),
+            accounts: DenseSlotMap::<AccountKey, Account<Am>>::with_key(),
+            units: DenseSlotMap::<UnitKey, Unit<Um>>::with_key(),
+            moves: DenseSlotMap::<MoveKey, Move<Mm>>::with_key(),
         }
     }
     /// Gets the book's metadata.
@@ -37,11 +40,11 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
         self.meta = meta;
     }
     /// Creates a new account.
-    pub fn new_account(&mut self, meta: Am) -> Ak {
+    pub fn new_account(&mut self, meta: Am) -> AccountKey {
         self.accounts.insert(Account::new(meta))
     }
     /// Creates a new unit.
-    pub fn new_unit(&mut self, meta: Um) -> Uk {
+    pub fn new_unit(&mut self, meta: Um) -> UnitKey {
         self.units.insert(Unit::new(meta))
     }
     /// Creates a new move.
@@ -53,11 +56,11 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// - Some units that are in the sum are not in the book.
     pub fn new_move(
         &mut self,
-        debit_account: Ak,
-        credit_account: Ak,
+        debit_account: AccountKey,
+        credit_account: AccountKey,
         sum: Sum,
         meta: Mm,
-    ) -> Mk {
+    ) -> MoveKey {
         [debit_account, credit_account].iter().for_each(|key| {
             self.assert_has_account(*key);
         });
@@ -75,8 +78,8 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// - The account is not debit nor credit in the move.
     pub fn account_balance_with_move<'a>(
         &'a self,
-        account: Ak,
-        move_: Mk,
+        account: AccountKey,
+        move_: MoveKey,
         cmp: impl Fn(&Mm, &Mm) -> Ordering,
     ) -> Balance<'a> {
         self.assert_has_account(account);
@@ -113,14 +116,14 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     }
 }
 #[duplicate(
-    R             getter        set_metadata             assert_has           K    M    plural      string     ;
-    [Account<Am>] [get_account] [set_account_metadata]   [assert_has_account] [Ak] [Am] [accounts] ["account"];
-    [Unit<Um>]    [get_unit]    [set_unit_metadata]      [assert_has_unit]    [Uk] [Um] [units]    ["unit"]   ;
-    [Move<Mm>]    [get_move]    [set_move_metadata]      [assert_has_move]    [Mk] [Mm] [moves]    ["move"]   ;
+    R             getter        set_metadata             assert_has           Key          M    plural      string    ;
+    [Account<Am>] [get_account] [set_account_metadata]   [assert_has_account] [AccountKey] [Am] [accounts] ["account"];
+    [Unit<Um>]    [get_unit]    [set_unit_metadata]      [assert_has_unit]    [UnitKey]    [Um] [units]    ["unit"]   ;
+    [Move<Mm>]    [get_move]    [set_move_metadata]      [assert_has_move]    [MoveKey]    [Mm] [moves]    ["move"]   ;
 )]
 impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// Sets the metadata value.
-    pub fn set_metadata(&mut self, key: K, meta: M) {
+    pub fn set_metadata(&mut self, key: Key, meta: M) {
         self.plural
             .get_mut(key)
             .expect("No value found for this key.")
@@ -131,18 +134,18 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// ## Panics
     ///
     /// - No such record in the book.
-    pub fn getter(&self, key: K) -> &R {
+    pub fn getter(&self, key: Key) -> &R {
         self.assert_has(key);
         self.plural.get(key).unwrap()
     }
-    fn assert_has(&self, key: K) {
+    fn assert_has(&self, key: Key) {
         assert!(
             self.plural.contains_key(key),
             format!("No {} found for key {:?}", string, key),
         );
     }
     /// Gets an iterator of existing records in order of creation.
-    pub fn plural(&self) -> impl Iterator<Item = (K, &M)> {
+    pub fn plural(&self) -> impl Iterator<Item = (Key, &M)> {
         self.plural.iter().map(|(k, a)| (k, &a.meta))
     }
 }

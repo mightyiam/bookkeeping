@@ -1,9 +1,9 @@
-use crate::book::Uk;
+use crate::book::UnitKey;
 use std::collections::BTreeMap;
 use std::fmt;
 /// Represents amounts of any number of units.
 #[derive(Clone, PartialEq)]
-pub struct Sum(pub(crate) BTreeMap<Uk, u64>);
+pub struct Sum(pub(crate) BTreeMap<UnitKey, u64>);
 impl Sum {
     /// Creates an empty sum.
     /// ```
@@ -16,7 +16,7 @@ impl Sum {
     }
     /// Creates a sum with an amount of a unit.
     #[cfg(test)]
-    pub(crate) fn of(amount: u64, unit: Uk) -> Self {
+    pub(crate) fn of(amount: u64, unit: UnitKey) -> Self {
         let mut sum = Self::new();
         sum.set_amount_for_unit(amount, unit);
         sum
@@ -31,7 +31,7 @@ impl Sum {
     /// sum.set_amount_for_unit(500, usd);
     /// # assert_eq!(sum.amounts().collect::<Vec<_>>(), vec![(&usd, &500)]);
     /// ```
-    pub fn set_amount_for_unit(&mut self, amount: u64, unit: Uk) {
+    pub fn set_amount_for_unit(&mut self, amount: u64, unit: UnitKey) {
         self.0.insert(unit, amount);
     }
     /// Gets the amounts of all units in undefined order.
@@ -49,7 +49,7 @@ impl Sum {
     ///     vec![(&usd, &500), (&thb, &900)],
     /// );
     /// ```
-    pub fn amounts(&self) -> impl Iterator<Item = (&Uk, &u64)> {
+    pub fn amounts(&self) -> impl Iterator<Item = (&UnitKey, &u64)> {
         self.0.iter()
     }
 }
