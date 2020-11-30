@@ -76,7 +76,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     ///
     /// - The account is not in the book.
     /// - The account is not debit nor credit in the move.
-    pub fn account_balance_with_move<'a>(
+    pub fn account_balance_at_move<'a>(
         &'a self,
         account: AccountKey,
         move_: MoveKey,
@@ -307,7 +307,7 @@ mod test {
         let move_ =
             book.new_move(debit_account, credit_account, Sum::new(), "");
         book.accounts.remove(debit_account);
-        book.account_balance_with_move(debit_account, move_, |_, _| panic!());
+        book.account_balance_at_move(debit_account, move_, |_, _| panic!());
     }
     #[test]
     #[should_panic(expected = "No move found for key ")]
@@ -318,7 +318,7 @@ mod test {
         let move_ =
             book.new_move(debit_account, credit_account, Sum::new(), "");
         book.moves.remove(move_);
-        book.account_balance_with_move(debit_account, move_, |_, _| panic!());
+        book.account_balance_at_move(debit_account, move_, |_, _| panic!());
     }
     #[test]
     #[should_panic(
@@ -331,7 +331,7 @@ mod test {
         let move_ =
             book.new_move(debit_account, credit_account, Sum::new(), "");
         let other_account = book.new_account("");
-        book.account_balance_with_move(other_account, move_, |_, _| {
+        book.account_balance_at_move(other_account, move_, |_, _| {
             panic!();
         });
     }
@@ -344,55 +344,55 @@ mod test {
         let unit = book.new_unit("");
         let move_1 = book.new_move(account_a, account_b, Sum::of(3, unit), 1);
         assert_eq!(
-            book.account_balance_with_move(account_a, move_1, cmp),
+            book.account_balance_at_move(account_a, move_1, cmp),
             Balance::new() - &Sum::of(3, unit),
         );
         assert_eq!(
-            book.account_balance_with_move(account_b, move_1, cmp),
+            book.account_balance_at_move(account_b, move_1, cmp),
             Balance::new() + &Sum::of(3, unit),
         );
 
         let move_2 = book.new_move(account_a, account_b, Sum::of(4, unit), 2);
         assert_eq!(
-            book.account_balance_with_move(account_a, move_1, cmp),
+            book.account_balance_at_move(account_a, move_1, cmp),
             Balance::new() - &Sum::of(3, unit),
         );
         assert_eq!(
-            book.account_balance_with_move(account_b, move_1, cmp),
+            book.account_balance_at_move(account_b, move_1, cmp),
             Balance::new() + &Sum::of(3, unit),
         );
         assert_eq!(
-            book.account_balance_with_move(account_a, move_2, cmp),
+            book.account_balance_at_move(account_a, move_2, cmp),
             Balance::new() - &Sum::of(7, unit),
         );
         assert_eq!(
-            book.account_balance_with_move(account_b, move_2, cmp),
+            book.account_balance_at_move(account_b, move_2, cmp),
             Balance::new() + &Sum::of(7, unit),
         );
 
         let move_0 = book.new_move(account_a, account_b, Sum::of(1, unit), 0);
         assert_eq!(
-            book.account_balance_with_move(account_a, move_0, cmp),
+            book.account_balance_at_move(account_a, move_0, cmp),
             Balance::new() - &Sum::of(1, unit),
         );
         assert_eq!(
-            book.account_balance_with_move(account_b, move_0, cmp),
+            book.account_balance_at_move(account_b, move_0, cmp),
             Balance::new() + &Sum::of(1, unit),
         );
         assert_eq!(
-            book.account_balance_with_move(account_a, move_1, cmp),
+            book.account_balance_at_move(account_a, move_1, cmp),
             Balance::new() - &Sum::of(4, unit),
         );
         assert_eq!(
-            book.account_balance_with_move(account_b, move_1, cmp),
+            book.account_balance_at_move(account_b, move_1, cmp),
             Balance::new() + &Sum::of(4, unit),
         );
         assert_eq!(
-            book.account_balance_with_move(account_a, move_2, cmp),
+            book.account_balance_at_move(account_a, move_2, cmp),
             Balance::new() - &Sum::of(8, unit),
         );
         assert_eq!(
-            book.account_balance_with_move(account_b, move_2, cmp),
+            book.account_balance_at_move(account_b, move_2, cmp),
             Balance::new() + &Sum::of(8, unit),
         );
     }

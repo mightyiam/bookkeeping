@@ -38,7 +38,7 @@ impl Balance<'_> {
     /// # sum.set_amount_for_unit(200, thb);
     /// # sum.set_amount_for_unit(300, ils);
     /// # let move_ = book.new_move(debit_account, credit_account, sum, 0);
-    /// # let balance = book.account_balance_with_move(credit_account, move_, |a, b| a.cmp(b));
+    /// # let balance = book.account_balance_at_move(credit_account, move_, |a, b| a.cmp(b));
     /// let amounts = balance.amounts().collect::<HashSet<_>>();
     /// assert!(amounts.contains(&(&usd, &100)));
     /// assert!(amounts.contains(&(&thb, &200)));
