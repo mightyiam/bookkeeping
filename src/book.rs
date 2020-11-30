@@ -148,6 +148,25 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     ///
     /// - The account is not in the book.
     /// - The account is not debit nor credit in the move.
+    ///
+    /// ```
+    /// # use bookkeeping::{ Book, Sum };
+    /// # use chrono::{ DateTime, Utc };
+    /// # struct BookMetadata { id: u8 }
+    /// # struct AccountMetadata { name: String }
+    /// # struct UnitMetadata { currency_code: String }
+    /// struct MoveMetadata { date: DateTime<Utc> }
+    /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
+    /// #     BookMetadata { id: 0 },
+    /// # );
+    /// # let wallet = book.new_account(AccountMetadata { name: String::from("Wallet") });
+    /// # let bank = book.new_account(AccountMetadata { name: String::from("Bank") });
+    /// # let usd = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
+    /// # let mut sum = Sum::new();
+    /// # sum.set_amount_for_unit(800, usd);
+    /// # let move_ = book.new_move(bank, wallet, sum, MoveMetadata { date: Utc::now() });
+    /// let balance = book.account_balance_at_move(wallet, move_, |a, b| a.date.cmp(&b.date));
+    /// ```
     pub fn account_balance_at_move<'a>(
         &'a self,
         account: AccountKey,
