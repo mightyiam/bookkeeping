@@ -113,15 +113,15 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     }
 }
 #[duplicate(
-    R             getter        set_metadata            records_iter    assert_has           K    M    field      string     ;
-    [Account<Am>] [get_account] [set_account_metadata]  [accounts_iter] [assert_has_account] [Ak] [Am] [accounts] ["account"];
-    [Unit<Um>]    [get_unit]    [set_unit_metadata]     [units_iter]    [assert_has_unit]    [Uk] [Um] [units]    ["unit"]   ;
-    [Move<Mm>]    [get_move]    [set_move_metadata]     [moves_iter]    [assert_has_move]    [Mk] [Mm] [moves]    ["move"]   ;
+    R             getter        set_metadata             assert_has           K    M    plural      string     ;
+    [Account<Am>] [get_account] [set_account_metadata]   [assert_has_account] [Ak] [Am] [accounts] ["account"];
+    [Unit<Um>]    [get_unit]    [set_unit_metadata]      [assert_has_unit]    [Uk] [Um] [units]    ["unit"]   ;
+    [Move<Mm>]    [get_move]    [set_move_metadata]      [assert_has_move]    [Mk] [Mm] [moves]    ["move"]   ;
 )]
 impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// Sets the metadata value.
     pub fn set_metadata(&mut self, key: K, meta: M) {
-        self.field
+        self.plural
             .get_mut(key)
             .expect("No value found for this key.")
             .meta = meta;
@@ -133,17 +133,17 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// - No such record in the book.
     pub fn getter(&self, key: K) -> &R {
         self.assert_has(key);
-        self.field.get(key).unwrap()
+        self.plural.get(key).unwrap()
     }
     fn assert_has(&self, key: K) {
         assert!(
-            self.field.contains_key(key),
+            self.plural.contains_key(key),
             format!("No {} found for key {:?}", string, key),
         );
     }
     /// Gets an iterator of existing records in order of creation.
-    pub fn records_iter(&self) -> impl Iterator<Item = (K, &M)> {
-        self.field.iter().map(|(k, a)| (k, &a.meta))
+    pub fn plural(&self) -> impl Iterator<Item = (K, &M)> {
+        self.plural.iter().map(|(k, a)| (k, &a.meta))
     }
 }
 #[cfg(test)]
@@ -209,33 +209,33 @@ mod test {
         assert_eq!(book.moves.len(), 1);
     }
     #[test]
-    fn accounts_iter() {
+    fn accounts() {
         let mut book = test_book!("");
-        assert!(book.accounts_iter().next().is_none());
+        assert!(book.accounts().next().is_none());
         let account = book.new_account("");
         let expected = vec![(account, &"")];
-        let actual = book.accounts_iter().collect::<Vec<_>>();
+        let actual = book.accounts().collect::<Vec<_>>();
         assert_eq!(actual, expected);
     }
     #[test]
-    fn units_iter() {
+    fn units() {
         let mut book = test_book!("");
-        assert!(book.units_iter().next().is_none());
+        assert!(book.units().next().is_none());
         let unit = book.new_unit("");
         let expected = vec![(unit, &"")];
-        let actual = book.units_iter().collect::<Vec<_>>();
+        let actual = book.units().collect::<Vec<_>>();
         assert_eq!(actual, expected);
     }
     #[test]
-    fn moves_iter() {
+    fn moves() {
         let mut book = test_book!("");
-        assert!(book.moves_iter().next().is_none());
+        assert!(book.moves().next().is_none());
         let credit_account = book.new_account("");
         let debit_account = book.new_account("");
         let move_ =
             book.new_move(debit_account, credit_account, Sum::new(), "");
         let expected = vec![(move_, &"")];
-        let actual = book.moves_iter().collect::<Vec<_>>();
+        let actual = book.moves().collect::<Vec<_>>();
         assert_eq!(actual, expected);
     }
     #[test]
