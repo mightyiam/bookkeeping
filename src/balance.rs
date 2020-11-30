@@ -21,6 +21,32 @@ impl Balance<'_> {
                 .or_insert(amount_op(0, *amount));
         });
     }
+    /// Gets the amounts of all units in undefined order.
+    ///
+    /// ```
+    /// # use bookkeeping::Book;
+    /// # use bookkeeping::Sum;
+    /// # use std::collections::HashSet;
+    /// # let mut book = Book::<&str, &str, &str, u8>::new("");
+    /// # let usd = book.new_unit("");
+    /// # let thb = book.new_unit("");
+    /// # let ils = book.new_unit("");
+    /// # let debit_account = book.new_account("");
+    /// # let credit_account = book.new_account("");
+    /// # let mut sum = Sum::new();
+    /// # sum.set_amount_for_unit(100, usd);
+    /// # sum.set_amount_for_unit(200, thb);
+    /// # sum.set_amount_for_unit(300, ils);
+    /// # let move_ = book.new_move(debit_account, credit_account, sum, 0);
+    /// # let balance = book.account_balance_with_move(credit_account, move_, |a, b| a.cmp(b));
+    /// let amounts = balance.amounts().collect::<HashSet<_>>();
+    /// assert!(amounts.contains(&(&usd, &100)));
+    /// assert!(amounts.contains(&(&thb, &200)));
+    /// assert!(amounts.contains(&(&ils, &300)));
+    /// ```
+    pub fn amounts(&self) -> impl Iterator<Item = (&Uk, &i128)> {
+        self.0.iter()
+    }
 }
 impl fmt::Debug for Balance<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -65,6 +91,7 @@ mod test {
     use super::Balance;
     use super::PhantomData;
     use super::Sum;
+    use maplit::btreemap;
     #[test]
     fn new() {
         let actual = Balance::new();
@@ -165,6 +192,20 @@ mod test {
             },
             PhantomData,
         );
+        assert_eq!(actual, expected);
+    }
+    #[test]
+    fn amounts() {
+        let mut book = test_book!("");
+        let usd = book.new_unit("");
+        let thb = book.new_unit("");
+        let ils = book.new_unit("");
+        let balance = Balance::new()
+            + &sum! {
+                100, usd; 200, thb; 300, ils
+            };
+        let actual = balance.amounts().collect::<Vec<_>>();
+        let expected = vec![(&usd, &100), (&thb, &200), (&ils, &300)];
         assert_eq!(actual, expected);
     }
 }
