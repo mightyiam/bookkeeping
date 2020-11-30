@@ -32,7 +32,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     pub fn get_metadata(&self) -> &Bm {
         &self.meta
     }
-    /// Gets the book's metadata.
+    /// Sets the book's metadata.
     pub fn set_metadata(&mut self, meta: Bm) {
         self.meta = meta;
     }
