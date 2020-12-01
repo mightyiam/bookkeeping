@@ -215,6 +215,18 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
         self.assert_has_move(key);
         self.moves.get(key).unwrap()
     }
+    /// Gets an iterator of existing accounts in order of creation.
+    pub fn accounts(&self) -> impl Iterator<Item = (AccountKey, &Am)> {
+        self.accounts.iter().map(|(k, a)| (k, &a.meta))
+    }
+    /// Gets an iterator of existing units in order of creation.
+    pub fn units(&self) -> impl Iterator<Item = (UnitKey, &Um)> {
+        self.units.iter().map(|(k, a)| (k, &a.meta))
+    }
+    /// Gets an iterator of existing moves in order of creation.
+    pub fn moves(&self) -> impl Iterator<Item = (MoveKey, &Mm)> {
+        self.moves.iter().map(|(k, a)| (k, &a.meta))
+    }
     /// Sets the metadata for an account.
     ///
     /// ## Panics
@@ -356,10 +368,10 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     }
 }
 #[duplicate(
-    assert_has           Key          M    plural      string    ;
-    [assert_has_account] [AccountKey] [Am] [accounts] ["account"];
-    [assert_has_unit]    [UnitKey]    [Um] [units]    ["unit"]   ;
-    [assert_has_move]    [MoveKey]    [Mm] [moves]    ["move"]   ;
+    assert_has           Key          plural      string    ;
+    [assert_has_account] [AccountKey] [accounts] ["account"];
+    [assert_has_unit]    [UnitKey]    [units]    ["unit"]   ;
+    [assert_has_move]    [MoveKey]    [moves]    ["move"]   ;
 )]
 impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     fn assert_has(&self, key: Key) {
@@ -367,10 +379,6 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
             self.plural.contains_key(key),
             format!("No {} found for key {:?}", string, key),
         );
-    }
-    /// Gets an iterator of existing records in order of creation.
-    pub fn plural(&self) -> impl Iterator<Item = (Key, &M)> {
-        self.plural.iter().map(|(k, a)| (k, &a.meta))
     }
 }
 #[cfg(test)]
