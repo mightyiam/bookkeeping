@@ -216,14 +216,80 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
         self.moves.get(key).unwrap()
     }
     /// Gets an iterator of existing accounts in order of creation.
+    ///
+    /// ```
+    /// # use bookkeeping::Book;
+    /// # use chrono::naive::NaiveDate;
+    /// # struct BookMetadata { id: u8 }
+    /// # #[derive(Debug, PartialEq)]
+    /// # struct AccountMetadata { name: String }
+    /// # struct UnitMetadata { currency_code: String }
+    /// # struct MoveMetadata { date: NaiveDate }
+    /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
+    /// #     BookMetadata { id: 0 },
+    /// # );
+    /// # let wallet_key = book.new_account(AccountMetadata { name: String::from("Wallet") });
+    /// # let bank_key = book.new_account(AccountMetadata { name: String::from("Bank") });
+    /// # let wallet = book.get_account(wallet_key);
+    /// # let bank = book.get_account(bank_key);
+    /// assert_eq!(
+    ///     book.accounts().collect::<Vec<_>>(),
+    ///     vec![(wallet_key, wallet), (bank_key, bank)],
+    /// );
+    /// ```
     pub fn accounts(&self) -> impl Iterator<Item = (AccountKey, &Account<Am>)> {
         self.accounts.iter()
     }
     /// Gets an iterator of existing units in order of creation.
+    ///
+    /// ```
+    /// # use bookkeeping::Book;
+    /// # use chrono::naive::NaiveDate;
+    /// # struct BookMetadata { id: u8 }
+    /// # struct AccountMetadata { name: String }
+    /// # #[derive(Debug, PartialEq)]
+    /// # struct UnitMetadata { currency_code: String }
+    /// # struct MoveMetadata { date: NaiveDate }
+    /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
+    /// #     BookMetadata { id: 0 },
+    /// # );
+    /// # let usd_key = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
+    /// # let thb_key = book.new_unit(UnitMetadata { currency_code: String::from("THB") });
+    /// # let usd = book.get_unit(usd_key);
+    /// # let thb = book.get_unit(thb_key);
+    /// assert_eq!(
+    ///     book.units().collect::<Vec<_>>(),
+    ///     vec![(usd_key, usd), (thb_key, thb)],
+    /// );
+    /// ```
     pub fn units(&self) -> impl Iterator<Item = (UnitKey, &Unit<Um>)> {
         self.units.iter()
     }
     /// Gets an iterator of existing moves in order of creation.
+    ///
+    /// ```
+    /// # use bookkeeping::{ Book, Sum };
+    /// # use chrono::naive::NaiveDate;
+    /// # struct BookMetadata { id: u8 }
+    /// # struct AccountMetadata { name: String }
+    /// # struct UnitMetadata { currency_code: String }
+    /// # #[derive(Debug, PartialEq)]
+    /// # struct MoveMetadata { date: NaiveDate }
+    /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
+    /// #     BookMetadata { id: 0 },
+    /// # );
+    /// # let wallet = book.new_account(AccountMetadata { name: String::from("Wallet") });
+    /// # let bank = book.new_account(AccountMetadata { name: String::from("Bank") });
+    /// # let usd = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
+    /// # let deposit_key = book.new_move(bank, wallet, Sum::new(), MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
+    /// # let withdrawal_key = book.new_move(bank, wallet, Sum::new(), MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 2) });
+    /// # let deposit = book.get_move(deposit_key);
+    /// # let withdrawal = book.get_move(withdrawal_key);
+    /// assert_eq!(
+    ///     book.moves().collect::<Vec<_>>(),
+    ///     vec![(deposit_key, deposit), (withdrawal_key, withdrawal)],
+    /// );
+    /// ```
     pub fn moves(&self) -> impl Iterator<Item = (MoveKey, &Move<Mm>)> {
         self.moves.iter()
     }
