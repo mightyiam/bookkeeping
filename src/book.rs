@@ -26,11 +26,11 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     ///
     /// ```
     /// # use bookkeeping::Book;
-    /// # use chrono::{ DateTime, Utc };
+    /// # use chrono::naive::NaiveDate;
     /// struct BookMetadata { id: u8 }
     /// struct AccountMetadata { name: String }
     /// struct UnitMetadata { currency_code: String }
-    /// struct MoveMetadata { date: DateTime<Utc> }
+    /// struct MoveMetadata { date: NaiveDate }
     /// let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
     ///     BookMetadata { id: 0 },
     /// );
@@ -51,11 +51,11 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     ///
     /// ```
     /// # use bookkeeping::Book;
-    /// # use chrono::{ DateTime, Utc };
+    /// # use chrono::naive::NaiveDate;
     /// struct BookMetadata { id: u8 }
     /// # struct AccountMetadata { name: String }
     /// # struct UnitMetadata { currency_code: String }
-    /// # struct MoveMetadata { date: DateTime<Utc> }
+    /// # struct MoveMetadata { date: NaiveDate }
     /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
     /// #     BookMetadata { id: 0 },
     /// # );
@@ -68,11 +68,11 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     ///
     /// ```
     /// # use bookkeeping::Book;
-    /// # use chrono::{ DateTime, Utc };
+    /// # use chrono::naive::NaiveDate;
     /// # struct BookMetadata { id: u8 }
     /// struct AccountMetadata { name: String }
     /// # struct UnitMetadata { currency_code: String }
-    /// # struct MoveMetadata { date: DateTime<Utc> }
+    /// # struct MoveMetadata { date: NaiveDate }
     /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
     /// #     BookMetadata { id: 0 },
     /// # );
@@ -86,11 +86,11 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     ///
     /// ```
     /// # use bookkeeping::Book;
-    /// # use chrono::{ DateTime, Utc };
+    /// # use chrono::naive::NaiveDate;
     /// # struct BookMetadata { id: u8 }
     /// # struct AccountMetadata { name: String }
     /// struct UnitMetadata { currency_code: String }
-    /// # struct MoveMetadata { date: DateTime<Utc> }
+    /// # struct MoveMetadata { date: NaiveDate }
     /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
     /// #     BookMetadata { id: 0 },
     /// # );
@@ -111,11 +111,11 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     ///
     /// ```
     /// # use bookkeeping::{ Book, Sum };
-    /// # use chrono::{ DateTime, Utc };
+    /// # use chrono::naive::NaiveDate;
     /// # struct BookMetadata { id: u8 }
     /// # struct AccountMetadata { name: String }
     /// # struct UnitMetadata { currency_code: String }
-    /// struct MoveMetadata { date: DateTime<Utc> }
+    /// struct MoveMetadata { date: NaiveDate }
     /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
     /// #     BookMetadata { id: 0 },
     /// # );
@@ -124,7 +124,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// # let usd = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
     /// let mut sum = Sum::new();
     /// sum.set_amount_for_unit(800, usd);
-    /// let move_ = book.new_move(bank, wallet, sum, MoveMetadata { date: Utc::now() });
+    /// let move_ = book.new_move(bank, wallet, sum, MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
     /// ```
     pub fn new_move(
         &mut self,
@@ -150,11 +150,11 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     ///
     /// ```
     /// # use bookkeeping::{ Book, Sum };
-    /// # use chrono::{ DateTime, Utc };
+    /// # use chrono::naive::NaiveDate;
     /// # struct BookMetadata { id: u8 }
     /// # struct AccountMetadata { name: String }
     /// # struct UnitMetadata { currency_code: String }
-    /// # struct MoveMetadata { date: DateTime<Utc> }
+    /// # struct MoveMetadata { date: NaiveDate }
     /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
     /// #     BookMetadata { id: 0 },
     /// # );
@@ -173,11 +173,11 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     ///
     /// ```
     /// # use bookkeeping::{ Book, Sum };
-    /// # use chrono::{ DateTime, Utc };
+    /// # use chrono::naive::NaiveDate;
     /// # struct BookMetadata { id: u8 }
     /// # struct AccountMetadata { name: String }
     /// # struct UnitMetadata { currency_code: String }
-    /// # struct MoveMetadata { date: DateTime<Utc> }
+    /// # struct MoveMetadata { date: NaiveDate }
     /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
     /// #     BookMetadata { id: 0 },
     /// # );
@@ -196,11 +196,11 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     ///
     /// ```
     /// # use bookkeeping::{ Book, Sum };
-    /// # use chrono::{ DateTime, Utc };
+    /// # use chrono::naive::NaiveDate;
     /// # struct BookMetadata { id: u8 }
     /// # struct AccountMetadata { name: String }
     /// # struct UnitMetadata { currency_code: String }
-    /// # struct MoveMetadata { date: DateTime<Utc> }
+    /// # struct MoveMetadata { date: NaiveDate }
     /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
     /// #     BookMetadata { id: 0 },
     /// # );
@@ -208,7 +208,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// # let bank = book.new_account(AccountMetadata { name: String::from("Bank") });
     /// # let usd = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
     /// # let sum = Sum::new();
-    /// # let move_key = book.new_move(bank, wallet, sum, MoveMetadata { date: Utc::now() });
+    /// # let move_key = book.new_move(bank, wallet, sum, MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
     /// let move_ = book.get_move(move_key);
     /// ```
     pub fn get_move(&self, key: MoveKey) -> &Move<Mm> {
@@ -224,11 +224,11 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     ///
     /// ```
     /// # use bookkeeping::{ Book, Sum };
-    /// # use chrono::{ DateTime, Utc };
+    /// # use chrono::naive::NaiveDate;
     /// # struct BookMetadata { id: u8 }
     /// # struct AccountMetadata { name: String }
     /// # struct UnitMetadata { currency_code: String }
-    /// struct MoveMetadata { date: DateTime<Utc> }
+    /// struct MoveMetadata { date: NaiveDate }
     /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
     /// #     BookMetadata { id: 0 },
     /// # );
@@ -237,7 +237,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// # let usd = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
     /// # let mut sum = Sum::new();
     /// # sum.set_amount_for_unit(800, usd);
-    /// # let move_ = book.new_move(bank, wallet, sum, MoveMetadata { date: Utc::now() });
+    /// # let move_ = book.new_move(bank, wallet, sum, MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
     /// let balance = book.account_balance_at_move(wallet, move_, |a, b| a.date.cmp(&b.date));
     /// ```
     pub fn account_balance_at_move<'a>(
