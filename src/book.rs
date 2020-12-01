@@ -216,16 +216,16 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
         self.moves.get(key).unwrap()
     }
     /// Gets an iterator of existing accounts in order of creation.
-    pub fn accounts(&self) -> impl Iterator<Item = (AccountKey, &Am)> {
-        self.accounts.iter().map(|(k, a)| (k, &a.meta))
+    pub fn accounts(&self) -> impl Iterator<Item = (AccountKey, &Account<Am>)> {
+        self.accounts.iter()
     }
     /// Gets an iterator of existing units in order of creation.
-    pub fn units(&self) -> impl Iterator<Item = (UnitKey, &Um)> {
-        self.units.iter().map(|(k, a)| (k, &a.meta))
+    pub fn units(&self) -> impl Iterator<Item = (UnitKey, &Unit<Um>)> {
+        self.units.iter()
     }
     /// Gets an iterator of existing moves in order of creation.
-    pub fn moves(&self) -> impl Iterator<Item = (MoveKey, &Mm)> {
-        self.moves.iter().map(|(k, a)| (k, &a.meta))
+    pub fn moves(&self) -> impl Iterator<Item = (MoveKey, &Move<Mm>)> {
+        self.moves.iter()
     }
     /// Sets the metadata for an account.
     ///
@@ -448,7 +448,8 @@ mod test {
         let mut book = test_book!("");
         assert!(book.accounts().next().is_none());
         let account_key = book.new_account("");
-        let expected = vec![(account_key, &"")];
+        let account = book.accounts.get(account_key).unwrap();
+        let expected = vec![(account_key, account)];
         let actual = book.accounts().collect::<Vec<_>>();
         assert_eq!(actual, expected);
     }
@@ -457,7 +458,8 @@ mod test {
         let mut book = test_book!("");
         assert!(book.units().next().is_none());
         let unit_key = book.new_unit("");
-        let expected = vec![(unit_key, &"")];
+        let unit = book.units.get(unit_key).unwrap();
+        let expected = vec![(unit_key, unit)];
         let actual = book.units().collect::<Vec<_>>();
         assert_eq!(actual, expected);
     }
@@ -469,7 +471,8 @@ mod test {
         let debit_account = book.new_account("");
         let move_key =
             book.new_move(debit_account, credit_account, Sum::new(), "");
-        let expected = vec![(move_key, &"")];
+        let move_ = book.moves.get(move_key).unwrap();
+        let expected = vec![(move_key, move_)];
         let actual = book.moves().collect::<Vec<_>>();
         assert_eq!(actual, expected);
     }

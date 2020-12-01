@@ -2,6 +2,7 @@ use crate::book::AccountKey;
 use crate::sum::Sum;
 use duplicate::duplicate;
 /// Represents an [account](https://en.wikipedia.org/wiki/Account_(bookkeeping)).
+#[derive(Debug, PartialEq)]
 pub struct Account<Am> {
     pub(crate) meta: Am,
 }
@@ -11,7 +12,7 @@ impl<Am> Account<Am> {
     }
 }
 /// Represents a unit of measurement. Will most commonly represent the minor unit of a currency.
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Unit<Um> {
     pub(crate) meta: Um,
 }
@@ -22,6 +23,7 @@ impl<Um> Unit<Um> {
     }
 }
 /// Represents a move of a [Sum] of [Unit](crate::Unit)s from one account to another.
+#[derive(Debug, PartialEq)]
 pub struct Move<Mm> {
     pub(crate) meta: Mm,
     pub(crate) debit_account: AccountKey,
