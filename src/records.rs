@@ -1,6 +1,5 @@
 use crate::book::AccountKey;
 use crate::sum::Sum;
-use duplicate::duplicate;
 /// Represents an [account](https://en.wikipedia.org/wiki/Account_(bookkeeping)).
 #[derive(Debug, PartialEq)]
 pub struct Account<Am> {
@@ -9,6 +8,29 @@ pub struct Account<Am> {
 impl<Am> Account<Am> {
     pub(crate) fn new(meta: Am) -> Self {
         Self { meta }
+    }
+    /// Gets the metadata of the account.
+    ///
+    /// ```
+    /// # use bookkeeping::Book;
+    /// # use chrono::naive::NaiveDate;
+    /// # struct BookMetadata { id: u8 }
+    /// # #[derive(Debug, PartialEq)]
+    /// # struct AccountMetadata { name: String }
+    /// # struct UnitMetadata { currency_code: String }
+    /// # struct MoveMetadata { date: NaiveDate }
+    /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
+    /// #     BookMetadata { id: 0 },
+    /// # );
+    /// # let account_key = book.new_account(AccountMetadata { name: String::from("Wallet") });
+    /// # let account = book.get_account(account_key);
+    /// assert_eq!(
+    ///     account.metadata(),
+    ///     &AccountMetadata { name: String::from("Wallet") },
+    /// );
+    /// ```
+    pub fn metadata(&self) -> &Am {
+        &self.meta
     }
 }
 /// Represents a unit of measurement. Will most commonly represent the minor unit of a currency.
@@ -20,6 +42,29 @@ impl<Um> Unit<Um> {
     /// Creates a new unit.
     pub(crate) fn new(meta: Um) -> Self {
         Self { meta }
+    }
+    /// Gets the metadata of the unit.
+    ///
+    /// ```
+    /// # use bookkeeping::Book;
+    /// # use chrono::naive::NaiveDate;
+    /// # struct BookMetadata { id: u8 }
+    /// # struct AccountMetadata { name: String }
+    /// # #[derive(Debug, PartialEq)]
+    /// # struct UnitMetadata { currency_code: String }
+    /// # struct MoveMetadata { date: NaiveDate }
+    /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
+    /// #     BookMetadata { id: 0 },
+    /// # );
+    /// # let unit_key = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
+    /// # let unit = book.get_unit(unit_key);
+    /// assert_eq!(
+    ///     unit.metadata(),
+    ///     &UnitMetadata { currency_code: String::from("USD") },
+    /// );
+    /// ```
+    pub fn metadata(&self) -> &Um {
+        &self.meta
     }
 }
 /// Represents a move of a [Sum] of [Unit](crate::Unit)s from one account to another.
@@ -48,16 +93,30 @@ impl<Mm> Move<Mm> {
             sum,
         }
     }
-}
-#[duplicate(
-    Record    M   ;
-    [Account] [Ma];
-    [Unit]    [Mu];
-    [Move]    [Mm];
-)]
-impl<M> Record<M> {
-    /// Gets the metadata of the record.
-    pub fn metadata(&self) -> &M {
+    /// Gets the metadata of the move.
+    ///
+    /// ```
+    /// # use bookkeeping::{ Book, Sum };
+    /// # use chrono::naive::NaiveDate;
+    /// # struct BookMetadata { id: u8 }
+    /// # struct AccountMetadata { name: String }
+    /// # struct UnitMetadata { currency_code: String }
+    /// # #[derive(Debug, PartialEq)]
+    /// # struct MoveMetadata { date: NaiveDate }
+    /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
+    /// #     BookMetadata { id: 0 },
+    /// # );
+    /// # let wallet = book.new_account(AccountMetadata { name: String::from("Wallet") });
+    /// # let bank = book.new_account(AccountMetadata { name: String::from("Bank") });
+    /// # let usd = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
+    /// # let move_key = book.new_move(bank, wallet, Sum::new(), MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
+    /// # let move_ = book.get_move(move_key);
+    /// assert_eq!(
+    ///     move_.metadata(),
+    ///     &MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) },
+    /// );
+    /// ```
+    pub fn metadata(&self) -> &Mm {
         &self.meta
     }
 }
