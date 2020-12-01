@@ -44,6 +44,23 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
         }
     }
     /// Gets the book's metadata.
+    ///
+    /// ```
+    /// # use bookkeeping::Book;
+    /// # use chrono::naive::NaiveDate;
+    /// # #[derive(Debug, PartialEq)]
+    /// # struct BookMetadata { id: u8 }
+    /// # struct AccountMetadata { name: String }
+    /// # struct UnitMetadata { currency_code: String }
+    /// # struct MoveMetadata { date: NaiveDate }
+    /// # let book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
+    /// #     BookMetadata { id: 3 },
+    /// # );
+    /// assert_eq!(
+    ///     book.metadata(),
+    ///     &BookMetadata { id: 3 },
+    /// );
+    /// ```
     pub fn metadata(&self) -> &Bm {
         &self.meta
     }
