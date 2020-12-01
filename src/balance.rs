@@ -37,8 +37,8 @@ impl Balance<'_> {
     /// # sum.set_amount_for_unit(100, usd);
     /// # sum.set_amount_for_unit(200, thb);
     /// # sum.set_amount_for_unit(300, ils);
-    /// # let move_ = book.new_move(debit_account, credit_account, sum, 0);
-    /// # let balance = book.account_balance_at_move(credit_account, move_, |a, b| a.cmp(b));
+    /// # let move_key = book.new_move(debit_account, credit_account, sum, 0);
+    /// # let balance = book.account_balance_at_move(credit_account, move_key, |a, b| a.cmp(b));
     /// let amounts = balance.amounts().collect::<HashSet<_>>();
     /// assert!(amounts.contains(&(&usd, &100)));
     /// assert!(amounts.contains(&(&thb, &200)));
@@ -138,12 +138,12 @@ mod test {
     fn sub_assign_sum() {
         use maplit::btreemap;
         let mut book = test_book!("");
-        let unit = book.new_unit("");
+        let unit_key = book.new_unit("");
         let mut actual = Balance::new();
-        actual -= &Sum::of(9, unit);
+        actual -= &Sum::of(9, unit_key);
         let expected = Balance(
             btreemap! {
-                unit.clone() => -9,
+                unit_key.clone() => -9,
             },
             PhantomData,
         );
@@ -153,12 +153,12 @@ mod test {
     fn sub_sum() {
         use maplit::btreemap;
         let mut book = test_book!("");
-        let unit = book.new_unit("");
+        let unit_key = book.new_unit("");
         let immutable = Balance::new();
-        let actual = immutable - &Sum::of(9, unit);
+        let actual = immutable - &Sum::of(9, unit_key);
         let expected = Balance(
             btreemap! {
-                unit.clone() => -9,
+                unit_key.clone() => -9,
             },
             PhantomData,
         );
@@ -168,12 +168,12 @@ mod test {
     fn add_assign_sum() {
         use maplit::btreemap;
         let mut book = test_book!("");
-        let unit = book.new_unit("");
+        let unit_key = book.new_unit("");
         let mut actual = Balance::new();
-        actual += &Sum::of(9, unit);
+        actual += &Sum::of(9, unit_key);
         let expected = Balance(
             btreemap! {
-                unit.clone() => 9,
+                unit_key.clone() => 9,
             },
             PhantomData,
         );
@@ -183,12 +183,12 @@ mod test {
     fn add_sum() {
         use maplit::btreemap;
         let mut book = test_book!("");
-        let unit = book.new_unit("");
+        let unit_key = book.new_unit("");
         let immutable = Balance::new();
-        let actual = immutable + &Sum::of(9, unit);
+        let actual = immutable + &Sum::of(9, unit_key);
         let expected = Balance(
             btreemap! {
-                unit.clone() => 9,
+                unit_key.clone() => 9,
             },
             PhantomData,
         );

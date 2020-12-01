@@ -73,9 +73,9 @@ mod test {
     #[test]
     fn of() {
         let mut book = test_book!("");
-        let unit = book.new_unit("");
-        let actual = Sum::of(24, unit);
-        let expected = Sum(btreemap! { unit => 24 });
+        let unit_key = book.new_unit("");
+        let actual = Sum::of(24, unit_key);
+        let expected = Sum(btreemap! { unit_key => 24 });
         assert_eq!(actual, expected);
     }
     #[test]
@@ -93,10 +93,10 @@ mod test {
     #[test]
     fn set_amount_for_unit() {
         let mut book = test_book!("");
-        let unit = book.new_unit("");
+        let unit_key = book.new_unit("");
         let mut actual = Sum::new();
-        actual.set_amount_for_unit(3, unit);
-        let expected = Sum(btreemap! { unit => 3 });
+        actual.set_amount_for_unit(3, unit_key);
+        let expected = Sum(btreemap! { unit_key => 3 });
         assert_eq!(actual, expected);
     }
     #[test]

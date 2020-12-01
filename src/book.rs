@@ -124,7 +124,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// # let usd = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
     /// let mut sum = Sum::new();
     /// sum.set_amount_for_unit(800, usd);
-    /// let move_ = book.new_move(bank, wallet, sum, MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
+    /// let move_key = book.new_move(bank, wallet, sum, MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
     /// ```
     pub fn new_move(
         &mut self,
@@ -294,8 +294,8 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// # let bank = book.new_account(AccountMetadata { name: String::from("Bank") });
     /// # let usd = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
     /// # let sum = Sum::new();
-    /// # let move_ = book.new_move(bank, wallet, sum, MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
-    /// book.set_move_metadata(move_, MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 2) });
+    /// # let move_key = book.new_move(bank, wallet, sum, MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
+    /// book.set_move_metadata(move_key, MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 2) });
     /// ```
     pub fn set_move_metadata(&mut self, key: MoveKey, meta: Mm) {
         self.moves
@@ -325,8 +325,8 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// # let usd = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
     /// # let mut sum = Sum::new();
     /// # sum.set_amount_for_unit(800, usd);
-    /// # let move_ = book.new_move(bank, wallet, sum, MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
-    /// let balance = book.account_balance_at_move(wallet, move_, |a, b| a.date.cmp(&b.date));
+    /// # let move_key = book.new_move(bank, wallet, sum, MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
+    /// let balance = book.account_balance_at_move(wallet, move_key, |a, b| a.date.cmp(&b.date));
     /// ```
     pub fn account_balance_at_move<'a>(
         &'a self,
@@ -429,9 +429,9 @@ mod test {
         let mut book = test_book!("");
         let debit = book.new_account("");
         let credit = book.new_account("");
-        let unit = book.new_unit("");
-        book.units.remove(unit);
-        let sum = Sum::of(0, unit);
+        let unit_key = book.new_unit("");
+        book.units.remove(unit_key);
+        let sum = Sum::of(0, unit_key);
         book.new_move(debit, credit, sum, "");
     }
     #[test]
@@ -447,8 +447,8 @@ mod test {
     fn accounts() {
         let mut book = test_book!("");
         assert!(book.accounts().next().is_none());
-        let account = book.new_account("");
-        let expected = vec![(account, &"")];
+        let account_key = book.new_account("");
+        let expected = vec![(account_key, &"")];
         let actual = book.accounts().collect::<Vec<_>>();
         assert_eq!(actual, expected);
     }
@@ -456,8 +456,8 @@ mod test {
     fn units() {
         let mut book = test_book!("");
         assert!(book.units().next().is_none());
-        let unit = book.new_unit("");
-        let expected = vec![(unit, &"")];
+        let unit_key = book.new_unit("");
+        let expected = vec![(unit_key, &"")];
         let actual = book.units().collect::<Vec<_>>();
         assert_eq!(actual, expected);
     }
@@ -467,9 +467,9 @@ mod test {
         assert!(book.moves().next().is_none());
         let credit_account = book.new_account("");
         let debit_account = book.new_account("");
-        let move_ =
+        let move_key =
             book.new_move(debit_account, credit_account, Sum::new(), "");
-        let expected = vec![(move_, &"")];
+        let expected = vec![(move_key, &"")];
         let actual = book.moves().collect::<Vec<_>>();
         assert_eq!(actual, expected);
     }
@@ -477,18 +477,18 @@ mod test {
     fn get_account() {
         let mut book = test_book!("");
         book.new_account("");
-        let account = book.new_account("!");
+        let account_key = book.new_account("!");
         book.new_account("");
-        let account = book.get_account(account);
+        let account = book.get_account(account_key);
         assert_eq!(*account.metadata(), "!");
     }
     #[test]
     fn get_unit() {
         let mut book = test_book!("");
         book.new_unit("");
-        let unit = book.new_unit("!");
+        let unit_key = book.new_unit("!");
         book.new_unit("");
-        let unit = book.get_unit(unit);
+        let unit = book.get_unit(unit_key);
         assert_eq!(*unit.metadata(), "!");
     }
     #[test]
@@ -497,27 +497,27 @@ mod test {
         let debit_account = book.new_account("");
         let credit_account = book.new_account("");
         book.new_move(debit_account, credit_account, Sum::new(), "");
-        let move_ =
+        let move_key =
             book.new_move(debit_account, credit_account, Sum::new(), "!");
         book.new_move(debit_account, credit_account, Sum::new(), "");
-        let move_ = book.get_move(move_);
+        let move_ = book.get_move(move_key);
         assert_eq!(*move_.metadata(), "!");
     }
     #[test]
     #[should_panic(expected = "No account found for key ")]
     fn assert_has_account() {
         let mut book = test_book!("");
-        let account = book.new_account("");
-        book.accounts.remove(account);
-        book.assert_has_account(account);
+        let account_key = book.new_account("");
+        book.accounts.remove(account_key);
+        book.assert_has_account(account_key);
     }
     #[test]
     #[should_panic(expected = "No unit found for key ")]
     fn assert_has_unit() {
         let mut book = test_book!("");
-        let unit = book.new_unit("");
-        book.units.remove(unit);
-        book.assert_has_unit(unit);
+        let unit_key = book.new_unit("");
+        book.units.remove(unit_key);
+        book.assert_has_unit(unit_key);
     }
     #[test]
     #[should_panic(expected = "No move found for key ")]
@@ -525,10 +525,10 @@ mod test {
         let mut book = test_book!("");
         let credit_account = book.new_account("");
         let debit_account = book.new_account("");
-        let move_ =
+        let move_key =
             book.new_move(debit_account, credit_account, Sum::new(), "");
-        book.moves.remove(move_);
-        book.assert_has_move(move_);
+        book.moves.remove(move_key);
+        book.assert_has_move(move_key);
     }
     #[test]
     #[should_panic(expected = "No account found for key ")]
@@ -536,10 +536,10 @@ mod test {
         let mut book = test_book!("");
         let debit_account = book.new_account("");
         let credit_account = book.new_account("");
-        let move_ =
+        let move_key =
             book.new_move(debit_account, credit_account, Sum::new(), "");
         book.accounts.remove(debit_account);
-        book.account_balance_at_move(debit_account, move_, |_, _| panic!());
+        book.account_balance_at_move(debit_account, move_key, |_, _| panic!());
     }
     #[test]
     #[should_panic(expected = "No move found for key ")]
@@ -547,10 +547,10 @@ mod test {
         let mut book = test_book!("");
         let debit_account = book.new_account("");
         let credit_account = book.new_account("");
-        let move_ =
+        let move_key =
             book.new_move(debit_account, credit_account, Sum::new(), "");
-        book.moves.remove(move_);
-        book.account_balance_at_move(debit_account, move_, |_, _| panic!());
+        book.moves.remove(move_key);
+        book.account_balance_at_move(debit_account, move_key, |_, _| panic!());
     }
     #[test]
     #[should_panic(
@@ -560,10 +560,10 @@ mod test {
         let mut book = test_book!("");
         let debit_account = book.new_account("");
         let credit_account = book.new_account("");
-        let move_ =
+        let move_key =
             book.new_move(debit_account, credit_account, Sum::new(), "");
         let other_account = book.new_account("");
-        book.account_balance_at_move(other_account, move_, |_, _| {
+        book.account_balance_at_move(other_account, move_key, |_, _| {
             panic!();
         });
     }
@@ -573,59 +573,62 @@ mod test {
         let mut book = super::Book::<&str, &str, &str, u8>::new("");
         let account_a = book.new_account("");
         let account_b = book.new_account("");
-        let unit = book.new_unit("");
-        let move_1 = book.new_move(account_a, account_b, Sum::of(3, unit), 1);
+        let unit_key = book.new_unit("");
+        let move_1 =
+            book.new_move(account_a, account_b, Sum::of(3, unit_key), 1);
         assert_eq!(
             book.account_balance_at_move(account_a, move_1, cmp),
-            Balance::new() - &Sum::of(3, unit),
+            Balance::new() - &Sum::of(3, unit_key),
         );
         assert_eq!(
             book.account_balance_at_move(account_b, move_1, cmp),
-            Balance::new() + &Sum::of(3, unit),
+            Balance::new() + &Sum::of(3, unit_key),
         );
 
-        let move_2 = book.new_move(account_a, account_b, Sum::of(4, unit), 2);
+        let move_2 =
+            book.new_move(account_a, account_b, Sum::of(4, unit_key), 2);
         assert_eq!(
             book.account_balance_at_move(account_a, move_1, cmp),
-            Balance::new() - &Sum::of(3, unit),
+            Balance::new() - &Sum::of(3, unit_key),
         );
         assert_eq!(
             book.account_balance_at_move(account_b, move_1, cmp),
-            Balance::new() + &Sum::of(3, unit),
+            Balance::new() + &Sum::of(3, unit_key),
         );
         assert_eq!(
             book.account_balance_at_move(account_a, move_2, cmp),
-            Balance::new() - &Sum::of(7, unit),
+            Balance::new() - &Sum::of(7, unit_key),
         );
         assert_eq!(
             book.account_balance_at_move(account_b, move_2, cmp),
-            Balance::new() + &Sum::of(7, unit),
+            Balance::new() + &Sum::of(7, unit_key),
         );
 
-        let move_0 = book.new_move(account_a, account_b, Sum::of(1, unit), 0);
+        let move_0 =
+            book.new_move(account_a, account_b, Sum::of(1, unit_key), 0);
         assert_eq!(
             book.account_balance_at_move(account_a, move_0, cmp),
-            Balance::new() - &Sum::of(1, unit),
+            Balance::new() - &Sum::of(1, unit_key),
         );
         assert_eq!(
             book.account_balance_at_move(account_b, move_0, cmp),
-            Balance::new() + &Sum::of(1, unit),
+            Balance::new() + &Sum::of(1, unit_key),
         );
         assert_eq!(
             book.account_balance_at_move(account_a, move_1, cmp),
-            Balance::new() - &Sum::of(4, unit),
+            Balance::new() - &Sum::of(4, unit_key),
         );
         assert_eq!(
             book.account_balance_at_move(account_b, move_1, cmp),
-            Balance::new() + &Sum::of(4, unit),
+            Balance::new() + &Sum::of(4, unit_key),
         );
         assert_eq!(
             book.account_balance_at_move(account_a, move_2, cmp),
-            Balance::new() - &Sum::of(8, unit),
+            Balance::new() - &Sum::of(8, unit_key),
         );
         assert_eq!(
             book.account_balance_at_move(account_b, move_2, cmp),
-            Balance::new() + &Sum::of(8, unit),
+            Balance::new() + &Sum::of(8, unit_key),
         );
     }
     #[test]
@@ -642,26 +645,26 @@ mod test {
     #[test]
     fn set_account_metadata() {
         let mut book = test_book!("");
-        let account = book.new_account("");
-        book.set_account_metadata(account, "!");
-        assert_eq!(*book.accounts.get(account).unwrap().metadata(), "!");
+        let account_key = book.new_account("");
+        book.set_account_metadata(account_key, "!");
+        assert_eq!(*book.accounts.get(account_key).unwrap().metadata(), "!");
     }
     #[test]
     fn set_unit_metadata() {
         let mut book = test_book!("");
-        let unit = book.new_unit("");
-        assert_eq!(*book.units.get(unit).unwrap().metadata(), "");
-        book.set_unit_metadata(unit, "!");
-        assert_eq!(*book.units.get(unit).unwrap().metadata(), "!");
+        let unit_key = book.new_unit("");
+        assert_eq!(*book.units.get(unit_key).unwrap().metadata(), "");
+        book.set_unit_metadata(unit_key, "!");
+        assert_eq!(*book.units.get(unit_key).unwrap().metadata(), "!");
     }
     #[test]
     fn set_move_metadata() {
         let mut book = test_book!("");
         let debit = book.new_account("");
         let credit = book.new_account("");
-        let move_ = book.new_move(debit, credit, Sum::new(), "");
-        assert_eq!(*book.moves.get(move_).unwrap().metadata(), "");
-        book.set_move_metadata(move_, "!");
-        assert_eq!(*book.moves.get(move_).unwrap().metadata(), "!");
+        let move_key = book.new_move(debit, credit, Sum::new(), "");
+        assert_eq!(*book.moves.get(move_key).unwrap().metadata(), "");
+        book.set_move_metadata(move_key, "!");
+        assert_eq!(*book.moves.get(move_key).unwrap().metadata(), "!");
     }
 }
