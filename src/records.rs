@@ -2,11 +2,11 @@ use crate::book::AccountKey;
 use crate::sum::Sum;
 /// Represents an [account](https://en.wikipedia.org/wiki/Account_(bookkeeping)).
 #[derive(Debug, PartialEq)]
-pub struct Account<Am> {
-    pub(crate) meta: Am,
+pub struct Account<A> {
+    pub(crate) meta: A,
 }
-impl<Am> Account<Am> {
-    pub(crate) fn new(meta: Am) -> Self {
+impl<A> Account<A> {
+    pub(crate) fn new(meta: A) -> Self {
         Self { meta }
     }
     /// Gets the metadata of the account.
@@ -29,18 +29,18 @@ impl<Am> Account<Am> {
     ///     &AccountMetadata { name: String::from("Wallet") },
     /// );
     /// ```
-    pub fn metadata(&self) -> &Am {
+    pub fn metadata(&self) -> &A {
         &self.meta
     }
 }
 /// Represents a unit of measurement. Will most commonly represent the minor unit of a currency.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Unit<Um> {
-    pub(crate) meta: Um,
+pub struct Unit<U> {
+    pub(crate) meta: U,
 }
-impl<Um> Unit<Um> {
+impl<U> Unit<U> {
     /// Creates a new unit.
-    pub(crate) fn new(meta: Um) -> Self {
+    pub(crate) fn new(meta: U) -> Self {
         Self { meta }
     }
     /// Gets the metadata of the unit.
@@ -63,24 +63,24 @@ impl<Um> Unit<Um> {
     ///     &UnitMetadata { currency_code: String::from("USD") },
     /// );
     /// ```
-    pub fn metadata(&self) -> &Um {
+    pub fn metadata(&self) -> &U {
         &self.meta
     }
 }
 /// Represents a move of a [Sum] of [Unit](crate::Unit)s from one account to another.
 #[derive(Debug, PartialEq)]
-pub struct Move<Mm> {
-    pub(crate) meta: Mm,
+pub struct Move<M> {
+    pub(crate) meta: M,
     pub(crate) debit_account: AccountKey,
     pub(crate) credit_account: AccountKey,
     pub(crate) sum: Sum,
 }
-impl<Mm> Move<Mm> {
+impl<M> Move<M> {
     pub(crate) fn new(
         debit_account: AccountKey,
         credit_account: AccountKey,
         sum: Sum,
-        meta: Mm,
+        meta: M,
     ) -> Self {
         assert!(
             debit_account != credit_account,
@@ -116,7 +116,7 @@ impl<Mm> Move<Mm> {
     ///     &MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) },
     /// );
     /// ```
-    pub fn metadata(&self) -> &Mm {
+    pub fn metadata(&self) -> &M {
         &self.meta
     }
 }

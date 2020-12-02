@@ -15,13 +15,13 @@ new_key_type! {
 }
 /// Represents a book.
 #[derive(Default)]
-pub struct Book<Bm, Am, Um, Mm> {
-    meta: Bm,
-    accounts: DenseSlotMap<AccountKey, Account<Am>>,
-    units: DenseSlotMap<UnitKey, Unit<Um>>,
-    moves: DenseSlotMap<MoveKey, Move<Mm>>,
+pub struct Book<B, A, U, M> {
+    meta: B,
+    accounts: DenseSlotMap<AccountKey, Account<A>>,
+    units: DenseSlotMap<UnitKey, Unit<U>>,
+    moves: DenseSlotMap<MoveKey, Move<M>>,
 }
-impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
+impl<B, A, U, M> Book<B, A, U, M> {
     /// Creates a new book
     ///
     /// ```
@@ -35,12 +35,12 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     ///     BookMetadata { id: 0 },
     /// );
     /// ```
-    pub fn new(meta: Bm) -> Self {
+    pub fn new(meta: B) -> Self {
         Self {
             meta,
-            accounts: DenseSlotMap::<AccountKey, Account<Am>>::with_key(),
-            units: DenseSlotMap::<UnitKey, Unit<Um>>::with_key(),
-            moves: DenseSlotMap::<MoveKey, Move<Mm>>::with_key(),
+            accounts: DenseSlotMap::<AccountKey, Account<A>>::with_key(),
+            units: DenseSlotMap::<UnitKey, Unit<U>>::with_key(),
+            moves: DenseSlotMap::<MoveKey, Move<M>>::with_key(),
         }
     }
     /// Gets the book's metadata.
@@ -61,7 +61,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     ///     &BookMetadata { id: 3 },
     /// );
     /// ```
-    pub fn metadata(&self) -> &Bm {
+    pub fn metadata(&self) -> &B {
         &self.meta
     }
     /// Sets the book's metadata.
@@ -78,7 +78,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// # );
     /// book.set_metadata(BookMetadata{ id: 1 });
     /// ```
-    pub fn set_metadata(&mut self, meta: Bm) {
+    pub fn set_metadata(&mut self, meta: B) {
         self.meta = meta;
     }
     /// Creates a new account.
@@ -96,7 +96,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// let wallet = book.new_account(AccountMetadata { name: String::from("Wallet") });
     /// let bank = book.new_account(AccountMetadata { name: String::from("Bank") });
     /// ```
-    pub fn new_account(&mut self, meta: Am) -> AccountKey {
+    pub fn new_account(&mut self, meta: A) -> AccountKey {
         self.accounts.insert(Account::new(meta))
     }
     /// Creates a new unit.
@@ -115,7 +115,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// let thb = book.new_unit(UnitMetadata { currency_code: String::from("THB") });
     /// let ils = book.new_unit(UnitMetadata { currency_code: String::from("ILS") });
     /// ```
-    pub fn new_unit(&mut self, meta: Um) -> UnitKey {
+    pub fn new_unit(&mut self, meta: U) -> UnitKey {
         self.units.insert(Unit::new(meta))
     }
     /// Creates a new move.
@@ -148,7 +148,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
         debit_account: AccountKey,
         credit_account: AccountKey,
         sum: Sum,
-        meta: Mm,
+        meta: M,
     ) -> MoveKey {
         [debit_account, credit_account].iter().for_each(|key| {
             self.assert_has_account(*key);
@@ -178,7 +178,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// # let wallet_key = book.new_account(AccountMetadata { name: String::from("Wallet") });
     /// let wallet = book.get_account(wallet_key);
     /// ```
-    pub fn get_account(&self, key: AccountKey) -> &Account<Am> {
+    pub fn get_account(&self, key: AccountKey) -> &Account<A> {
         self.assert_has_account(key);
         self.accounts.get(key).unwrap()
     }
@@ -201,7 +201,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// # let usd_key = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
     /// let usd = book.get_unit(usd_key);
     /// ```
-    pub fn get_unit(&self, key: UnitKey) -> &Unit<Um> {
+    pub fn get_unit(&self, key: UnitKey) -> &Unit<U> {
         self.assert_has_unit(key);
         self.units.get(key).unwrap()
     }
@@ -228,7 +228,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// # let move_key = book.new_move(bank, wallet, sum, MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
     /// let move_ = book.get_move(move_key);
     /// ```
-    pub fn get_move(&self, key: MoveKey) -> &Move<Mm> {
+    pub fn get_move(&self, key: MoveKey) -> &Move<M> {
         self.assert_has_move(key);
         self.moves.get(key).unwrap()
     }
@@ -254,7 +254,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     ///     vec![(wallet_key, wallet), (bank_key, bank)],
     /// );
     /// ```
-    pub fn accounts(&self) -> impl Iterator<Item = (AccountKey, &Account<Am>)> {
+    pub fn accounts(&self) -> impl Iterator<Item = (AccountKey, &Account<A>)> {
         self.accounts.iter()
     }
     /// Gets an iterator of existing units in order of creation.
@@ -279,7 +279,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     ///     vec![(usd_key, usd), (thb_key, thb)],
     /// );
     /// ```
-    pub fn units(&self) -> impl Iterator<Item = (UnitKey, &Unit<Um>)> {
+    pub fn units(&self) -> impl Iterator<Item = (UnitKey, &Unit<U>)> {
         self.units.iter()
     }
     /// Gets an iterator of existing moves in order of creation.
@@ -307,7 +307,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     ///     vec![(deposit_key, deposit), (withdrawal_key, withdrawal)],
     /// );
     /// ```
-    pub fn moves(&self) -> impl Iterator<Item = (MoveKey, &Move<Mm>)> {
+    pub fn moves(&self) -> impl Iterator<Item = (MoveKey, &Move<M>)> {
         self.moves.iter()
     }
     /// Sets the metadata for an account.
@@ -328,7 +328,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// # let bank = book.new_account(AccountMetadata { name: String::from("Bank") });
     /// book.set_account_metadata(bank, AccountMetadata { name: String::from("Current") });
     /// ```
-    pub fn set_account_metadata(&mut self, key: AccountKey, meta: Am) {
+    pub fn set_account_metadata(&mut self, key: AccountKey, meta: A) {
         self.accounts
             .get_mut(key)
             .expect("No value found for this key.")
@@ -352,7 +352,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// # let usd = book.new_unit(UnitMetadata { currency_code: String::from("") });
     /// book.set_unit_metadata(usd, UnitMetadata { currency_code: String::from("USD") });
     /// ```
-    pub fn set_unit_metadata(&mut self, key: UnitKey, meta: Um) {
+    pub fn set_unit_metadata(&mut self, key: UnitKey, meta: U) {
         self.units
             .get_mut(key)
             .expect("No value found for this key.")
@@ -380,7 +380,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     /// # let move_key = book.new_move(bank, wallet, sum, MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
     /// book.set_move_metadata(move_key, MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 2) });
     /// ```
-    pub fn set_move_metadata(&mut self, key: MoveKey, meta: Mm) {
+    pub fn set_move_metadata(&mut self, key: MoveKey, meta: M) {
         self.moves
             .get_mut(key)
             .expect("No value found for this key.")
@@ -415,7 +415,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
         &'a self,
         account: AccountKey,
         move_: MoveKey,
-        cmp: impl Fn(&Mm, &Mm) -> Ordering,
+        cmp: impl Fn(&M, &M) -> Ordering,
     ) -> Balance<'a> {
         self.assert_has_account(account);
         self.assert_has_move(move_);
@@ -456,7 +456,7 @@ impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
     [assert_has_unit]    [UnitKey]    [units]    ["unit"]   ;
     [assert_has_move]    [MoveKey]    [moves]    ["move"]   ;
 )]
-impl<Bm, Am, Um, Mm> Book<Bm, Am, Um, Mm> {
+impl<B, A, U, M> Book<B, A, U, M> {
     fn assert_has(&self, key: Key) {
         assert!(
             self.plural.contains_key(key),
