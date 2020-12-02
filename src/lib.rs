@@ -5,6 +5,8 @@
 #![deny(missing_doc_code_examples)]
 //#![deny(private_doc_tests)]
 #![deny(invalid_codeblock_attributes)]
+//! ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/mightyiam/bookkeeping/Rust/master?logo=github)
+//!
 //! _This is a new rustacean's first open source crate.
 //! It is made with the intention of serving as the go-to bookkeeping crate.
 //! To get there, reviews from knowledgeable rustaceans seem necessary, so if you are one, then consider giving this crate your full attention for a while and leave your comments as a contribution to the community._
