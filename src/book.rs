@@ -14,6 +14,12 @@ new_key_type! {
     pub struct MoveKey;
 }
 /// Represents a book.
+///
+/// Where
+/// - `B`: book metadata
+/// - `A`: account metadata
+/// - `U`: unit metadata
+/// - `M`: move metadata
 #[derive(Default)]
 pub struct Book<B, A, U, M> {
     meta: B,
