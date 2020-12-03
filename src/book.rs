@@ -292,7 +292,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
     pub fn units(&self) -> impl Iterator<Item = (UnitKey, &Unit<U>)> {
         self.units.iter()
     }
-    /// Gets an iterator of existing moves in order of creation.
+    /// Gets an iterator of existing moves in their order.
     ///
     /// ```
     /// # use bookkeeping::{ Book, Sum };
@@ -308,17 +308,22 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// # let wallet = book.new_account(AccountMetadata { name: String::from("Wallet") });
     /// # let bank = book.new_account(AccountMetadata { name: String::from("Bank") });
     /// # let usd = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
-    /// # let deposit_key = book.insert_move(0, bank, wallet, Sum::new(), MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
-    /// # let withdrawal_key = book.insert_move(1, bank, wallet, Sum::new(), MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 2) });
-    /// # let deposit = book.get_move(deposit_key);
-    /// # let withdrawal = book.get_move(withdrawal_key);
+    /// let deposit_key = book.insert_move(0, bank, wallet, Sum::new(), MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
+    /// let withdrawal_key = book.insert_move(1, bank, wallet, Sum::new(), MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 2) });
+    /// let deposit = book.get_move(deposit_key);
+    /// let withdrawal = book.get_move(withdrawal_key);
     /// assert_eq!(
     ///     book.moves().collect::<Vec<_>>(),
-    ///     vec![(deposit_key, deposit), (withdrawal_key, withdrawal)],
+    ///     vec![(0, deposit_key, deposit), (1, withdrawal_key, withdrawal)],
     /// );
     /// ```
-    pub fn moves(&self) -> impl Iterator<Item = (MoveKey, &Move<M>)> {
-        self.moves.iter()
+    pub fn moves(&self) -> impl Iterator<Item = (usize, MoveKey, &Move<M>)> {
+        self.moves_order
+            .iter()
+            .enumerate()
+            .map(move |(index, move_key)| {
+                (index, *move_key, self.moves.get(*move_key).unwrap())
+            })
     }
     /// Sets the metadata for an account.
     ///
@@ -570,10 +575,13 @@ mod test {
         assert!(book.moves().next().is_none());
         let credit_account = book.new_account("");
         let debit_account = book.new_account("");
-        let move_key =
+        let move_0_key =
             book.insert_move(0, debit_account, credit_account, Sum::new(), "");
-        let move_ = book.moves.get(move_key).unwrap();
-        let expected = vec![(move_key, move_)];
+        let move_1_key =
+            book.insert_move(1, debit_account, credit_account, Sum::new(), "");
+        let move_0 = book.moves.get(move_0_key).unwrap();
+        let move_1 = book.moves.get(move_0_key).unwrap();
+        let expected = vec![(0, move_0_key, move_0), (1, move_1_key, move_1)];
         let actual = book.moves().collect::<Vec<_>>();
         assert_eq!(actual, expected);
     }
