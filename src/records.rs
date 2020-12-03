@@ -109,7 +109,7 @@ impl<M> Move<M> {
     /// # let wallet = book.new_account(AccountMetadata { name: String::from("Wallet") });
     /// # let bank = book.new_account(AccountMetadata { name: String::from("Bank") });
     /// # let usd = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
-    /// # let move_key = book.new_move(bank, wallet, Sum::new(), MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
+    /// # let move_key = book.insert_move(0, bank, wallet, Sum::new(), MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
     /// # let move_ = book.get_move(move_key);
     /// assert_eq!(
     ///     move_.metadata(),
