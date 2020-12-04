@@ -55,21 +55,20 @@ impl<M> Move<M> {
 }
 #[cfg(test)]
 mod test {
-    use super::AccountKey;
     use super::Move;
     use super::Sum;
-    use slotmap::DenseSlotMap;
     #[test]
     #[should_panic(expected = "Debit and credit accounts are the same.")]
     fn new_panic_debit_and_credit_accounts_are_the_same() {
-        let account_key = DenseSlotMap::<AccountKey, ()>::with_key().insert(());
+        let mut book = test_book!("");
+        let account_key = book.new_account("");
         Move::new(account_key, account_key, Sum::new(), ());
     }
     #[test]
     fn new() {
-        let mut slot_map = DenseSlotMap::<AccountKey, ()>::with_key();
-        let debit_account = slot_map.insert(());
-        let credit_account = slot_map.insert(());
+        let mut book = test_book!("");
+        let debit_account = book.new_account("");
+        let credit_account = book.new_account("");
         let sum = Sum::new();
         let move_ = Move::new(debit_account, credit_account, sum.clone(), ());
         assert_eq!(move_.debit_account, debit_account);
@@ -78,9 +77,9 @@ mod test {
     }
     #[test]
     fn metadata() {
-        let mut slot_map = DenseSlotMap::<AccountKey, ()>::with_key();
-        let debit_account = slot_map.insert(());
-        let credit_account = slot_map.insert(());
+        let mut book = test_book!("");
+        let debit_account = book.new_account("");
+        let credit_account = book.new_account("");
         let sum = Sum::new();
         let move_ = Move::new(debit_account, credit_account, sum.clone(), 5);
         assert_eq!(*move_.metadata(), 5);
