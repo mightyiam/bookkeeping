@@ -23,6 +23,7 @@ impl Balance<'_> {
     }
     /// Gets the amounts of all units in undefined order.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::Book;
     /// # use bookkeeping::Sum;
