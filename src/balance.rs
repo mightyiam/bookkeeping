@@ -29,21 +29,21 @@ impl Balance<'_> {
     /// # use bookkeeping::Sum;
     /// # use std::collections::HashSet;
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
-    /// # let usd = book.new_unit("");
-    /// # let thb = book.new_unit("");
-    /// # let ils = book.new_unit("");
-    /// # let wallet = book.new_account("");
-    /// # let bank = book.new_account("");
+    /// # let usd_key = book.new_unit("");
+    /// # let thb_key = book.new_unit("");
+    /// # let ils_key = book.new_unit("");
+    /// # let wallet_key = book.new_account("");
+    /// # let bank_key = book.new_account("");
     /// # let mut sum = Sum::new();
-    /// # sum.set_amount_for_unit(100, usd);
-    /// # sum.set_amount_for_unit(200, thb);
-    /// # sum.set_amount_for_unit(300, ils);
-    /// # let move_key = book.insert_move(0, wallet, bank, sum, "");
-    /// # let balance = book.account_balance_at_move(bank, move_key);
+    /// # sum.set_amount_for_unit(100, usd_key);
+    /// # sum.set_amount_for_unit(200, thb_key);
+    /// # sum.set_amount_for_unit(300, ils_key);
+    /// # let move_key = book.insert_move(0, wallet_key, bank_key, sum, "");
+    /// # let balance = book.account_balance_at_move(bank_key, move_key);
     /// let amounts = balance.amounts().collect::<HashSet<_>>();
-    /// assert!(amounts.contains(&(usd, &100)));
-    /// assert!(amounts.contains(&(thb, &200)));
-    /// assert!(amounts.contains(&(ils, &300)));
+    /// assert!(amounts.contains(&(usd_key, &100)));
+    /// assert!(amounts.contains(&(thb_key, &200)));
+    /// assert!(amounts.contains(&(ils_key, &300)));
     /// ```
     pub fn amounts(&self) -> impl Iterator<Item = (UnitKey, &i128)> {
         self.0.iter().map(|(key, amount)| (*key, amount))
@@ -104,16 +104,16 @@ mod test {
         use maplit::btreemap;
         let mut actual = Balance::new();
         let mut book = test_book!("");
-        let unit_a = book.new_unit("");
-        let unit_b = book.new_unit("");
-        let sum = sum!(2, unit_a; 3, unit_b);
+        let unit_a_key = book.new_unit("");
+        let unit_b_key = book.new_unit("");
+        let sum = sum!(2, unit_a_key; 3, unit_b_key);
         actual.operation(&sum, |balance, amount| balance + amount as i128);
-        let sum = sum!(2, unit_a; 3, unit_b);
+        let sum = sum!(2, unit_a_key; 3, unit_b_key);
         actual.operation(&sum, |balance, amount| balance * amount as i128);
         let expected = Balance(
             btreemap! {
-                unit_a => 4,
-                unit_b => 9,
+                unit_a_key => 4,
+                unit_b_key => 9,
             },
             PhantomData,
         );
@@ -122,16 +122,16 @@ mod test {
     #[test]
     fn fmt_debug() {
         let mut book = test_book!("");
-        let unit_a = book.new_unit("");
+        let unit_a_key = book.new_unit("");
         let amount_a = 76;
-        let unit_b = book.new_unit("");
+        let unit_b_key = book.new_unit("");
         let amount_b = 45;
-        let sum = sum!(amount_a, unit_a; amount_b, unit_b);
+        let sum = sum!(amount_a, unit_a_key; amount_b, unit_b_key);
         let balance = Balance::new() + &sum;
         let actual = format!("{:?}", balance);
         let expected = format!(
             "Balance({{{:?}: {:?}, {:?}: {:?}}})",
-            unit_a, amount_a, unit_b, amount_b
+            unit_a_key, amount_a, unit_b_key, amount_b
         );
         assert_eq!(actual, expected);
     }
@@ -198,15 +198,15 @@ mod test {
     #[test]
     fn amounts() {
         let mut book = test_book!("");
-        let usd = book.new_unit("");
-        let thb = book.new_unit("");
-        let ils = book.new_unit("");
+        let usd_key = book.new_unit("");
+        let thb_key = book.new_unit("");
+        let ils_key = book.new_unit("");
         let balance = Balance::new()
             + &sum! {
-                100, usd; 200, thb; 300, ils
+                100, usd_key; 200, thb_key; 300, ils_key
             };
         let actual = balance.amounts().collect::<Vec<_>>();
-        let expected = vec![(usd, &100), (thb, &200), (ils, &300)];
+        let expected = vec![(usd_key, &100), (thb_key, &200), (ils_key, &300)];
         assert_eq!(actual, expected);
     }
 }

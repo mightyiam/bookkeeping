@@ -32,11 +32,11 @@ impl<M> Move<M> {
     /// ```
     /// # use bookkeeping::{ Book, Sum };
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
-    /// let wallet = book.new_account("wallet");
-    /// # let bank = book.new_account("bank");
-    /// let move_key = book.insert_move(0, wallet, bank, Sum::new(), "deposit");
+    /// let wallet_key = book.new_account("wallet");
+    /// # let bank_key = book.new_account("bank");
+    /// let move_key = book.insert_move(0, wallet_key, bank_key, Sum::new(), "deposit");
     /// let move_ = book.get_move(move_key);
-    /// assert_eq!(move_.debit_account(), wallet);
+    /// assert_eq!(move_.debit_account(), wallet_key);
     /// ```
     pub fn debit_account(&self) -> AccountKey {
         self.debit_account
@@ -47,11 +47,11 @@ impl<M> Move<M> {
     /// ```
     /// # use bookkeeping::{ Book, Sum };
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
-    /// # let wallet = book.new_account("wallet");
-    /// let bank = book.new_account("bank");
-    /// let move_key = book.insert_move(0, wallet, bank, Sum::new(), "deposit");
+    /// # let wallet_key = book.new_account("wallet");
+    /// let bank_key = book.new_account("bank");
+    /// let move_key = book.insert_move(0, wallet_key, bank_key, Sum::new(), "deposit");
     /// let move_ = book.get_move(move_key);
-    /// assert_eq!(move_.credit_account(), bank);
+    /// assert_eq!(move_.credit_account(), bank_key);
     /// ```
     pub fn credit_account(&self) -> AccountKey {
         self.credit_account
@@ -62,12 +62,12 @@ impl<M> Move<M> {
     /// ```
     /// # use bookkeeping::{ Book, Sum };
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
-    /// # let wallet = book.new_account("wallet");
-    /// # let bank = book.new_account("bank");
-    /// # let usd = book.new_unit("USD");
+    /// # let wallet_key = book.new_account("wallet");
+    /// # let bank_key = book.new_account("bank");
+    /// # let usd_key = book.new_unit("USD");
     /// let mut sum = Sum::new();
-    /// sum.set_amount_for_unit(100, usd);
-    /// let move_key = book.insert_move(0, wallet, bank, sum.clone(), "deposit");
+    /// sum.set_amount_for_unit(100, usd_key);
+    /// let move_key = book.insert_move(0, wallet_key, bank_key, sum.clone(), "deposit");
     /// let move_ = book.get_move(move_key);
     /// assert_eq!(*move_.sum(), sum);
     /// ```
@@ -80,9 +80,9 @@ impl<M> Move<M> {
     /// ```
     /// # use bookkeeping::{ Book, Sum };
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
-    /// # let wallet = book.new_account("wallet");
-    /// # let bank = book.new_account("bank");
-    /// # let move_key = book.insert_move(0, bank, wallet, Sum::new(), "withdrawal");
+    /// # let wallet_key = book.new_account("wallet");
+    /// # let bank_key = book.new_account("bank");
+    /// # let move_key = book.insert_move(0, bank_key, wallet_key, Sum::new(), "withdrawal");
     /// # let move_ = book.get_move(move_key);
     /// assert_eq!(*move_.metadata(), "withdrawal");
     /// ```
@@ -104,48 +104,53 @@ mod test {
     #[test]
     fn new() {
         let mut book = test_book!("");
-        let debit_account = book.new_account("");
-        let credit_account = book.new_account("");
+        let debit_account_key = book.new_account("");
+        let credit_account_key = book.new_account("");
         let sum = Sum::new();
-        let move_ = Move::new(debit_account, credit_account, sum.clone(), ());
-        assert_eq!(move_.debit_account, debit_account);
-        assert_eq!(move_.credit_account, credit_account);
+        let move_ =
+            Move::new(debit_account_key, credit_account_key, sum.clone(), ());
+        assert_eq!(move_.debit_account, debit_account_key);
+        assert_eq!(move_.credit_account, credit_account_key);
         assert_eq!(move_.sum, sum);
     }
     #[test]
     fn debit_account() {
         let mut book = test_book!("");
-        let debit_account = book.new_account("");
-        let credit_account = book.new_account("");
-        let move_ = Move::new(debit_account, credit_account, Sum::new(), "");
-        assert_eq!(move_.debit_account(), debit_account);
+        let debit_account_key = book.new_account("");
+        let credit_account_key = book.new_account("");
+        let move_ =
+            Move::new(debit_account_key, credit_account_key, Sum::new(), "");
+        assert_eq!(move_.debit_account(), debit_account_key);
     }
     #[test]
     fn credit_account() {
         let mut book = test_book!("");
-        let debit_account = book.new_account("");
-        let credit_account = book.new_account("");
-        let move_ = Move::new(debit_account, credit_account, Sum::new(), "");
-        assert_eq!(move_.credit_account(), credit_account);
+        let debit_account_key = book.new_account("");
+        let credit_account_key = book.new_account("");
+        let move_ =
+            Move::new(debit_account_key, credit_account_key, Sum::new(), "");
+        assert_eq!(move_.credit_account(), credit_account_key);
     }
     #[test]
     fn sum() {
         let mut book = test_book!("");
-        let debit_account = book.new_account("");
-        let credit_account = book.new_account("");
-        let thb = book.new_unit("");
-        let ils = book.new_unit("");
-        let sum = sum!(100, thb; 200, ils);
-        let move_ = Move::new(debit_account, credit_account, sum.clone(), "");
+        let debit_account_key = book.new_account("");
+        let credit_account_key = book.new_account("");
+        let thb_key = book.new_unit("");
+        let ils_key = book.new_unit("");
+        let sum = sum!(100, thb_key; 200, ils_key);
+        let move_ =
+            Move::new(debit_account_key, credit_account_key, sum.clone(), "");
         assert_eq!(*move_.sum(), sum);
     }
     #[test]
     fn metadata() {
         let mut book = test_book!("");
-        let debit_account = book.new_account("");
-        let credit_account = book.new_account("");
+        let debit_account_key = book.new_account("");
+        let credit_account_key = book.new_account("");
         let sum = Sum::new();
-        let move_ = Move::new(debit_account, credit_account, sum.clone(), 5);
+        let move_ =
+            Move::new(debit_account_key, credit_account_key, sum.clone(), 5);
         assert_eq!(*move_.metadata(), 5);
     }
 }
