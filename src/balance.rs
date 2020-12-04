@@ -41,12 +41,12 @@ impl Balance<'_> {
     /// # let move_key = book.insert_move(0, wallet, bank, sum, "");
     /// # let balance = book.account_balance_at_move(bank, move_key);
     /// let amounts = balance.amounts().collect::<HashSet<_>>();
-    /// assert!(amounts.contains(&(&usd, &100)));
-    /// assert!(amounts.contains(&(&thb, &200)));
-    /// assert!(amounts.contains(&(&ils, &300)));
+    /// assert!(amounts.contains(&(usd, &100)));
+    /// assert!(amounts.contains(&(thb, &200)));
+    /// assert!(amounts.contains(&(ils, &300)));
     /// ```
-    pub fn amounts(&self) -> impl Iterator<Item = (&UnitKey, &i128)> {
-        self.0.iter()
+    pub fn amounts(&self) -> impl Iterator<Item = (UnitKey, &i128)> {
+        self.0.iter().map(|(key, amount)| (*key, amount))
     }
 }
 impl fmt::Debug for Balance<'_> {
@@ -206,7 +206,7 @@ mod test {
                 100, usd; 200, thb; 300, ils
             };
         let actual = balance.amounts().collect::<Vec<_>>();
-        let expected = vec![(&usd, &100), (&thb, &200), (&ils, &300)];
+        let expected = vec![(usd, &100), (thb, &200), (ils, &300)];
         assert_eq!(actual, expected);
     }
 }
