@@ -30,11 +30,15 @@
 //! - Caching of balance calculations.
 #[macro_use]
 mod macros;
+mod account;
 mod balance;
 mod book;
-mod records;
+mod move_;
 mod sum;
+mod unit;
+pub use account::Account;
 pub use balance::Balance;
 pub use book::{AccountKey, Book, MoveKey, UnitKey};
-pub use records::{Account, Move, Unit};
+pub use move_::Move;
 pub use sum::Sum;
+pub use unit::Unit;
