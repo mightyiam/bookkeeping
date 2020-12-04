@@ -11,21 +11,10 @@ impl<A> Account<A> {
     ///
     /// ```
     /// # use bookkeeping::Book;
-    /// # use chrono::naive::NaiveDate;
-    /// # struct BookMetadata { id: u8 }
-    /// # #[derive(Debug, PartialEq)]
-    /// # struct AccountMetadata { name: String }
-    /// # struct UnitMetadata { currency_code: String }
-    /// # struct MoveMetadata { date: NaiveDate }
-    /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
-    /// #     BookMetadata { id: 0 },
-    /// # );
-    /// # let account_key = book.new_account(AccountMetadata { name: String::from("Wallet") });
+    /// # let mut book = Book::<&str, &str, &str, &str>::new("");
+    /// # let account_key = book.new_account("wallet");
     /// # let account = book.get_account(account_key);
-    /// assert_eq!(
-    ///     account.metadata(),
-    ///     &AccountMetadata { name: String::from("Wallet") },
-    /// );
+    /// assert_eq!(*account.metadata(), "wallet");
     /// ```
     pub fn metadata(&self) -> &A {
         &self.meta

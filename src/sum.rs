@@ -8,8 +8,7 @@ impl Sum {
     /// Creates an empty sum.
     /// ```
     /// # use bookkeeping::Sum;
-    /// let mut sum = Sum::new();
-    /// # assert!(sum.amounts().next().is_none());
+    /// let _sum = Sum::new();
     /// ```
     pub fn new() -> Self {
         Self(BTreeMap::new())
