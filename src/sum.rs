@@ -29,7 +29,7 @@ impl Sum {
     /// # let usd = book.new_unit("USD");
     /// # let mut sum = Sum::new();
     /// sum.set_amount_for_unit(500, usd);
-    /// # assert_eq!(sum.amounts().collect::<Vec<_>>(), vec![(&usd, &500)]);
+    /// # assert_eq!(sum.amounts().collect::<Vec<_>>(), vec![(usd, &500)]);
     /// ```
     pub fn set_amount_for_unit(&mut self, amount: u64, unit: UnitKey) {
         self.0.insert(unit, amount);
@@ -46,11 +46,11 @@ impl Sum {
     /// # sum.set_amount_for_unit(900, thb);
     /// assert_eq!(
     ///     sum.amounts().collect::<Vec<_>>(),
-    ///     vec![(&usd, &500), (&thb, &900)],
+    ///     vec![(usd, &500), (thb, &900)],
     /// );
     /// ```
-    pub fn amounts(&self) -> impl Iterator<Item = (&UnitKey, &u64)> {
-        self.0.iter()
+    pub fn amounts(&self) -> impl Iterator<Item = (UnitKey, &u64)> {
+        self.0.iter().map(|(key, amount)| (*key, amount))
     }
 }
 impl fmt::Debug for Sum {
@@ -106,7 +106,7 @@ mod test {
         let usd = book.new_unit("USD");
         let sum = sum!(3, thb; 10, usd);
         let actual = sum.amounts().collect::<Vec<_>>();
-        let expected = vec![(&thb, &3), (&usd, &10)];
+        let expected = vec![(thb, &3), (usd, &10)];
         assert_eq!(actual, expected);
     }
     #[test]
