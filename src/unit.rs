@@ -12,21 +12,10 @@ impl<U> Unit<U> {
     ///
     /// ```
     /// # use bookkeeping::Book;
-    /// # use chrono::naive::NaiveDate;
-    /// # struct BookMetadata { id: u8 }
-    /// # struct AccountMetadata { name: String }
-    /// # #[derive(Debug, PartialEq)]
-    /// # struct UnitMetadata { currency_code: String }
-    /// # struct MoveMetadata { date: NaiveDate }
-    /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
-    /// #     BookMetadata { id: 0 },
-    /// # );
-    /// # let unit_key = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
+    /// # let mut book = Book::<&str, &str, &str, &str>::new("");
+    /// # let unit_key = book.new_unit("USD");
     /// # let unit = book.get_unit(unit_key);
-    /// assert_eq!(
-    ///     unit.metadata(),
-    ///     &UnitMetadata { currency_code: String::from("USD") },
-    /// );
+    /// assert_eq!(*unit.metadata(), "USD");
     /// ```
     pub fn metadata(&self) -> &U {
         &self.meta

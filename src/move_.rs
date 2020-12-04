@@ -30,21 +30,12 @@ impl<M> Move<M> {
     ///
     /// ```
     /// # use bookkeeping::{ Book, Sum };
-    /// # use chrono::naive::NaiveDate;
-    /// # struct BookMetadata { id: u8 }
-    /// # struct AccountMetadata { name: String }
-    /// # struct UnitMetadata { currency_code: String }
-    /// # #[derive(Debug, PartialEq)]
-    /// # struct MoveMetadata { date: NaiveDate }
-    /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
-    /// #     BookMetadata { id: 0 },
-    /// # );
-    /// let debit_account = book.new_account(AccountMetadata { name: String::from("Wallet") });
-    /// # let credit_account = book.new_account(AccountMetadata { name: String::from("Bank") });
-    /// # let usd = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
-    /// let move_key = book.insert_move(0, debit_account, credit_account, Sum::new(), MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
+    /// # let mut book = Book::<&str, &str, &str, &str>::new("");
+    /// let wallet = book.new_account("wallet");
+    /// # let bank = book.new_account("bank");
+    /// let move_key = book.insert_move(0, wallet, bank, Sum::new(), "deposit");
     /// let move_ = book.get_move(move_key);
-    /// assert_eq!(move_.debit_account(), debit_account);
+    /// assert_eq!(move_.debit_account(), wallet);
     /// ```
     pub fn debit_account(&self) -> AccountKey {
         self.debit_account
@@ -53,21 +44,12 @@ impl<M> Move<M> {
     ///
     /// ```
     /// # use bookkeeping::{ Book, Sum };
-    /// # use chrono::naive::NaiveDate;
-    /// # struct BookMetadata { id: u8 }
-    /// # struct AccountMetadata { name: String }
-    /// # struct UnitMetadata { currency_code: String }
-    /// # #[derive(Debug, PartialEq)]
-    /// # struct MoveMetadata { date: NaiveDate }
-    /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
-    /// #     BookMetadata { id: 0 },
-    /// # );
-    /// # let debit_account = book.new_account(AccountMetadata { name: String::from("Wallet") });
-    /// let credit_account = book.new_account(AccountMetadata { name: String::from("Bank") });
-    /// # let usd = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
-    /// let move_key = book.insert_move(0, debit_account, credit_account, Sum::new(), MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
+    /// # let mut book = Book::<&str, &str, &str, &str>::new("");
+    /// # let wallet = book.new_account("wallet");
+    /// let bank = book.new_account("bank");
+    /// let move_key = book.insert_move(0, wallet, bank, Sum::new(), "deposit");
     /// let move_ = book.get_move(move_key);
-    /// assert_eq!(move_.credit_account(), credit_account);
+    /// assert_eq!(move_.credit_account(), bank);
     /// ```
     pub fn credit_account(&self) -> AccountKey {
         self.credit_account
@@ -76,21 +58,13 @@ impl<M> Move<M> {
     ///
     /// ```
     /// # use bookkeeping::{ Book, Sum };
-    /// # use chrono::naive::NaiveDate;
-    /// # struct BookMetadata { id: u8 }
-    /// # struct AccountMetadata { name: String }
-    /// # struct UnitMetadata { currency_code: String }
-    /// # #[derive(Debug, PartialEq)]
-    /// # struct MoveMetadata { date: NaiveDate }
-    /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
-    /// #     BookMetadata { id: 0 },
-    /// # );
-    /// # let debit_account = book.new_account(AccountMetadata { name: String::from("Wallet") });
-    /// # let credit_account = book.new_account(AccountMetadata { name: String::from("Bank") });
-    /// # let usd = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
+    /// # let mut book = Book::<&str, &str, &str, &str>::new("");
+    /// # let wallet = book.new_account("wallet");
+    /// # let bank = book.new_account("bank");
+    /// # let usd = book.new_unit("USD");
     /// let mut sum = Sum::new();
     /// sum.set_amount_for_unit(100, usd);
-    /// let move_key = book.insert_move(0, debit_account, credit_account, sum.clone(), MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
+    /// let move_key = book.insert_move(0, wallet, bank, sum.clone(), "deposit");
     /// let move_ = book.get_move(move_key);
     /// assert_eq!(*move_.sum(), sum);
     /// ```
@@ -101,24 +75,12 @@ impl<M> Move<M> {
     ///
     /// ```
     /// # use bookkeeping::{ Book, Sum };
-    /// # use chrono::naive::NaiveDate;
-    /// # struct BookMetadata { id: u8 }
-    /// # struct AccountMetadata { name: String }
-    /// # struct UnitMetadata { currency_code: String }
-    /// # #[derive(Debug, PartialEq)]
-    /// # struct MoveMetadata { date: NaiveDate }
-    /// # let mut book = Book::<BookMetadata, AccountMetadata, UnitMetadata, MoveMetadata>::new(
-    /// #     BookMetadata { id: 0 },
-    /// # );
-    /// # let wallet = book.new_account(AccountMetadata { name: String::from("Wallet") });
-    /// # let bank = book.new_account(AccountMetadata { name: String::from("Bank") });
-    /// # let usd = book.new_unit(UnitMetadata { currency_code: String::from("USD") });
-    /// # let move_key = book.insert_move(0, bank, wallet, Sum::new(), MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) });
+    /// # let mut book = Book::<&str, &str, &str, &str>::new("");
+    /// # let wallet = book.new_account("wallet");
+    /// # let bank = book.new_account("bank");
+    /// # let move_key = book.insert_move(0, bank, wallet, Sum::new(), "withdrawal");
     /// # let move_ = book.get_move(move_key);
-    /// assert_eq!(
-    ///     move_.metadata(),
-    ///     &MoveMetadata { date: NaiveDate::from_ymd(2020, 12, 1) },
-    /// );
+    /// assert_eq!(*move_.metadata(), "withdrawal");
     /// ```
     pub fn metadata(&self) -> &M {
         &self.meta

@@ -5,6 +5,7 @@
 #![deny(missing_doc_code_examples)]
 //#![deny(private_doc_tests)]
 #![deny(invalid_codeblock_attributes)]
+#![doc(test(attr(deny(warnings))))]
 //! ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/mightyiam/bookkeeping/Rust/master?logo=github)
 //!
 //! _This is a new rustacean's first open source crate.
