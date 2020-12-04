@@ -32,6 +32,7 @@ pub struct Book<B, A, U, M> {
 impl<B, A, U, M> Book<B, A, U, M> {
     /// Creates a new book
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::Book;
     /// let _book = Book::<&str, &str, &str, &str>::new("some book");
@@ -47,6 +48,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
     }
     /// Gets the book's metadata.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::Book;
     /// # let book = Book::<&str, &str, &str, &str>::new("some book");
@@ -57,6 +59,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
     }
     /// Sets the book's metadata.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::Book;
     /// # let mut book = Book::<&str, &str, &str, &str>::new("some booc");
@@ -67,6 +70,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
     }
     /// Creates a new account.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::Book;
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
@@ -78,6 +82,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
     }
     /// Creates a new unit.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::Book;
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
@@ -96,6 +101,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// - `debit_account` and `credit_account` are equal.
     /// - Some units that are in the sum are not in the book.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::{ Book, Sum };
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
@@ -131,6 +137,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
     ///
     /// - No such account in the book.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::Book;
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
@@ -147,6 +154,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
     ///
     /// - No such unit in the book.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::Book;
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
@@ -163,6 +171,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
     ///
     /// - No such move in the book.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::{ Book, Sum };
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
@@ -177,6 +186,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
     }
     /// Gets an iterator of existing accounts in order of creation.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::Book;
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
@@ -194,6 +204,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
     }
     /// Gets an iterator of existing units in order of creation.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::Book;
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
@@ -211,6 +222,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
     }
     /// Gets an iterator of existing moves in their order.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::{ Book, Sum };
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
@@ -238,6 +250,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// ## Panics
     /// - The account is not in the book.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::Book;
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
@@ -255,6 +268,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// ## Panics
     /// - The unit is not in the book.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::Book;
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
@@ -272,6 +286,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// ## Panics
     /// - The move is not in the book.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::{ Book, Sum };
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
@@ -293,6 +308,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// - The account is not in the book.
     /// - The account is not debit nor credit in the move.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::{ Book, Sum };
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");

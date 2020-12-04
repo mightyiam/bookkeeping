@@ -9,6 +9,7 @@ impl<A> Account<A> {
     }
     /// Gets the metadata of the account.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::Book;
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");

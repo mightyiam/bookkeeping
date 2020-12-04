@@ -10,6 +10,7 @@ impl<U> Unit<U> {
     }
     /// Gets the metadata of the unit.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::Book;
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");

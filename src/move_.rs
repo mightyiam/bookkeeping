@@ -28,6 +28,7 @@ impl<M> Move<M> {
     }
     /// Gets the debit account key of a move.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::{ Book, Sum };
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
@@ -42,6 +43,7 @@ impl<M> Move<M> {
     }
     /// Gets the credit account key of a move.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::{ Book, Sum };
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
@@ -56,6 +58,7 @@ impl<M> Move<M> {
     }
     /// Gets the sum of a move.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::{ Book, Sum };
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
@@ -73,6 +76,7 @@ impl<M> Move<M> {
     }
     /// Gets the metadata of the move.
     ///
+    /// ## Example
     /// ```
     /// # use bookkeeping::{ Book, Sum };
     /// # let mut book = Book::<&str, &str, &str, &str>::new("");
