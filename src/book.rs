@@ -97,6 +97,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
     ///
     /// ## Panics
     ///
+    /// - Provided index is out of bounds.
     /// - Some of `debit_account` or `credit_account` are not in the book.
     /// - `debit_account` and `credit_account` are equal.
     /// - Some units that are in the sum are not in the book.
