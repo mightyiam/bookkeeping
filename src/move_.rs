@@ -4,25 +4,25 @@ use crate::sum::Sum;
 #[derive(Debug, PartialEq)]
 pub struct Move<M> {
     pub(crate) metadata: M,
-    pub(crate) debit_account: AccountKey,
-    pub(crate) credit_account: AccountKey,
+    pub(crate) debit_account_key: AccountKey,
+    pub(crate) credit_account_key: AccountKey,
     pub(crate) sum: Sum,
 }
 impl<M> Move<M> {
     pub(crate) fn new(
-        debit_account: AccountKey,
-        credit_account: AccountKey,
+        debit_account_key: AccountKey,
+        credit_account_key: AccountKey,
         sum: Sum,
         metadata: M,
     ) -> Self {
         assert!(
-            debit_account != credit_account,
+            debit_account_key != credit_account_key,
             "Debit and credit accounts are the same."
         );
         Self {
             metadata,
-            debit_account,
-            credit_account,
+            debit_account_key: debit_account_key,
+            credit_account_key: credit_account_key,
             sum,
         }
     }
@@ -36,10 +36,10 @@ impl<M> Move<M> {
     /// # let bank_key = book.new_account("bank");
     /// let move_key = book.insert_move(0, wallet_key, bank_key, Sum::new(), "deposit");
     /// let move_ = book.get_move(move_key);
-    /// assert_eq!(move_.debit_account(), wallet_key);
+    /// assert_eq!(move_.debit_account_key(), wallet_key);
     /// ```
-    pub fn debit_account(&self) -> AccountKey {
-        self.debit_account
+    pub fn debit_account_key(&self) -> AccountKey {
+        self.debit_account_key
     }
     /// Gets the credit account key of a move.
     ///
@@ -51,10 +51,10 @@ impl<M> Move<M> {
     /// let bank_key = book.new_account("bank");
     /// let move_key = book.insert_move(0, wallet_key, bank_key, Sum::new(), "deposit");
     /// let move_ = book.get_move(move_key);
-    /// assert_eq!(move_.credit_account(), bank_key);
+    /// assert_eq!(move_.credit_account_key(), bank_key);
     /// ```
-    pub fn credit_account(&self) -> AccountKey {
-        self.credit_account
+    pub fn credit_account_key(&self) -> AccountKey {
+        self.credit_account_key
     }
     /// Gets the sum of a move.
     ///
@@ -109,8 +109,8 @@ mod test {
         let sum = Sum::new();
         let move_ =
             Move::new(debit_account_key, credit_account_key, sum.clone(), ());
-        assert_eq!(move_.debit_account, debit_account_key);
-        assert_eq!(move_.credit_account, credit_account_key);
+        assert_eq!(move_.debit_account_key, debit_account_key);
+        assert_eq!(move_.credit_account_key, credit_account_key);
         assert_eq!(move_.sum, sum);
     }
     #[test]
@@ -120,7 +120,7 @@ mod test {
         let credit_account_key = book.new_account("");
         let move_ =
             Move::new(debit_account_key, credit_account_key, Sum::new(), "");
-        assert_eq!(move_.debit_account(), debit_account_key);
+        assert_eq!(move_.debit_account_key(), debit_account_key);
     }
     #[test]
     fn credit_account() {
@@ -129,7 +129,7 @@ mod test {
         let credit_account_key = book.new_account("");
         let move_ =
             Move::new(debit_account_key, credit_account_key, Sum::new(), "");
-        assert_eq!(move_.credit_account(), credit_account_key);
+        assert_eq!(move_.credit_account_key(), credit_account_key);
     }
     #[test]
     fn sum() {

@@ -15,9 +15,9 @@ impl Sum {
     }
     /// Creates a sum with an amount of a unit.
     #[cfg(test)]
-    pub(crate) fn of(amount: u64, unit: UnitKey) -> Self {
+    pub(crate) fn of(amount: u64, unit_key: UnitKey) -> Self {
         let mut sum = Self::new();
-        sum.set_amount_for_unit(amount, unit);
+        sum.set_amount_for_unit(amount, unit_key);
         sum
     }
     /// Sets the amount of a unit in a sum.
@@ -30,8 +30,8 @@ impl Sum {
     /// sum.set_amount_for_unit(500, usd_key);
     /// # assert_eq!(sum.amounts().collect::<Vec<_>>(), vec![(usd_key, &500)]);
     /// ```
-    pub fn set_amount_for_unit(&mut self, amount: u64, unit: UnitKey) {
-        self.0.insert(unit, amount);
+    pub fn set_amount_for_unit(&mut self, amount: u64, unit_key: UnitKey) {
+        self.0.insert(unit_key, amount);
     }
     /// Gets the amounts of all units in undefined order.
     /// ```
@@ -49,7 +49,7 @@ impl Sum {
     /// );
     /// ```
     pub fn amounts(&self) -> impl Iterator<Item = (UnitKey, &u64)> {
-        self.0.iter().map(|(key, amount)| (*key, amount))
+        self.0.iter().map(|(unit_key, amount)| (*unit_key, amount))
     }
 }
 impl fmt::Debug for Sum {

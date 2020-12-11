@@ -116,18 +116,21 @@ impl<B, A, U, M> Book<B, A, U, M> {
     pub fn insert_move(
         &mut self,
         index: usize,
-        debit_account: AccountKey,
-        credit_account: AccountKey,
+        debit_account_key: AccountKey,
+        credit_account_key: AccountKey,
         sum: Sum,
         metadata: M,
     ) -> MoveKey {
-        [debit_account, credit_account].iter().for_each(|key| {
-            self.assert_has_account(*key);
-        });
+        [debit_account_key, credit_account_key]
+            .iter()
+            .for_each(|key| {
+                self.assert_has_account(*key);
+            });
         sum.0.keys().for_each(|key| {
             self.assert_has_unit(*key);
         });
-        let move_ = Move::new(debit_account, credit_account, sum, metadata);
+        let move_ =
+            Move::new(debit_account_key, credit_account_key, sum, metadata);
         let move_key = self.moves.insert(move_);
         self.moves_order.insert(index, move_key);
         move_key
@@ -323,13 +326,15 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// ```
     pub fn account_balance_at_move<'a>(
         &'a self,
-        account: AccountKey,
+        account_key: AccountKey,
         move_key: MoveKey,
     ) -> Balance<'a> {
-        self.assert_has_account(account);
+        self.assert_has_account(account_key);
         self.assert_has_move(move_key);
         let move_ = self.moves.get(move_key).unwrap();
-        if ![move_.debit_account, move_.credit_account].contains(&account) {
+        if ![move_.debit_account_key, move_.credit_account_key]
+            .contains(&account_key)
+        {
             panic!(
                 "Provided account is not debit nor credit in provided move."
             );
@@ -340,9 +345,9 @@ impl<B, A, U, M> Book<B, A, U, M> {
             .map(|cur_move_key| self.moves.get(*cur_move_key).unwrap())
             .chain(std::iter::once(move_))
             .filter_map(|move_| -> Option<(fn(&mut Balance<'a>, _), &Sum)> {
-                if move_.debit_account == account {
+                if move_.debit_account_key == account_key {
                     Some((ops::SubAssign::sub_assign, &move_.sum))
-                } else if move_.credit_account == account {
+                } else if move_.credit_account_key == account_key {
                     Some((ops::AddAssign::add_assign, &move_.sum))
                 } else {
                     None
