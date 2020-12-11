@@ -11,15 +11,26 @@ impl Balance<'_> {
     pub(crate) fn new() -> Self {
         Self(Default::default(), Default::default())
     }
-    fn operation(&mut self, rhs: &Sum, amount_op: fn(i128, u64) -> i128) {
+    fn apply_sum_operation(
+        &mut self,
+        rhs: &Sum,
+        amount_op: fn(i128, u64) -> i128,
+    ) {
         rhs.0.iter().for_each(|(unit, amount)| {
-            self.0
-                .entry(unit.clone())
-                .and_modify(|balance| {
-                    *balance = amount_op(*balance, *amount);
-                })
-                .or_insert(amount_op(0, *amount));
+            self.apply_unit_operation(&(*unit, *amount), amount_op)
         });
+    }
+    fn apply_unit_operation(
+        &mut self,
+        (unit, amount): &(UnitKey, u64),
+        amount_op: fn(i128, u64) -> i128,
+    ) {
+        self.0
+            .entry(unit.clone())
+            .and_modify(|balance| {
+                *balance = amount_op(*balance, *amount);
+            })
+            .or_insert(amount_op(0, *amount));
     }
     /// Gets the amounts of all units in undefined order.
     ///
@@ -58,8 +69,15 @@ impl fmt::Debug for Balance<'_> {
 }
 impl ops::SubAssign<&Sum> for Balance<'_> {
     fn sub_assign(&mut self, sum: &Sum) {
-        self.operation(sum, |balance_amount, sum_amount| {
+        self.apply_sum_operation(sum, |balance_amount, sum_amount| {
             balance_amount - sum_amount as i128
+        });
+    }
+}
+impl ops::SubAssign<&(UnitKey, u64)> for Balance<'_> {
+    fn sub_assign(&mut self, unit_amount: &(UnitKey, u64)) {
+        self.apply_unit_operation(unit_amount, |balance, amount| {
+            balance - amount as i128
         });
     }
 }
@@ -71,10 +89,25 @@ impl ops::Sub<&Sum> for Balance<'_> {
         result
     }
 }
+impl ops::Sub<&(UnitKey, u64)> for Balance<'_> {
+    type Output = Self;
+    fn sub(self, unit_amount: &(UnitKey, u64)) -> Self::Output {
+        let mut result = self.clone();
+        result -= unit_amount;
+        result
+    }
+}
 impl ops::AddAssign<&Sum> for Balance<'_> {
     fn add_assign(&mut self, sum: &Sum) {
-        self.operation(sum, |balance_amount, sum_amount| {
+        self.apply_sum_operation(sum, |balance_amount, sum_amount| {
             balance_amount + sum_amount as i128
+        });
+    }
+}
+impl ops::AddAssign<&(UnitKey, u64)> for Balance<'_> {
+    fn add_assign(&mut self, unit_amount: &(UnitKey, u64)) {
+        self.apply_unit_operation(unit_amount, |balance, amount| {
+            balance + amount as i128
         });
     }
 }
@@ -83,6 +116,14 @@ impl ops::Add<&Sum> for Balance<'_> {
     fn add(self, sum: &Sum) -> Self::Output {
         let mut result = self.clone();
         result += sum;
+        result
+    }
+}
+impl ops::Add<&(UnitKey, u64)> for Balance<'_> {
+    type Output = Self;
+    fn add(self, unit_amount: &(UnitKey, u64)) -> Self::Output {
+        let mut result = self.clone();
+        result += unit_amount;
         result
     }
 }
@@ -100,16 +141,20 @@ mod test {
         assert_eq!(actual, expected);
     }
     #[test]
-    fn operation() {
+    fn apply_sum_operation() {
         use maplit::btreemap;
         let mut actual = Balance::new();
         let mut book = test_book!("");
         let unit_a_key = book.new_unit("");
         let unit_b_key = book.new_unit("");
         let sum = sum!(2, unit_a_key; 3, unit_b_key);
-        actual.operation(&sum, |balance, amount| balance + amount as i128);
+        actual.apply_sum_operation(&sum, |balance, amount| {
+            balance + amount as i128
+        });
         let sum = sum!(2, unit_a_key; 3, unit_b_key);
-        actual.operation(&sum, |balance, amount| balance * amount as i128);
+        actual.apply_sum_operation(&sum, |balance, amount| {
+            balance * amount as i128
+        });
         let expected = Balance(
             btreemap! {
                 unit_a_key => 4,
