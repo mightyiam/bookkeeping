@@ -132,7 +132,6 @@ mod test {
     use super::BTreeMap;
     use super::Balance;
     use super::PhantomData;
-    use super::Sum;
     use maplit::btreemap;
     #[test]
     fn new() {

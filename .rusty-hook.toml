@@ -1,5 +1,5 @@
 [hooks]
-pre-commit = "cargo test && cargo doc"
+pre-commit = "cargo test --features=fail-on-warnings && cargo doc"
 
 [logging]
 verbose = true

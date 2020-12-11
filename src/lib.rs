@@ -1,3 +1,4 @@
+#![cfg_attr(feature = "fail-on-warnings", deny(warnings))]
 #![deny(missing_docs)]
 #![deny(broken_intra_doc_links)]
 //#![deny(private_intra_doc_links)]
