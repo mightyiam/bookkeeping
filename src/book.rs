@@ -63,9 +63,9 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// ```
     /// # use bookkeeping::Book;
     /// # let mut book = Book::<&str, &str, &str, &str>::new("some booc");
-    /// book.set_metadata("some book");
+    /// book.set_book_metadata("some book");
     /// ```
-    pub fn set_metadata(&mut self, metadata: B) {
+    pub fn set_book_metadata(&mut self, metadata: B) {
         self.metadata = metadata;
     }
     /// Creates a new account.
@@ -705,9 +705,9 @@ mod test {
         );
     }
     #[test]
-    fn set_metadata() {
+    fn set_book_metadata() {
         let mut book = test_book!("");
-        book.set_metadata("!");
+        book.set_book_metadata("!");
         assert_eq!(book.metadata, "!");
     }
     #[test]
