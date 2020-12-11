@@ -13,13 +13,6 @@ impl Sum {
     pub fn new() -> Self {
         Self(BTreeMap::new())
     }
-    /// Creates a sum with an amount of a unit.
-    #[cfg(test)]
-    pub(crate) fn of(amount: u64, unit_key: UnitKey) -> Self {
-        let mut sum = Self::new();
-        sum.set_amount_for_unit(amount, unit_key);
-        sum
-    }
     /// Sets the amount of a unit in a sum.
     /// ```
     /// # use bookkeeping::Book;
@@ -67,14 +60,6 @@ mod test {
     fn new() {
         let actual = Sum::new();
         let expected = Sum(btreemap! {});
-        assert_eq!(actual, expected);
-    }
-    #[test]
-    fn of() {
-        let mut book = test_book!("");
-        let unit_key = book.new_unit("");
-        let actual = Sum::of(24, unit_key);
-        let expected = Sum(btreemap! { unit_key => 24 });
         assert_eq!(actual, expected);
     }
     #[test]
