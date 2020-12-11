@@ -141,7 +141,7 @@ mod test {
         let mut book = test_book!("");
         let unit_key = book.new_unit("");
         let mut actual = Balance::new();
-        actual -= &Sum::of(9, unit_key);
+        actual -= &sum!(9, unit_key);
         let expected = Balance(
             btreemap! {
                 unit_key.clone() => -9,
@@ -156,7 +156,7 @@ mod test {
         let mut book = test_book!("");
         let unit_key = book.new_unit("");
         let immutable = Balance::new();
-        let actual = immutable - &Sum::of(9, unit_key);
+        let actual = immutable - &sum!(9, unit_key);
         let expected = Balance(
             btreemap! {
                 unit_key.clone() => -9,
@@ -171,7 +171,7 @@ mod test {
         let mut book = test_book!("");
         let unit_key = book.new_unit("");
         let mut actual = Balance::new();
-        actual += &Sum::of(9, unit_key);
+        actual += &sum!(9, unit_key);
         let expected = Balance(
             btreemap! {
                 unit_key.clone() => 9,
@@ -186,7 +186,7 @@ mod test {
         let mut book = test_book!("");
         let unit_key = book.new_unit("");
         let immutable = Balance::new();
-        let actual = immutable + &Sum::of(9, unit_key);
+        let actual = immutable + &sum!(9, unit_key);
         let expected = Balance(
             btreemap! {
                 unit_key.clone() => 9,
