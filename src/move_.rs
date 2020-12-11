@@ -3,7 +3,7 @@ use crate::sum::Sum;
 /// Represents a move of a [Sum] of [Unit](crate::Unit)s from one account to another.
 #[derive(Debug, PartialEq)]
 pub struct Move<M> {
-    pub(crate) meta: M,
+    pub(crate) metadata: M,
     pub(crate) debit_account: AccountKey,
     pub(crate) credit_account: AccountKey,
     pub(crate) sum: Sum,
@@ -13,14 +13,14 @@ impl<M> Move<M> {
         debit_account: AccountKey,
         credit_account: AccountKey,
         sum: Sum,
-        meta: M,
+        metadata: M,
     ) -> Self {
         assert!(
             debit_account != credit_account,
             "Debit and credit accounts are the same."
         );
         Self {
-            meta,
+            metadata,
             debit_account,
             credit_account,
             sum,
@@ -87,7 +87,7 @@ impl<M> Move<M> {
     /// assert_eq!(*move_.metadata(), "withdrawal");
     /// ```
     pub fn metadata(&self) -> &M {
-        &self.meta
+        &self.metadata
     }
 }
 #[cfg(test)]
