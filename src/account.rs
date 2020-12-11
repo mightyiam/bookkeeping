@@ -1,11 +1,11 @@
 /// Represents an [account](https://en.wikipedia.org/wiki/Account_(bookkeeping)).
 #[derive(Debug, PartialEq)]
 pub struct Account<A> {
-    pub(crate) meta: A,
+    pub(crate) metadata: A,
 }
 impl<A> Account<A> {
-    pub(crate) fn new(meta: A) -> Self {
-        Self { meta }
+    pub(crate) fn new(metadata: A) -> Self {
+        Self { metadata }
     }
     /// Gets the metadata of the account.
     ///
@@ -18,7 +18,7 @@ impl<A> Account<A> {
     /// assert_eq!(*account.metadata(), "wallet");
     /// ```
     pub fn metadata(&self) -> &A {
-        &self.meta
+        &self.metadata
     }
 }
 #[cfg(test)]

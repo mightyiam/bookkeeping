@@ -1,12 +1,12 @@
 /// Represents a unit of measurement. Will most commonly represent the minor unit of a currency.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Unit<U> {
-    pub(crate) meta: U,
+    pub(crate) metadata: U,
 }
 impl<U> Unit<U> {
     /// Creates a new unit.
-    pub(crate) fn new(meta: U) -> Self {
-        Self { meta }
+    pub(crate) fn new(metadata: U) -> Self {
+        Self { metadata }
     }
     /// Gets the metadata of the unit.
     ///
@@ -19,7 +19,7 @@ impl<U> Unit<U> {
     /// assert_eq!(*unit.metadata(), "USD");
     /// ```
     pub fn metadata(&self) -> &U {
-        &self.meta
+        &self.metadata
     }
 }
 #[cfg(test)]
