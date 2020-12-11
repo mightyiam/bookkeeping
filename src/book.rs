@@ -78,7 +78,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// let _bank_key = book.new_account("bank");
     /// ```
     pub fn new_account(&mut self, metadata: A) -> AccountKey {
-        self.accounts.insert(Account::new(metadata))
+        self.accounts.insert(Account { metadata })
     }
     /// Creates a new unit.
     ///
@@ -91,7 +91,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// let _ils_key = book.new_unit("ILS");
     /// ```
     pub fn new_unit(&mut self, metadata: U) -> UnitKey {
-        self.units.insert(Unit::new(metadata))
+        self.units.insert(Unit { metadata })
     }
     /// Creates a new move and inserts it at a provided index.
     ///

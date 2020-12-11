@@ -4,10 +4,6 @@ pub struct Unit<U> {
     pub(crate) metadata: U,
 }
 impl<U> Unit<U> {
-    /// Creates a new unit.
-    pub(crate) fn new(metadata: U) -> Self {
-        Self { metadata }
-    }
     /// Gets the metadata of the unit.
     ///
     /// ## Example
@@ -27,7 +23,7 @@ mod test {
     use super::Unit;
     #[test]
     fn metadata() {
-        let unit = Unit::new(5);
+        let unit = Unit { metadata: 5 };
         assert_eq!(*unit.metadata(), 5);
     }
 }

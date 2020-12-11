@@ -4,9 +4,6 @@ pub struct Account<A> {
     pub(crate) metadata: A,
 }
 impl<A> Account<A> {
-    pub(crate) fn new(metadata: A) -> Self {
-        Self { metadata }
-    }
     /// Gets the metadata of the account.
     ///
     /// ## Example
@@ -26,7 +23,7 @@ mod test {
     use super::Account;
     #[test]
     fn metadata() {
-        let account = Account::new(5);
+        let account = Account { metadata: 5 };
         assert_eq!(*account.metadata(), 5);
     }
 }
