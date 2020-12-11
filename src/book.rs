@@ -649,7 +649,6 @@ mod test {
             book.account_balance_at_move(account_b_key, move_1),
             Balance::new() + &Sum::of(3, unit_key),
         );
-
         let move_2 = book.insert_move(
             1,
             account_a_key,
@@ -673,7 +672,6 @@ mod test {
             book.account_balance_at_move(account_b_key, move_2),
             Balance::new() + &Sum::of(7, unit_key),
         );
-
         let move_0 = book.insert_move(
             0,
             account_a_key,
