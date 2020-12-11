@@ -16,3 +16,6 @@ slotmap = "0.4.0"
 [dev_dependencies]
 maplit = "1.0.2"
 rusty-hook = "0.11.2"
+
+[features]
+fail-on-warnings = []
