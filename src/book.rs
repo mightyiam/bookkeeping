@@ -40,9 +40,9 @@ impl<B, A, U, M> Book<B, A, U, M> {
     pub fn new(metadata: B) -> Self {
         Self {
             metadata,
-            accounts: DenseSlotMap::<AccountKey, Account<A>>::with_key(),
-            units: DenseSlotMap::<UnitKey, Unit<U>>::with_key(),
-            moves: DenseSlotMap::<MoveKey, Move<M>>::with_key(),
+            accounts: DenseSlotMap::with_key(),
+            units: DenseSlotMap::with_key(),
+            moves: DenseSlotMap::with_key(),
             moves_order: Vec::new(),
         }
     }
