@@ -307,7 +307,6 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// ## Panics
     ///
     /// - The account is not in the book.
-    /// - The account is not debit nor credit in the move.
     ///
     /// ## Example
     /// ```
@@ -328,19 +327,11 @@ impl<B, A, U, M> Book<B, A, U, M> {
     ) -> Balance<'a> {
         self.assert_has_account(account_key);
         self.assert_has_move(move_key);
-        let move_ = self.moves.get(move_key).unwrap();
-        if ![move_.debit_account_key, move_.credit_account_key]
-            .contains(&account_key)
-        {
-            panic!(
-                "Provided account is not debit nor credit in provided move."
-            );
-        }
         self.moves_order
             .iter()
             .take_while(|cur_move_key| **cur_move_key != move_key)
+            .chain(std::iter::once(&move_key))
             .map(|cur_move_key| self.moves.get(*cur_move_key).unwrap())
-            .chain(std::iter::once(move_))
             .filter_map(|move_| -> Option<(fn(&mut Balance<'a>, _), &Sum)> {
                 if move_.debit_account_key == account_key {
                     Some((ops::SubAssign::sub_assign, &move_.sum))
@@ -606,24 +597,6 @@ mod test {
         );
         book.moves.remove(move_key);
         book.account_balance_at_move(debit_account_key, move_key);
-    }
-    #[test]
-    #[should_panic(
-        expected = "Provided account is not debit nor credit in provided move."
-    )]
-    fn account_balance_at_move_account_not_related_to_move() {
-        let mut book = test_book!("");
-        let debit_account_key = book.new_account("");
-        let credit_account_key = book.new_account("");
-        let move_key = book.insert_move(
-            0,
-            debit_account_key,
-            credit_account_key,
-            Sum::new(),
-            "",
-        );
-        let other_account_key = book.new_account("");
-        book.account_balance_at_move(other_account_key, move_key);
     }
     #[test]
     fn account_balance_at_move() {
