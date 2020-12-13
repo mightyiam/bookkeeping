@@ -262,10 +262,8 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// book.set_account_metadata(bank_key, "bank");
     /// ```
     pub fn set_account_metadata(&mut self, key: AccountKey, metadata: A) {
-        self.accounts
-            .get_mut(key)
-            .expect("No value found for this key.")
-            .metadata = metadata;
+        self.assert_has_account(key);
+        self.accounts.get_mut(key).unwrap().metadata = metadata;
     }
     /// Sets the metadata for a unit.
     ///
@@ -280,10 +278,8 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// book.set_unit_metadata(usd_key, "USD");
     /// ```
     pub fn set_unit_metadata(&mut self, key: UnitKey, metadata: U) {
-        self.units
-            .get_mut(key)
-            .expect("No value found for this key.")
-            .metadata = metadata;
+        self.assert_has_unit(key);
+        self.units.get_mut(key).unwrap().metadata = metadata;
     }
     /// Sets the metadata for a move.
     ///
@@ -300,10 +296,8 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// book.set_move_metadata(move_key, "withdrawal");
     /// ```
     pub fn set_move_metadata(&mut self, key: MoveKey, metadata: M) {
-        self.moves
-            .get_mut(key)
-            .expect("No value found for this key.")
-            .metadata = metadata;
+        self.assert_has_move(key);
+        self.moves.get_mut(key).unwrap().metadata = metadata;
     }
     /// Calculates the balance of an account at a provided move.
     ///
@@ -716,11 +710,27 @@ mod test {
         assert_eq!(*book.metadata(), "!");
     }
     #[test]
+    #[should_panic(expected = "No account found for key ")]
+    fn set_account_metadata_panic() {
+        let mut book = test_book!("");
+        let account_key = book.new_account("");
+        book.accounts.remove(account_key);
+        book.set_account_metadata(account_key, "!");
+    }
+    #[test]
     fn set_account_metadata() {
         let mut book = test_book!("");
         let account_key = book.new_account("");
         book.set_account_metadata(account_key, "!");
         assert_eq!(*book.accounts.get(account_key).unwrap().metadata(), "!");
+    }
+    #[test]
+    #[should_panic(expected = "No unit found for key ")]
+    fn set_unit_metadata_panic() {
+        let mut book = test_book!("");
+        let unit_key = book.new_unit("");
+        book.units.remove(unit_key);
+        book.set_unit_metadata(unit_key, "!");
     }
     #[test]
     fn set_unit_metadata() {
@@ -729,6 +739,17 @@ mod test {
         assert_eq!(*book.units.get(unit_key).unwrap().metadata(), "");
         book.set_unit_metadata(unit_key, "!");
         assert_eq!(*book.units.get(unit_key).unwrap().metadata(), "!");
+    }
+    #[test]
+    #[should_panic(expected = "No move found for key ")]
+    fn set_move_metadata_panic() {
+        let mut book = test_book!("");
+        let debit_key = book.new_account("");
+        let credit_key = book.new_account("");
+        let move_key =
+            book.insert_move(0, debit_key, credit_key, Sum::new(), "");
+        book.moves.remove(move_key);
+        book.set_move_metadata(move_key, "!");
     }
     #[test]
     fn set_move_metadata() {
