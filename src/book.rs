@@ -115,7 +115,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// ```
     pub fn insert_move(
         &mut self,
-        index: usize,
+        move_index: usize,
         debit_account_key: AccountKey,
         credit_account_key: AccountKey,
         sum: Sum,
@@ -132,7 +132,7 @@ impl<B, A, U, M> Book<B, A, U, M> {
         let move_ =
             Move::new(debit_account_key, credit_account_key, sum, metadata);
         let move_key = self.moves.insert(move_);
-        self.moves_order.insert(index, move_key);
+        self.moves_order.insert(move_index, move_key);
         move_key
     }
     /// Gets an account using a key.
@@ -242,12 +242,11 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// );
     /// ```
     pub fn moves(&self) -> impl Iterator<Item = (usize, MoveKey, &Move<M>)> {
-        self.moves_order
-            .iter()
-            .enumerate()
-            .map(move |(index, move_key)| {
-                (index, *move_key, self.moves.get(*move_key).unwrap())
-            })
+        self.moves_order.iter().enumerate().map(
+            move |(move_index, move_key)| {
+                (move_index, *move_key, self.moves.get(*move_key).unwrap())
+            },
+        )
     }
     /// Sets the metadata for an account.
     ///
