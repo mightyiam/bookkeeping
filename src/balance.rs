@@ -57,7 +57,7 @@ impl Balance<'_> {
     /// assert!(amounts.contains(&(ils_key, &300)));
     /// ```
     pub fn amounts(&self) -> impl Iterator<Item = (UnitKey, &i128)> {
-        self.0.iter().map(|(key, amount)| (*key, amount))
+        self.0.iter().map(|(unit_key, amount)| (*unit_key, amount))
     }
 }
 impl fmt::Debug for Balance<'_> {

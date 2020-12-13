@@ -121,13 +121,13 @@ impl<B, A, U, M> Book<B, A, U, M> {
         sum: Sum,
         metadata: M,
     ) -> MoveKey {
-        [debit_account_key, credit_account_key]
-            .iter()
-            .for_each(|key| {
-                self.assert_has_account(*key);
-            });
-        sum.0.keys().for_each(|key| {
-            self.assert_has_unit(*key);
+        [debit_account_key, credit_account_key].iter().for_each(
+            |account_key| {
+                self.assert_has_account(*account_key);
+            },
+        );
+        sum.0.keys().for_each(|unit_key| {
+            self.assert_has_unit(*unit_key);
         });
         let move_ =
             Move::new(debit_account_key, credit_account_key, sum, metadata);
@@ -148,9 +148,9 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// # let wallet_key = book.new_account("wallet");
     /// let _wallet = book.get_account(wallet_key);
     /// ```
-    pub fn get_account(&self, key: AccountKey) -> &Account<A> {
-        self.assert_has_account(key);
-        self.accounts.get(key).unwrap()
+    pub fn get_account(&self, account_key: AccountKey) -> &Account<A> {
+        self.assert_has_account(account_key);
+        self.accounts.get(account_key).unwrap()
     }
     /// Gets a unit using a key.
     ///
@@ -165,9 +165,9 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// # let usd_key = book.new_unit("USD");
     /// let _usd = book.get_unit(usd_key);
     /// ```
-    pub fn get_unit(&self, key: UnitKey) -> &Unit<U> {
-        self.assert_has_unit(key);
-        self.units.get(key).unwrap()
+    pub fn get_unit(&self, unit_key: UnitKey) -> &Unit<U> {
+        self.assert_has_unit(unit_key);
+        self.units.get(unit_key).unwrap()
     }
     /// Gets a move using a key.
     ///
@@ -184,9 +184,9 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// # let move_key = book.insert_move(0, bank_key, wallet_key, Sum::new(), "withdrawal");
     /// let _move = book.get_move(move_key);
     /// ```
-    pub fn get_move(&self, key: MoveKey) -> &Move<M> {
-        self.assert_has_move(key);
-        self.moves.get(key).unwrap()
+    pub fn get_move(&self, move_key: MoveKey) -> &Move<M> {
+        self.assert_has_move(move_key);
+        self.moves.get(move_key).unwrap()
     }
     /// Gets an iterator of existing accounts in order of creation.
     ///
@@ -261,9 +261,13 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// # let bank_key = book.new_account("banc");
     /// book.set_account_metadata(bank_key, "bank");
     /// ```
-    pub fn set_account_metadata(&mut self, key: AccountKey, metadata: A) {
-        self.assert_has_account(key);
-        self.accounts.get_mut(key).unwrap().metadata = metadata;
+    pub fn set_account_metadata(
+        &mut self,
+        account_key: AccountKey,
+        metadata: A,
+    ) {
+        self.assert_has_account(account_key);
+        self.accounts.get_mut(account_key).unwrap().metadata = metadata;
     }
     /// Sets the metadata for a unit.
     ///
@@ -277,9 +281,9 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// # let usd_key = book.new_unit("USd");
     /// book.set_unit_metadata(usd_key, "USD");
     /// ```
-    pub fn set_unit_metadata(&mut self, key: UnitKey, metadata: U) {
-        self.assert_has_unit(key);
-        self.units.get_mut(key).unwrap().metadata = metadata;
+    pub fn set_unit_metadata(&mut self, unit_key: UnitKey, metadata: U) {
+        self.assert_has_unit(unit_key);
+        self.units.get_mut(unit_key).unwrap().metadata = metadata;
     }
     /// Sets the metadata for a move.
     ///
@@ -295,9 +299,9 @@ impl<B, A, U, M> Book<B, A, U, M> {
     /// # let move_key = book.insert_move(0, bank_key, wallet_key, Sum::new(), "withdrawa");
     /// book.set_move_metadata(move_key, "withdrawal");
     /// ```
-    pub fn set_move_metadata(&mut self, key: MoveKey, metadata: M) {
-        self.assert_has_move(key);
-        self.moves.get_mut(key).unwrap().metadata = metadata;
+    pub fn set_move_metadata(&mut self, move_key: MoveKey, metadata: M) {
+        self.assert_has_move(move_key);
+        self.moves.get_mut(move_key).unwrap().metadata = metadata;
     }
     /// Calculates the balance of an account at a provided move.
     ///
