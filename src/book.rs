@@ -736,7 +736,6 @@ mod test {
     fn set_unit_metadata() {
         let mut book = test_book!("");
         let unit_key = book.new_unit("");
-        assert_eq!(*book.units.get(unit_key).unwrap().metadata(), "");
         book.set_unit_metadata(unit_key, "!");
         assert_eq!(*book.units.get(unit_key).unwrap().metadata(), "!");
     }
@@ -758,7 +757,6 @@ mod test {
         let credit_key = book.new_account("");
         let move_key =
             book.insert_move(0, debit_key, credit_key, Sum::new(), "");
-        assert_eq!(*book.moves.get(move_key).unwrap().metadata(), "");
         book.set_move_metadata(move_key, "!");
         assert_eq!(*book.moves.get(move_key).unwrap().metadata(), "!");
     }
