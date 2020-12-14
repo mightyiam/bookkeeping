@@ -39,7 +39,7 @@ impl Balance<'_> {
     /// # use bookkeeping::Book;
     /// # use bookkeeping::Sum;
     /// # use std::collections::HashSet;
-    /// # let mut book = Book::<&str, &str, &str, &str>::new("");
+    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
     /// # let usd_key = book.new_unit("");
     /// # let thb_key = book.new_unit("");
     /// # let ils_key = book.new_unit("");
@@ -49,8 +49,9 @@ impl Balance<'_> {
     /// # sum.set_amount_for_unit(100, usd_key);
     /// # sum.set_amount_for_unit(200, thb_key);
     /// # sum.set_amount_for_unit(300, ils_key);
-    /// # let move_key = book.insert_move(0, wallet_key, bank_key, sum, "");
-    /// # let balance = book.account_balance_at_move(bank_key, move_key);
+    /// # book.insert_transaction(0, "");
+    /// # book.insert_move(0, 0, wallet_key, bank_key, sum, "");
+    /// # let balance = book.account_balance_at_transaction(bank_key, 0);
     /// let amounts = balance.amounts().collect::<HashSet<_>>();
     /// assert!(amounts.contains(&(usd_key, &100)));
     /// assert!(amounts.contains(&(thb_key, &200)));
