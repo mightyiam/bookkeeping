@@ -383,6 +383,44 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
                 balance
             })
     }
+    /// Removes an existing transaction from the book.
+    ///
+    /// ## Panics
+    ///
+    /// - `transaction_index` out of bounds.
+    ///
+    /// ## Example
+    /// ```
+    /// # use bookkeeping::Book;
+    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
+    /// # book.insert_transaction(0, "");
+    /// book.remove_transaction(0);
+    /// ```
+    pub fn remove_transaction(&mut self, transaction_index: usize) {
+        self.transactions.remove(transaction_index);
+    }
+    /// Removes an existing move from the book.
+    ///
+    /// ## Panics
+    ///
+    /// - `transaction_index` out of bounds.
+    /// - `move_index` out of bounds.
+    ///
+    /// ## Example
+    /// ```
+    /// # use bookkeeping::{ Book, Sum };
+    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
+    /// # book.insert_transaction(0, "");
+    /// # let wallet_key = book.new_account("");
+    /// # let bank_key = book.new_account("");
+    /// # book.insert_move(0, 0, wallet_key, bank_key, Sum::new(), "");
+    /// book.remove_move(0, 0);
+    /// ```
+    pub fn remove_move(&mut self, transaction_index: usize, move_index: usize) {
+        self.transactions[transaction_index]
+            .moves
+            .remove(move_index);
+    }
 }
 #[duplicate(
     assert_has               Key              plural         string         ;
@@ -710,5 +748,63 @@ mod test {
         book.insert_move(0, 0, debit_key, credit_key, Sum::new(), "");
         book.set_move_metadata(0, 0, "!");
         assert_eq!(*book.transactions[0].moves[0].metadata(), "!");
+    }
+    #[test]
+    #[should_panic(expected = "removal index (is 0) should be < len (is 0)")]
+    fn remove_transaction_panic_out_of_bounds() {
+        let mut book = test_book!("");
+        book.remove_transaction(0);
+    }
+    #[test]
+    fn remove_transaction() {
+        let mut book = test_book!("");
+        book.insert_transaction(0, "a");
+        book.insert_transaction(1, "b");
+        book.remove_transaction(1);
+        assert_eq!(&book.transactions[0].metadata, &"a");
+        book.remove_transaction(0);
+        assert!(book.transactions.is_empty());
+    }
+    #[test]
+    #[should_panic(
+        expected = "index out of bounds: the len is 0 but the index is 0"
+    )]
+    fn remove_move_panic_transaction_index_out_of_bounds() {
+        let mut book = test_book!("");
+        book.remove_move(0, 0);
+    }
+    #[test]
+    #[should_panic(expected = "removal index (is 0) should be < len (is 0)")]
+    fn remove_move_panic_move_index_out_of_bounds() {
+        let mut book = test_book!("");
+        book.insert_transaction(0, "");
+        book.remove_move(0, 0);
+    }
+    #[test]
+    fn remove_move() {
+        let mut book = test_book!("");
+        let debit_account_key = book.new_account("");
+        let credit_account_key = book.new_account("");
+        book.insert_transaction(0, "");
+        book.insert_move(
+            0,
+            0,
+            debit_account_key,
+            credit_account_key,
+            Sum::new(),
+            "a",
+        );
+        book.insert_move(
+            0,
+            1,
+            debit_account_key,
+            credit_account_key,
+            Sum::new(),
+            "b",
+        );
+        book.remove_move(0, 1);
+        assert_eq!(&book.transactions[0].moves[0].metadata, &"a");
+        book.remove_move(0, 0);
+        assert!(book.transactions[0].moves.is_empty());
     }
 }
