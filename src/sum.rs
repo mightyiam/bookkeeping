@@ -17,7 +17,7 @@ impl Sum {
     /// ```
     /// # use bookkeeping::Book;
     /// # use bookkeeping::Sum;
-    /// # let mut book = Book::<&str, &str, &str, &str>::new("");
+    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
     /// # let usd_key = book.new_unit("USD");
     /// # let mut sum = Sum::new();
     /// sum.set_amount_for_unit(500, usd_key);
@@ -30,7 +30,7 @@ impl Sum {
     /// ```
     /// # use bookkeeping::Book;
     /// # use bookkeeping::Sum;
-    /// # let mut book = Book::<&str, &str, &str, &str>::new("");
+    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
     /// # let usd_key = book.new_unit("USD");
     /// # let thb_key = book.new_unit("THB");
     /// # let mut sum = Sum::new();

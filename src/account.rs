@@ -9,7 +9,7 @@ impl<A> Account<A> {
     /// ## Example
     /// ```
     /// # use bookkeeping::Book;
-    /// # let mut book = Book::<&str, &str, &str, &str>::new("");
+    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
     /// # let account_key = book.new_account("wallet");
     /// # let account = book.get_account(account_key);
     /// assert_eq!(*account.metadata(), "wallet");
