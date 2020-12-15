@@ -1,5 +1,4 @@
 /// Represents an [account](https://en.wikipedia.org/wiki/Account_(bookkeeping)).
-#[derive(Debug, PartialEq)]
 pub struct Account<A> {
     pub(crate) metadata: A,
 }

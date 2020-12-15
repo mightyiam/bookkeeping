@@ -207,11 +207,11 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
     /// # let wallet_key = book.new_account("wallet");
     /// # let bank_key = book.new_account("bank");
-    /// # let wallet = book.get_account(wallet_key);
-    /// # let bank = book.get_account(bank_key);
     /// assert_eq!(
-    ///     book.accounts().collect::<Vec<_>>(),
-    ///     vec![(wallet_key, wallet), (bank_key, bank)],
+    ///     book.accounts()
+    ///         .map(|(account_key, account)| (account_key, account.metadata()))
+    ///         .collect::<Vec<_>>(),
+    ///     vec![(wallet_key, &"wallet"), (bank_key, &"bank")],
     /// );
     /// ```
     pub fn accounts(&self) -> impl Iterator<Item = (AccountKey, &Account<A>)> {
@@ -628,10 +628,13 @@ mod test {
     fn accounts() {
         let mut book = test_book!("");
         assert!(book.accounts().next().is_none());
-        let account_key = book.new_account("");
-        let account = book.accounts.get(account_key).unwrap();
-        let expected = vec![(account_key, account)];
-        let actual = book.accounts().collect::<Vec<_>>();
+        let account_a_key = book.new_account("a");
+        let account_b_key = book.new_account("b");
+        let expected = vec![(account_a_key, &"a"), (account_b_key, &"b")];
+        let actual = book
+            .accounts()
+            .map(|(account_key, account)| (account_key, &account.metadata))
+            .collect::<Vec<_>>();
         assert_eq!(actual, expected);
     }
     #[test]
