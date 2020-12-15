@@ -462,6 +462,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     ///
     /// - `transaction_index` out of bounds.
     /// - `move_index` out of bounds.
+    /// - `account_key` is not in the book.
     ///
     /// ## Example
     /// ```
