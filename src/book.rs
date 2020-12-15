@@ -225,11 +225,11 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
     /// # let usd_key = book.new_unit("USD");
     /// # let thb_key = book.new_unit("THB");
-    /// # let usd = book.get_unit(usd_key);
-    /// # let thb = book.get_unit(thb_key);
     /// assert_eq!(
-    ///     book.units().collect::<Vec<_>>(),
-    ///     vec![(usd_key, usd), (thb_key, thb)],
+    ///     book.units()
+    ///     .map(|(unit_key, unit)| (unit_key, unit.metadata()))
+    ///     .collect::<Vec<_>>(),
+    ///     vec![(usd_key, &"USD"), (thb_key, &"THB")],
     /// );
     /// ```
     pub fn units(&self) -> impl Iterator<Item = (UnitKey, &Unit<U>)> {
@@ -638,10 +638,13 @@ mod test {
     fn units() {
         let mut book = test_book!("");
         assert!(book.units().next().is_none());
-        let unit_key = book.new_unit("");
-        let unit = book.units.get(unit_key).unwrap();
-        let expected = vec![(unit_key, unit)];
-        let actual = book.units().collect::<Vec<_>>();
+        let unit_a_key = book.new_unit("a");
+        let unit_b_key = book.new_unit("b");
+        let expected = vec![(unit_a_key, &"a"), (unit_b_key, &"b")];
+        let actual = book
+            .units()
+            .map(|(unit_key, unit)| (unit_key, &unit.metadata))
+            .collect::<Vec<_>>();
         assert_eq!(actual, expected);
     }
     #[test]
