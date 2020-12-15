@@ -97,20 +97,19 @@ impl<M> Move<M> {
 #[cfg(test)]
 mod test {
     use super::Move;
-    use super::Sum;
     #[test]
     #[should_panic(expected = "Debit and credit accounts are the same.")]
     fn new_panic_debit_and_credit_accounts_are_the_same() {
         let mut book = test_book!("");
         let account_key = book.new_account("");
-        Move::new(account_key, account_key, Sum::new(), ());
+        Move::new(account_key, account_key, sum!(), ());
     }
     #[test]
     fn new() {
         let mut book = test_book!("");
         let debit_account_key = book.new_account("");
         let credit_account_key = book.new_account("");
-        let sum = Sum::new();
+        let sum = sum!();
         let move_ =
             Move::new(debit_account_key, credit_account_key, sum.clone(), ());
         assert_eq!(move_.debit_account_key, debit_account_key);
@@ -123,7 +122,7 @@ mod test {
         let debit_account_key = book.new_account("");
         let credit_account_key = book.new_account("");
         let move_ =
-            Move::new(debit_account_key, credit_account_key, Sum::new(), "");
+            Move::new(debit_account_key, credit_account_key, sum!(), "");
         assert_eq!(move_.debit_account_key(), debit_account_key);
     }
     #[test]
@@ -132,7 +131,7 @@ mod test {
         let debit_account_key = book.new_account("");
         let credit_account_key = book.new_account("");
         let move_ =
-            Move::new(debit_account_key, credit_account_key, Sum::new(), "");
+            Move::new(debit_account_key, credit_account_key, sum!(), "");
         assert_eq!(move_.credit_account_key(), credit_account_key);
     }
     #[test]
@@ -152,7 +151,7 @@ mod test {
         let mut book = test_book!("");
         let debit_account_key = book.new_account("");
         let credit_account_key = book.new_account("");
-        let sum = Sum::new();
+        let sum = sum!();
         let move_ =
             Move::new(debit_account_key, credit_account_key, sum.clone(), 5);
         assert_eq!(*move_.metadata(), 5);
