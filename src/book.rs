@@ -463,6 +463,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// - `transaction_index` out of bounds.
     /// - `move_index` out of bounds.
     /// - `account_key` is not in the book.
+    /// - `side` is same as other side.
     ///
     /// ## Example
     /// ```
@@ -486,9 +487,11 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
         let move_ = &mut self.transactions[transaction_index].moves[move_index];
         match side {
             Side::Debit => {
+                assert_ne!(account_key, move_.credit_account_key, "Provided debit account is same as existing credit account.");
                 move_.debit_account_key = account_key;
             }
             Side::Credit => {
+                assert_ne!(account_key, move_.debit_account_key, "Provided credit account is same as existing debit account.");
                 move_.credit_account_key = account_key;
             }
         }
@@ -924,6 +927,44 @@ mod test {
         let other_account_key = book.new_account("");
         book.accounts.remove(other_account_key);
         book.set_move_side(0, 0, Debit, other_account_key);
+    }
+    #[test]
+    #[should_panic(
+        expected = "Provided debit account is same as existing credit account."
+    )]
+    fn set_move_side_panic_provided_debit_same_as_credit() {
+        let mut book = test_book!("");
+        let debit_account_key = book.new_account("");
+        let credit_account_key = book.new_account("");
+        book.insert_transaction(0, "");
+        book.insert_move(
+            0,
+            0,
+            debit_account_key,
+            credit_account_key,
+            sum!(),
+            "",
+        );
+        book.set_move_side(0, 0, Debit, credit_account_key);
+    }
+    #[test]
+    #[should_panic(
+        expected = "Provided credit account is same as existing debit account."
+    )]
+    fn set_move_side_panic_provided_credit_same_as_debit() {
+        let mut book = test_book!("");
+        let debit_account_key = book.new_account("");
+        let credit_account_key = book.new_account("");
+        book.insert_transaction(0, "");
+        book.insert_move(
+            0,
+            0,
+            debit_account_key,
+            credit_account_key,
+            sum!(),
+            "",
+        );
+        book.set_move_side(0, 0, Credit, debit_account_key);
     }
     #[test]
     fn set_move_side() {
