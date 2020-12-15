@@ -33,7 +33,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::Book;
-    /// let _book = Book::<&str, &str, &str, &str, &str>::new("some book");
+    /// let _book = Book::<&str, (), (), (), ()>::new("some book");
     /// ```
     pub fn new(metadata: B) -> Self {
         Self {
@@ -48,7 +48,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::Book;
-    /// # let book = Book::<&str, &str, &str, &str, &str>::new("some book");
+    /// # let book = Book::<&str, (), (), (), ()>::new("some book");
     /// assert_eq!(*book.metadata(), "some book");
     /// ```
     pub fn metadata(&self) -> &B {
@@ -59,7 +59,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::Book;
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("some booc");
+    /// # let mut book = Book::<&str, (), (), (), ()>::new("some booc");
     /// book.set_book_metadata("some book");
     /// ```
     pub fn set_book_metadata(&mut self, metadata: B) {
@@ -70,7 +70,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::Book;
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
+    /// # let mut book = Book::<(), &str, (), (), ()>::new(());
     /// let _wallet_key = book.new_account("wallet");
     /// let _bank_key = book.new_account("bank");
     /// ```
@@ -82,7 +82,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::Book;
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
+    /// # let mut book = Book::<(), (), &str, (), ()>::new(());
     /// let _usd_key = book.new_unit("USD");
     /// let _thb_key = book.new_unit("THB");
     /// let _ils_key = book.new_unit("ILS");
@@ -99,7 +99,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::Book;
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
+    /// # let mut book = Book::<(), (), (), (), &str>::new(());
     /// book.insert_transaction(0, "deposit");
     /// ```
     pub fn insert_transaction(
@@ -133,13 +133,13 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::{ Book, Sum };
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
-    /// # let wallet_key = book.new_account("wallet");
-    /// # let bank_key = book.new_account("bank");
-    /// # let usd_key = book.new_unit("USD");
+    /// # let mut book = Book::<(), (), (), &str, ()>::new(());
+    /// # let wallet_key = book.new_account(());
+    /// # let bank_key = book.new_account(());
+    /// # let usd_key = book.new_unit(());
     /// let mut sum = Sum::new();
     /// sum.set_amount_for_unit(800, usd_key);
-    /// book.insert_transaction(0, "");
+    /// book.insert_transaction(0, ());
     /// book.insert_move(0, 0, bank_key, wallet_key, sum, "withdrawal");
     /// ```
     pub fn insert_move(
@@ -174,8 +174,8 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::Book;
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
-    /// # let wallet_key = book.new_account("wallet");
+    /// # let mut book = Book::<(), (), (), (), ()>::new(());
+    /// # let wallet_key = book.new_account(());
     /// let _wallet = book.get_account(wallet_key);
     /// ```
     pub fn get_account(&self, account_key: AccountKey) -> &Account<A> {
@@ -191,8 +191,8 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::Book;
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
-    /// # let usd_key = book.new_unit("USD");
+    /// # let mut book = Book::<(), (), (), (), ()>::new(());
+    /// # let usd_key = book.new_unit(());
     /// let _usd = book.get_unit(usd_key);
     /// ```
     pub fn get_unit(&self, unit_key: UnitKey) -> &Unit<U> {
@@ -204,7 +204,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::Book;
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
+    /// # let mut book = Book::<(), &str, (), (), ()>::new(());
     /// # let wallet_key = book.new_account("wallet");
     /// # let bank_key = book.new_account("bank");
     /// assert_eq!(
@@ -222,7 +222,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::Book;
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
+    /// # let mut book = Book::<(), (), &str, (), ()>::new(());
     /// # let usd_key = book.new_unit("USD");
     /// # let thb_key = book.new_unit("THB");
     /// assert_eq!(
@@ -240,7 +240,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::Book;
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
+    /// # let mut book = Book::<(), (), (), (), &str>::new(());
     /// book.insert_transaction(0, "deposit");
     /// book.insert_transaction(1, "withdrawal");
     /// assert_eq!(
@@ -261,7 +261,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::Book;
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
+    /// # let mut book = Book::<(), &str, (), (), ()>::new(());
     /// # let bank_key = book.new_account("banc");
     /// book.set_account_metadata(bank_key, "bank");
     /// ```
@@ -281,7 +281,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::Book;
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
+    /// # let mut book = Book::<(), (), &str, (), ()>::new(());
     /// # let usd_key = book.new_unit("USd");
     /// book.set_unit_metadata(usd_key, "USD");
     /// ```
@@ -297,7 +297,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::Book;
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
+    /// # let mut book = Book::<(), (), (), (), &str>::new(());
     /// # book.insert_transaction(0, "withdrawa");
     /// book.set_transaction_metadata(0, "withdrawal");
     /// ```
@@ -320,10 +320,10 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::{ Book, Sum };
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
-    /// # let wallet_key = book.new_account("wallet");
-    /// # let bank_key = book.new_account("bank");
-    /// # book.insert_transaction(0, "");
+    /// # let mut book = Book::<(), (), (), &str, ()>::new(());
+    /// # let wallet_key = book.new_account(());
+    /// # let bank_key = book.new_account(());
+    /// # book.insert_transaction(0, ());
     /// # book.insert_move(0, 0, bank_key, wallet_key, Sum::new(), "withdrawa");
     /// book.set_move_metadata(0, 0, "withdrawal");
     /// ```
@@ -351,14 +351,14 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::{ Book, Sum };
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
-    /// # let wallet_key = book.new_account("wallet");
-    /// # let bank_key = book.new_account("bank");
-    /// # let usd_key = book.new_unit("USD");
+    /// # let mut book = Book::<(), (), (), (), ()>::new(());
+    /// # let wallet_key = book.new_account(());
+    /// # let bank_key = book.new_account(());
+    /// # let usd_key = book.new_unit(());
     /// # let mut sum = Sum::new();
     /// # sum.set_amount_for_unit(800, usd_key);
-    /// # book.insert_transaction(0, "");
-    /// # book.insert_move(0, 0, bank_key, wallet_key, sum, "withdrawal");
+    /// # book.insert_transaction(0, ());
+    /// # book.insert_move(0, 0, bank_key, wallet_key, sum, ());
     /// let _balance = book.account_balance_at_transaction(wallet_key, 0);
     /// ```
     pub fn account_balance_at_transaction<'a>(
@@ -394,8 +394,8 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::Book;
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
-    /// # book.insert_transaction(0, "");
+    /// # let mut book = Book::<(), (), (), (), ()>::new(());
+    /// # book.insert_transaction(0, ());
     /// book.remove_transaction(0);
     /// ```
     pub fn remove_transaction(&mut self, transaction_index: usize) {
@@ -411,11 +411,11 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::{ Book, Sum };
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
-    /// # book.insert_transaction(0, "");
-    /// # let wallet_key = book.new_account("");
-    /// # let bank_key = book.new_account("");
-    /// # book.insert_move(0, 0, wallet_key, bank_key, Sum::new(), "");
+    /// # let mut book = Book::<(), (), (), (), ()>::new(());
+    /// # book.insert_transaction(0, ());
+    /// # let wallet_key = book.new_account(());
+    /// # let bank_key = book.new_account(());
+    /// # book.insert_move(0, 0, wallet_key, bank_key, Sum::new(), ());
     /// book.remove_move(0, 0);
     /// ```
     pub fn remove_move(&mut self, transaction_index: usize, move_index: usize) {
@@ -433,11 +433,11 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::{ Book, Sum };
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
-    /// # book.insert_transaction(0, "");
-    /// # let wallet_key = book.new_account("");
-    /// # let bank_key = book.new_account("");
-    /// # book.insert_move(0, 0, wallet_key, bank_key, Sum::new(), "");
+    /// # let mut book = Book::<(), (), (), (), ()>::new(());
+    /// # book.insert_transaction(0, ());
+    /// # let wallet_key = book.new_account(());
+    /// # let bank_key = book.new_account(());
+    /// # book.insert_move(0, 0, wallet_key, bank_key, Sum::new(), ());
     /// book.set_move_sum(0, 0, Sum::new());
     /// ```
     pub fn set_move_sum(
@@ -459,12 +459,12 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::{ Book, Sum };
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
-    /// # book.insert_transaction(0, "");
-    /// # let safe_key = book.new_account("");
-    /// # let wallet_key = book.new_account("");
-    /// # book.insert_move(0, 0, safe_key, wallet_key, Sum::new(), "");
-    /// # let bank_key = book.new_account("");
+    /// # let mut book = Book::<(), (), (), (), ()>::new(());
+    /// # book.insert_transaction(0, ());
+    /// # let safe_key = book.new_account(());
+    /// # let wallet_key = book.new_account(());
+    /// # book.insert_move(0, 0, safe_key, wallet_key, Sum::new(), ());
+    /// # let bank_key = book.new_account(());
     /// book.set_move_debit_account(0, 0, bank_key);
     /// ```
     pub fn set_move_debit_account(
@@ -487,12 +487,12 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::{ Book, Sum };
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
-    /// # book.insert_transaction(0, "");
-    /// # let wallet_key = book.new_account("");
-    /// # let safe_key = book.new_account("");
-    /// # book.insert_move(0, 0, wallet_key, safe_key, Sum::new(), "");
-    /// # let bank_key = book.new_account("");
+    /// # let mut book = Book::<(), (), (), (), ()>::new(());
+    /// # book.insert_transaction(0, ());
+    /// # let wallet_key = book.new_account(());
+    /// # let safe_key = book.new_account(());
+    /// # book.insert_move(0, 0, wallet_key, safe_key, Sum::new(), ());
+    /// # let bank_key = book.new_account(());
     /// book.set_move_credit_account(0, 0, bank_key);
     /// ```
     pub fn set_move_credit_account(
