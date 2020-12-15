@@ -523,7 +523,6 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
 #[cfg(test)]
 mod test {
     use super::Balance;
-    use crate::sum::Sum;
     use duplicate::duplicate_inline;
     #[test]
     fn new() {
@@ -573,7 +572,7 @@ mod test {
         let debit_key = book.new_account("");
         let credit_key = book.new_account("");
         book.insert_transaction(0, "");
-        book.insert_move(0, 1, debit_key, credit_key, Sum::new(), "");
+        book.insert_move(0, 1, debit_key, credit_key, sum!(), "");
     }
     #[test]
     #[should_panic(expected = "No account found for key ")]
@@ -583,7 +582,7 @@ mod test {
         book.accounts.remove(debit_key);
         let credit_key = book.new_account("");
         book.insert_transaction(0, "");
-        book.insert_move(0, 0, debit_key, credit_key, Sum::new(), "");
+        book.insert_move(0, 0, debit_key, credit_key, sum!(), "");
     }
     #[test]
     #[should_panic(expected = "No account found for key ")]
@@ -593,7 +592,7 @@ mod test {
         let credit_key = book.new_account("");
         book.accounts.remove(credit_key);
         book.insert_transaction(0, "");
-        book.insert_move(0, 0, debit_key, credit_key, Sum::new(), "");
+        book.insert_move(0, 0, debit_key, credit_key, sum!(), "");
     }
     #[test]
     #[should_panic(expected = "No unit found for key ")]
@@ -613,10 +612,10 @@ mod test {
         book.insert_transaction(0, "");
         let debit_key = book.new_account("");
         let credit_key = book.new_account("");
-        book.insert_move(0, 0, debit_key, credit_key, Sum::new(), "a");
-        book.insert_move(0, 0, debit_key, credit_key, Sum::new(), "b");
-        book.insert_move(0, 1, debit_key, credit_key, Sum::new(), "c");
-        book.insert_move(0, 2, debit_key, credit_key, Sum::new(), "d");
+        book.insert_move(0, 0, debit_key, credit_key, sum!(), "a");
+        book.insert_move(0, 0, debit_key, credit_key, sum!(), "b");
+        book.insert_move(0, 1, debit_key, credit_key, sum!(), "c");
+        book.insert_move(0, 2, debit_key, credit_key, sum!(), "d");
         assert_eq!(
             book.transactions[0]
                 .moves
@@ -831,7 +830,7 @@ mod test {
         let debit_key = book.new_account("");
         let credit_key = book.new_account("");
         book.insert_transaction(0, "");
-        book.insert_move(0, 0, debit_key, credit_key, Sum::new(), "");
+        book.insert_move(0, 0, debit_key, credit_key, sum!(), "");
         book.set_move_metadata(0, 0, "!");
         assert_eq!(*book.transactions[0].moves[0].metadata(), "!");
     }
@@ -877,7 +876,7 @@ mod test {
             0,
             debit_account_key,
             credit_account_key,
-            Sum::new(),
+            sum!(),
             "a",
         );
         book.insert_move(
@@ -885,7 +884,7 @@ mod test {
             1,
             debit_account_key,
             credit_account_key,
-            Sum::new(),
+            sum!(),
             "b",
         );
         book.remove_move(0, 1);
@@ -901,7 +900,6 @@ mod test {
         ]
         #[cfg(test)]
         mod method {
-            use crate::sum::Sum;
             #[test]
             #[should_panic(expected = "index out of bounds: the len is 0 but the index is 0")]
             fn panic_transaction_out_of_bounds() {
@@ -929,7 +927,7 @@ mod test {
                     0,
                     debit_account_key,
                     credit_account_key,
-                    Sum::new(),
+                    sum!(),
                     "",
                 );
                 let other_account_key = book.new_account("");
@@ -947,7 +945,7 @@ mod test {
                     0,
                     debit_account_key,
                     credit_account_key,
-                    Sum::new(),
+                    sum!(),
                     "",
                 );
                 let other_account_key = book.new_account("");
@@ -965,7 +963,7 @@ mod test {
     )]
     fn set_move_sum_panic_transaction_out_of_bounds() {
         let mut book = test_book!("");
-        book.set_move_sum(0, 0, Sum::new());
+        book.set_move_sum(0, 0, sum!());
     }
     #[test]
     #[should_panic(
@@ -974,7 +972,7 @@ mod test {
     fn set_move_sum_panic_move_out_of_bounds() {
         let mut book = test_book!("");
         book.insert_transaction(0, "");
-        book.set_move_sum(0, 0, Sum::new());
+        book.set_move_sum(0, 0, sum!());
     }
     #[test]
     #[should_panic(expected = "No unit found for key ")]
@@ -988,7 +986,7 @@ mod test {
             0,
             debit_account_key,
             credit_account_key,
-            Sum::new(),
+            sum!(),
             "",
         );
         let unit_key = book.new_unit("");
@@ -1006,7 +1004,7 @@ mod test {
             0,
             debit_account_key,
             credit_account_key,
-            Sum::new(),
+            sum!(),
             "",
         );
         let unit_key = book.new_unit("");

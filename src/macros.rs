@@ -7,6 +7,7 @@ macro_rules! test_book {
 }
 #[cfg(test)]
 macro_rules! sum {
+    () => { crate::sum::Sum::new() };
     ($($amount:expr, $unit:ident);*) => {{
         let mut sum = crate::sum::Sum::new();
         $(sum.set_amount_for_unit($amount, $unit);)*

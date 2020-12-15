@@ -51,7 +51,6 @@ impl<M, T> Transaction<M, T> {
 #[cfg(test)]
 mod test {
     use super::Transaction;
-    use crate::sum::Sum;
     #[test]
     fn moves() {
         let mut book = test_book!("");
@@ -63,7 +62,7 @@ mod test {
             0,
             debit_account_key,
             credit_account_key,
-            Sum::new(),
+            sum!(),
             "a",
         );
         book.insert_move(
@@ -71,7 +70,7 @@ mod test {
             1,
             debit_account_key,
             credit_account_key,
-            Sum::new(),
+            sum!(),
             "b",
         );
         book.insert_move(
@@ -79,7 +78,7 @@ mod test {
             0,
             debit_account_key,
             credit_account_key,
-            Sum::new(),
+            sum!(),
             "c",
         );
         book.insert_move(
@@ -87,7 +86,7 @@ mod test {
             2,
             debit_account_key,
             credit_account_key,
-            Sum::new(),
+            sum!(),
             "d",
         );
         assert_eq!(
