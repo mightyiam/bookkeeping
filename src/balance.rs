@@ -5,7 +5,7 @@ use std::fmt;
 use std::marker::PhantomData;
 use std::ops;
 /// Represents a [balance](https://en.wikipedia.org/wiki/Balance_(accounting)), yet not necessarily the current balance.
-#[derive(Clone, PartialEq)]
+#[derive(PartialEq)]
 pub struct Balance<'a>(pub(crate) BTreeMap<UnitKey, i128>, PhantomData<&'a ()>);
 impl Balance<'_> {
     pub(crate) fn new() -> Self {
@@ -59,6 +59,9 @@ impl Balance<'_> {
     /// ```
     pub fn amounts(&self) -> impl Iterator<Item = (UnitKey, &i128)> {
         self.0.iter().map(|(unit_key, amount)| (*unit_key, amount))
+    }
+    fn clone(&self) -> Self {
+        Self(self.0.clone(), PhantomData)
     }
 }
 impl fmt::Debug for Balance<'_> {
