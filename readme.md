@@ -1,9 +1,9 @@
-![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/mightyiam/bookkeeping/Rust/master?logo=github)
+![GitHub Workflow Status (branch)][ci]
 
-This crate tries to model the very basics of the [bookkeeping](https://en.wikipedia.org/wiki/Bookkeeping) activity.
+This crate tries to model the very basics of the [bookkeeping][bookkeeping] activity.
 _it is a new rustacean's first open source crate_.
 
-## The outline
+## Outline
 
 A book contains
 - accounts,
@@ -18,3 +18,6 @@ A book contains
 ## Defficiencies
 
 - No optimization of balance calculations.
+
+[ci]: https://img.shields.io/github/workflow/status/mightyiam/bookkeeping/Rust/master?logo=github
+[bookkeeping]: https://en.wikipedia.org/wiki/Bookkeeping
