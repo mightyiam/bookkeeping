@@ -1,7 +1,6 @@
 use crate::book::AccountKey;
 use crate::sum::Sum;
 /// Represents a move of a [Sum] of [Unit](crate::Unit)s from one account to another.
-#[derive(Debug, PartialEq)]
 pub struct Move<M> {
     pub(crate) metadata: M,
     pub(crate) debit_account_key: AccountKey,
