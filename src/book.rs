@@ -21,7 +21,6 @@ new_key_type! {
 /// - `U`: unit metadata
 /// - `M`: move metadata
 /// - `T`: transaction metadata
-#[derive(Default)]
 pub struct Book<B, A, U, M, T> {
     metadata: B,
     accounts: DenseSlotMap<AccountKey, Account<A>>,
