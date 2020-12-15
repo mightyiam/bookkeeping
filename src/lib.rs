@@ -41,7 +41,7 @@ mod transaction;
 mod unit;
 pub use account::Account;
 pub use balance::Balance;
-pub use book::{AccountKey, Book, UnitKey};
+pub use book::{AccountKey, Book, Side, UnitKey};
 pub use move_::Move;
 pub use sum::Sum;
 pub use transaction::Transaction;
