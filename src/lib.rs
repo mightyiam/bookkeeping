@@ -9,27 +9,24 @@
 #![doc(test(attr(deny(warnings))))]
 //! ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/mightyiam/bookkeeping/Rust/master?logo=github)
 //!
-//! _This is a new rustacean's first open source crate.
-//! It is made with the intention of serving as the go-to bookkeeping crate.
-//! To get there, reviews from knowledgeable rustaceans seem necessary, so if you are one, then consider giving this crate your full attention for a while and leave your comments as a contribution to the community._
-//!
 //! This crate tries to model the very basics of the [bookkeeping](https://en.wikipedia.org/wiki/Bookkeeping) activity.
+//! _it is a new rustacean's first open source crate_.
 //!
-//! It doesn't make assumptions regarding what metadata is attached to anything and allows you to provide your own types for that.
-//! It also lets you determine how moves in an account are sorted, by providing your own sorting implementation that is based on your metadata.
+//! ## The outline
 //!
-//! Imbalance is prevented as much as possible, first by the data structures and further entirely, by runtime.
+//! A book contains
+//! - accounts,
+//! - units (may represent currencies)
+//! - and transactions, which in turn, contain moves.
 //!
-//! It attempts to provide an API that is nice to work with and to minimize user facing invariants.
+//! ## Features
 //!
-//! It is oblivious to the concept of a [currency](https://en.wikipedia.org/wiki/Currency).
-//! Therefore, there are no decimal places, minor and major units.
-//! There is only the concept of a [Unit], as in [unit of measurement](https://en.wikipedia.org/wiki/Unit_of_measurement), which the user may associate with some currency implementation via its metadata.
+//! - Book balance guaranteed at compile time.
+//! - Arbitrary metadata may be stored in books, accounts, units, transactions and moves.
 //!
-//! The most obvious todo items are:
-//! - Grouping of moves to represent transactions.
-//! - Editing/removing items other than metadata.
-//! - Caching of balance calculations.
+//! ## Defficiencies
+//!
+//! - No optimization of balance calculations.
 #[macro_use]
 mod macros;
 mod account;
