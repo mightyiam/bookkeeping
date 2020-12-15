@@ -1,5 +1,5 @@
 /// Represents a unit of measurement. Will most commonly represent the minor unit of a currency.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Unit<U> {
     pub(crate) metadata: U,
 }
