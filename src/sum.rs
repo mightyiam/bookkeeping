@@ -17,8 +17,8 @@ impl Sum {
     /// ```
     /// # use bookkeeping::Book;
     /// # use bookkeeping::Sum;
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
-    /// # let usd_key = book.new_unit("USD");
+    /// # let mut book = Book::<(), (), (), (), ()>::new(());
+    /// # let usd_key = book.new_unit(());
     /// # let mut sum = Sum::new();
     /// sum.set_amount_for_unit(500, usd_key);
     /// # assert_eq!(sum.amounts().collect::<Vec<_>>(), vec![(usd_key, &500)]);
@@ -30,9 +30,9 @@ impl Sum {
     /// ```
     /// # use bookkeeping::Book;
     /// # use bookkeeping::Sum;
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
-    /// # let usd_key = book.new_unit("USD");
-    /// # let thb_key = book.new_unit("THB");
+    /// # let mut book = Book::<(), (), (), (), ()>::new(());
+    /// # let usd_key = book.new_unit(());
+    /// # let thb_key = book.new_unit(());
     /// # let mut sum = Sum::new();
     /// # sum.set_amount_for_unit(500, usd_key);
     /// # sum.set_amount_for_unit(900, thb_key);

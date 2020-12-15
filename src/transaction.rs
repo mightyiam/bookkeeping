@@ -11,10 +11,10 @@ impl<M, T> Transaction<M, T> {
     /// # Example
     /// ```
     /// # use bookkeeping::{ Book, Sum };
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
-    /// # let wallet_key = book.new_account("");
-    /// # let bank_key = book.new_account("");
-    /// # book.insert_transaction(0, "");
+    /// # let mut book = Book::<(), (), (), &str, ()>::new(());
+    /// # let wallet_key = book.new_account(());
+    /// # let bank_key = book.new_account(());
+    /// # book.insert_transaction(0, ());
     /// book.insert_move(0, 0, wallet_key, bank_key, Sum::new(), "deposit");
     /// book.insert_move(0, 1, bank_key, wallet_key, Sum::new(), "withdrawal");
     /// assert_eq!(
@@ -35,7 +35,7 @@ impl<M, T> Transaction<M, T> {
     /// ## Example
     /// ```
     /// # use bookkeeping::Book;
-    /// # let mut book = Book::<&str, &str, &str, &str, &str>::new("");
+    /// # let mut book = Book::<(), (), (), (), &str>::new(());
     /// # book.insert_transaction(0, "deposit");
     /// # let transaction = book.transactions().nth(0).unwrap();
     /// assert_eq!(
