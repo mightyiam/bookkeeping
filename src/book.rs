@@ -135,7 +135,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// - `move_index` out of bounds.
     /// - Some of `debit_account_key` and `credit_account_key` are not in the book.
     /// - `debit_account_key` and `credit_account_key` are equal.
-    /// - Some unit keys that are in the sum are not in the book.
+    /// - Some unit keys in the `sum` are not in the book.
     ///
     /// ## Example
     /// ```
@@ -176,7 +176,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     ///
     /// ## Panics
     ///
-    /// - No such account in the book.
+    /// - `account_key` is not in the book.
     ///
     /// ## Example
     /// ```
@@ -193,7 +193,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     ///
     /// ## Panics
     ///
-    /// - No such unit in the book.
+    /// - `unit_key` is not in the book.
     ///
     /// ## Example
     /// ```
@@ -263,7 +263,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// Sets the metadata for an account.
     ///
     /// ## Panics
-    /// - The account is not in the book.
+    /// - `account_key` is not in the book.
     ///
     /// ## Example
     /// ```
@@ -283,7 +283,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// Sets the metadata for a unit.
     ///
     /// ## Panics
-    /// - The unit is not in the book.
+    /// - `unit_key` is not in the book.
     ///
     /// ## Example
     /// ```
@@ -353,7 +353,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     ///
     /// ## Panics
     ///
-    /// - The account is not in the book.
+    /// - `account_key` is not in the book.
     ///
     /// ## Example
     /// ```
