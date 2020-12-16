@@ -2,14 +2,13 @@ use crate::book::UnitKey;
 use crate::sum::Sum;
 use std::collections::BTreeMap;
 use std::fmt;
-use std::marker::PhantomData;
 use std::ops;
 /// Represents a [balance](https://en.wikipedia.org/wiki/Balance_(accounting)), yet not necessarily the current balance.
-#[derive(PartialEq)]
-pub struct Balance<'a>(pub(crate) BTreeMap<UnitKey, i128>, PhantomData<&'a ()>);
-impl Balance<'_> {
+#[derive(PartialEq, Clone)]
+pub struct Balance(pub(crate) BTreeMap<UnitKey, i128>);
+impl Balance {
     pub(crate) fn new() -> Self {
-        Self(Default::default(), Default::default())
+        Self(Default::default())
     }
     fn apply_sum_operation(
         &mut self,
@@ -60,32 +59,29 @@ impl Balance<'_> {
     pub fn amounts(&self) -> impl Iterator<Item = (UnitKey, &i128)> {
         self.0.iter().map(|(unit_key, amount)| (*unit_key, amount))
     }
-    fn clone(&self) -> Self {
-        Self(self.0.clone(), PhantomData)
-    }
 }
-impl fmt::Debug for Balance<'_> {
+impl fmt::Debug for Balance {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Balance(")?;
         f.debug_map().entries(self.0.clone()).finish()?;
         f.write_str(")")
     }
 }
-impl ops::SubAssign<&Sum> for Balance<'_> {
+impl ops::SubAssign<&Sum> for Balance {
     fn sub_assign(&mut self, sum: &Sum) {
         self.apply_sum_operation(sum, |balance_amount, sum_amount| {
             balance_amount - sum_amount as i128
         });
     }
 }
-impl ops::SubAssign<&(UnitKey, u64)> for Balance<'_> {
+impl ops::SubAssign<&(UnitKey, u64)> for Balance {
     fn sub_assign(&mut self, unit_amount: &(UnitKey, u64)) {
         self.apply_unit_operation(unit_amount, |balance, amount| {
             balance - amount as i128
         });
     }
 }
-impl ops::Sub<&Sum> for Balance<'_> {
+impl ops::Sub<&Sum> for Balance {
     type Output = Self;
     fn sub(self, sum: &Sum) -> Self::Output {
         let mut result = self.clone();
@@ -93,7 +89,7 @@ impl ops::Sub<&Sum> for Balance<'_> {
         result
     }
 }
-impl ops::Sub<&(UnitKey, u64)> for Balance<'_> {
+impl ops::Sub<&(UnitKey, u64)> for Balance {
     type Output = Self;
     fn sub(self, unit_amount: &(UnitKey, u64)) -> Self::Output {
         let mut result = self.clone();
@@ -101,21 +97,21 @@ impl ops::Sub<&(UnitKey, u64)> for Balance<'_> {
         result
     }
 }
-impl ops::AddAssign<&Sum> for Balance<'_> {
+impl ops::AddAssign<&Sum> for Balance {
     fn add_assign(&mut self, sum: &Sum) {
         self.apply_sum_operation(sum, |balance_amount, sum_amount| {
             balance_amount + sum_amount as i128
         });
     }
 }
-impl ops::AddAssign<&(UnitKey, u64)> for Balance<'_> {
+impl ops::AddAssign<&(UnitKey, u64)> for Balance {
     fn add_assign(&mut self, unit_amount: &(UnitKey, u64)) {
         self.apply_unit_operation(unit_amount, |balance, amount| {
             balance + amount as i128
         });
     }
 }
-impl ops::Add<&Sum> for Balance<'_> {
+impl ops::Add<&Sum> for Balance {
     type Output = Self;
     fn add(self, sum: &Sum) -> Self::Output {
         let mut result = self.clone();
@@ -123,7 +119,7 @@ impl ops::Add<&Sum> for Balance<'_> {
         result
     }
 }
-impl ops::Add<&(UnitKey, u64)> for Balance<'_> {
+impl ops::Add<&(UnitKey, u64)> for Balance {
     type Output = Self;
     fn add(self, unit_amount: &(UnitKey, u64)) -> Self::Output {
         let mut result = self.clone();
@@ -135,12 +131,11 @@ impl ops::Add<&(UnitKey, u64)> for Balance<'_> {
 mod test {
     use super::BTreeMap;
     use super::Balance;
-    use super::PhantomData;
     use maplit::btreemap;
     #[test]
     fn new() {
         let actual = Balance::new();
-        let expected = Balance(BTreeMap::new(), PhantomData);
+        let expected = Balance(BTreeMap::new());
         assert_eq!(actual, expected);
     }
     #[test]
@@ -158,13 +153,10 @@ mod test {
         actual.apply_sum_operation(&sum, |balance, amount| {
             balance * amount as i128
         });
-        let expected = Balance(
-            btreemap! {
-                unit_a_key => 4,
-                unit_b_key => 9,
-            },
-            PhantomData,
-        );
+        let expected = Balance(btreemap! {
+            unit_a_key => 4,
+            unit_b_key => 9,
+        });
         assert_eq!(actual, expected);
     }
     #[test]
@@ -190,12 +182,9 @@ mod test {
         let unit_key = book.new_unit("");
         let mut actual = Balance::new();
         actual -= &sum!(9, unit_key);
-        let expected = Balance(
-            btreemap! {
-                unit_key.clone() => -9,
-            },
-            PhantomData,
-        );
+        let expected = Balance(btreemap! {
+            unit_key.clone() => -9,
+        });
         assert_eq!(actual, expected);
     }
     #[test]
@@ -205,12 +194,9 @@ mod test {
         let unit_key = book.new_unit("");
         let immutable = Balance::new();
         let actual = immutable - &sum!(9, unit_key);
-        let expected = Balance(
-            btreemap! {
-                unit_key.clone() => -9,
-            },
-            PhantomData,
-        );
+        let expected = Balance(btreemap! {
+            unit_key.clone() => -9,
+        });
         assert_eq!(actual, expected);
     }
     #[test]
@@ -220,12 +206,9 @@ mod test {
         let unit_key = book.new_unit("");
         let mut actual = Balance::new();
         actual += &sum!(9, unit_key);
-        let expected = Balance(
-            btreemap! {
-                unit_key.clone() => 9,
-            },
-            PhantomData,
-        );
+        let expected = Balance(btreemap! {
+            unit_key.clone() => 9,
+        });
         assert_eq!(actual, expected);
     }
     #[test]
@@ -235,12 +218,9 @@ mod test {
         let unit_key = book.new_unit("");
         let immutable = Balance::new();
         let actual = immutable + &sum!(9, unit_key);
-        let expected = Balance(
-            btreemap! {
-                unit_key.clone() => 9,
-            },
-            PhantomData,
-        );
+        let expected = Balance(btreemap! {
+            unit_key.clone() => 9,
+        });
         assert_eq!(actual, expected);
     }
     #[test]

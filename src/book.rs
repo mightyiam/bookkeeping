@@ -368,17 +368,17 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// # book.insert_move(0, 0, bank_key, wallet_key, sum, ());
     /// let _balance = book.account_balance_at_transaction(wallet_key, 0);
     /// ```
-    pub fn account_balance_at_transaction<'a>(
-        &'a self,
+    pub fn account_balance_at_transaction(
+        &self,
         account_key: AccountKey,
         transaction_index: usize,
-    ) -> Balance<'a> {
+    ) -> Balance {
         self.assert_has_account(account_key);
         self.transactions
             .iter()
             .take(transaction_index + 1)
             .flat_map(|transaction| transaction.moves.iter())
-            .filter_map(|move_| -> Option<(fn(&mut Balance<'a>, _), &Sum)> {
+            .filter_map(|move_| -> Option<(fn(&mut Balance, _), &Sum)> {
                 if move_.debit_account_key == account_key {
                     Some((ops::SubAssign::sub_assign, &move_.sum))
                 } else if move_.credit_account_key == account_key {
