@@ -91,7 +91,7 @@ mod test {
         );
         assert_eq!(
             book.transactions()
-                .nth(0)
+                .next()
                 .unwrap()
                 .moves()
                 .map(|move_| move_.metadata())

@@ -2,7 +2,7 @@ use crate::book::UnitKey;
 use std::collections::BTreeMap;
 use std::fmt;
 /// Represents amounts of any number of units.
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Default)]
 pub struct Sum(pub(crate) BTreeMap<UnitKey, u64>);
 impl Sum {
     /// Creates an empty sum.
