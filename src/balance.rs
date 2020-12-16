@@ -59,6 +59,31 @@ impl Balance {
     pub fn amounts(&self) -> impl Iterator<Item = (UnitKey, &i128)> {
         self.0.iter().map(|(unit_key, amount)| (*unit_key, amount))
     }
+    /// Gets the amount of a provided unit.
+    ///
+    /// ## Example
+    /// ```
+    /// # use bookkeeping::Book;
+    /// # use bookkeeping::Sum;
+    /// # let mut book = Book::<(), (), (), (), ()>::new(());
+    /// # let usd_key = book.new_unit(());
+    /// # let thb_key = book.new_unit(());
+    /// # let ils_key = book.new_unit(());
+    /// # let wallet_key = book.new_account(());
+    /// # let bank_key = book.new_account(());
+    /// # let mut sum = Sum::new();
+    /// # sum.set_amount_for_unit(100, usd_key);
+    /// # sum.set_amount_for_unit(200, thb_key);
+    /// # book.insert_transaction(0, ());
+    /// # book.insert_move(0, 0, wallet_key, bank_key, sum, ());
+    /// # let balance = book.account_balance_at_transaction(bank_key, 0);
+    /// assert_eq!(balance.unit_amount(usd_key).unwrap(), &100);
+    /// assert_eq!(balance.unit_amount(thb_key).unwrap(), &200);
+    /// assert_eq!(balance.unit_amount(ils_key), None);
+    /// ```
+    pub fn unit_amount(&self, unit_key: UnitKey) -> Option<&i128> {
+        self.0.get(&unit_key)
+    }
 }
 impl fmt::Debug for Balance {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -236,5 +261,16 @@ mod test {
         let actual = balance.amounts().collect::<Vec<_>>();
         let expected = vec![(usd_key, &100), (thb_key, &200), (ils_key, &300)];
         assert_eq!(actual, expected);
+    }
+    #[test]
+    fn unit_amount() {
+        let mut book = test_book!("");
+        let usd_key = book.new_unit("");
+        let thb_key = book.new_unit("");
+        let ils_key = book.new_unit("");
+        let balance = Balance::new() + &sum!(200, usd_key; 100, thb_key);
+        assert_eq!(balance.unit_amount(usd_key).unwrap(), &200);
+        assert_eq!(balance.unit_amount(thb_key).unwrap(), &100);
+        assert_eq!(balance.unit_amount(ils_key), None);
     }
 }
