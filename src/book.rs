@@ -14,18 +14,17 @@ new_key_type! {
     pub struct UnitKey;
 }
 /// Represents a book.
-///
-/// Where
-/// - `B`: book metadata
-/// - `A`: account metadata
-/// - `U`: unit metadata
-/// - `M`: move metadata
-/// - `T`: transaction metadata
-pub struct Book<B, A, U, M, T> {
-    metadata: B,
-    accounts: DenseSlotMap<AccountKey, Account<A>>,
-    units: DenseSlotMap<UnitKey, Unit<U>>,
-    transactions: Vec<Transaction<M, T>>,
+pub struct Book<
+    Metadata = (),
+    AccountMetadata = (),
+    UnitMetadata = (),
+    MoveMetadata = (),
+    TransactionMetadata = (),
+> {
+    metadata: Metadata,
+    accounts: DenseSlotMap<AccountKey, Account<AccountMetadata>>,
+    units: DenseSlotMap<UnitKey, Unit<UnitMetadata>>,
+    transactions: Vec<Transaction<MoveMetadata, TransactionMetadata>>,
 }
 /// Represents a side of a [Move].
 pub enum Side {
@@ -34,9 +33,24 @@ pub enum Side {
     #[allow(missing_docs)]
     Credit,
 }
+
 /// Used to index transactions in the book.
 pub struct TransactionIndex(pub usize);
-impl<B, A, U, M, T> Book<B, A, U, M, T> {
+impl<
+        Metadata,
+        AccountMetadata,
+        UnitMetadata,
+        MoveMetadata,
+        TransactionMetadata,
+    >
+    Book<
+        Metadata,
+        AccountMetadata,
+        UnitMetadata,
+        MoveMetadata,
+        TransactionMetadata,
+    >
+{
     /// Creates a new book
     ///
     /// ## Example
@@ -44,7 +58,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// # use bookkeeping::*;
     /// let _book = Book::<&str, (), (), (), ()>::new("some book");
     /// ```
-    pub fn new(metadata: B) -> Self {
+    pub fn new(metadata: Metadata) -> Self {
         Self {
             metadata,
             accounts: DenseSlotMap::with_key(),
@@ -60,7 +74,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// # let book = Book::<&str, (), (), (), ()>::new("some book");
     /// assert_eq!(*book.metadata(), "some book");
     /// ```
-    pub fn metadata(&self) -> &B {
+    pub fn metadata(&self) -> &Metadata {
         &self.metadata
     }
     /// Sets the book's metadata.
@@ -71,7 +85,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// # let mut book = Book::<&str, (), (), (), ()>::new("some booc");
     /// book.set_book_metadata("some book");
     /// ```
-    pub fn set_book_metadata(&mut self, metadata: B) {
+    pub fn set_book_metadata(&mut self, metadata: Metadata) {
         self.metadata = metadata;
     }
     /// Creates a new account.
@@ -83,7 +97,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// let _wallet_key = book.new_account("wallet");
     /// let _bank_key = book.new_account("bank");
     /// ```
-    pub fn new_account(&mut self, metadata: A) -> AccountKey {
+    pub fn new_account(&mut self, metadata: AccountMetadata) -> AccountKey {
         self.accounts.insert(Account { metadata })
     }
     /// Creates a new unit.
@@ -96,7 +110,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// let _thb_key = book.new_unit("THB");
     /// let _ils_key = book.new_unit("ILS");
     /// ```
-    pub fn new_unit(&mut self, metadata: U) -> UnitKey {
+    pub fn new_unit(&mut self, metadata: UnitMetadata) -> UnitKey {
         self.units.insert(Unit { metadata })
     }
     /// Creates a transaction and inserts it at an index.
@@ -114,7 +128,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     pub fn insert_transaction(
         &mut self,
         transaction_index: TransactionIndex,
-        metadata: T,
+        metadata: TransactionMetadata,
     ) {
         self.transactions.insert(
             transaction_index.0,
@@ -165,7 +179,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
         debit_account_key: AccountKey,
         credit_account_key: AccountKey,
         sum: Sum,
-        metadata: M,
+        metadata: MoveMetadata,
     ) {
         [debit_account_key, credit_account_key].iter().for_each(
             |account_key| {
@@ -194,7 +208,10 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// # let wallet_key = book.new_account(());
     /// let _wallet = book.get_account(wallet_key);
     /// ```
-    pub fn get_account(&self, account_key: AccountKey) -> &Account<A> {
+    pub fn get_account(
+        &self,
+        account_key: AccountKey,
+    ) -> &Account<AccountMetadata> {
         self.assert_has_account(account_key);
         self.accounts.get(account_key).unwrap()
     }
@@ -211,7 +228,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// # let usd_key = book.new_unit(());
     /// let _usd = book.get_unit(usd_key);
     /// ```
-    pub fn get_unit(&self, unit_key: UnitKey) -> &Unit<U> {
+    pub fn get_unit(&self, unit_key: UnitKey) -> &Unit<UnitMetadata> {
         self.assert_has_unit(unit_key);
         self.units.get(unit_key).unwrap()
     }
@@ -230,7 +247,9 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     ///     vec![(wallet_key, &"wallet"), (bank_key, &"bank")],
     /// );
     /// ```
-    pub fn accounts(&self) -> impl Iterator<Item = (AccountKey, &Account<A>)> {
+    pub fn accounts(
+        &self,
+    ) -> impl Iterator<Item = (AccountKey, &Account<AccountMetadata>)> {
         self.accounts.iter()
     }
     /// Gets an iterator of existing units in order of creation.
@@ -248,7 +267,9 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     ///     vec![(usd_key, &"USD"), (thb_key, &"THB")],
     /// );
     /// ```
-    pub fn units(&self) -> impl Iterator<Item = (UnitKey, &Unit<U>)> {
+    pub fn units(
+        &self,
+    ) -> impl Iterator<Item = (UnitKey, &Unit<UnitMetadata>)> {
         self.units.iter()
     }
     /// Gets an iterator of existing transactions in their order.
@@ -268,7 +289,12 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// ```
     pub fn transactions(
         &self,
-    ) -> impl Iterator<Item = (TransactionIndex, &Transaction<M, T>)> {
+    ) -> impl Iterator<
+        Item = (
+            TransactionIndex,
+            &Transaction<MoveMetadata, TransactionMetadata>,
+        ),
+    > {
         self.transactions
             .iter()
             .enumerate()
@@ -289,7 +315,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     pub fn set_account_metadata(
         &mut self,
         account_key: AccountKey,
-        metadata: A,
+        metadata: AccountMetadata,
     ) {
         self.assert_has_account(account_key);
         self.accounts.get_mut(account_key).unwrap().metadata = metadata;
@@ -306,7 +332,11 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// # let usd_key = book.new_unit("USd");
     /// book.set_unit_metadata(usd_key, "USD");
     /// ```
-    pub fn set_unit_metadata(&mut self, unit_key: UnitKey, metadata: U) {
+    pub fn set_unit_metadata(
+        &mut self,
+        unit_key: UnitKey,
+        metadata: UnitMetadata,
+    ) {
         self.assert_has_unit(unit_key);
         self.units.get_mut(unit_key).unwrap().metadata = metadata;
     }
@@ -325,7 +355,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     pub fn set_transaction_metadata(
         &mut self,
         transaction_index: TransactionIndex,
-        metadata: T,
+        metadata: TransactionMetadata,
     ) {
         self.transactions
             .get_mut(transaction_index.0)
@@ -359,7 +389,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
         &mut self,
         transaction_index: TransactionIndex,
         move_index: MoveIndex,
-        metadata: M,
+        metadata: MoveMetadata,
     ) {
         let transaction = std::ops::IndexMut::index_mut(
             &mut self.transactions,

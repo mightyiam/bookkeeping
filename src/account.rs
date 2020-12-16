@@ -1,8 +1,8 @@
 /// Represents an [account](https://en.wikipedia.org/wiki/Account_(bookkeeping)).
-pub struct Account<A> {
-    pub(crate) metadata: A,
+pub struct Account<AccountMetadata> {
+    pub(crate) metadata: AccountMetadata,
 }
-impl<A> Account<A> {
+impl<AccountMetadata> Account<AccountMetadata> {
     /// Gets the metadata of the account.
     ///
     /// ## Example
@@ -13,7 +13,7 @@ impl<A> Account<A> {
     /// # let account = book.get_account(account_key);
     /// assert_eq!(*account.metadata(), "wallet");
     /// ```
-    pub fn metadata(&self) -> &A {
+    pub fn metadata(&self) -> &AccountMetadata {
         &self.metadata
     }
 }

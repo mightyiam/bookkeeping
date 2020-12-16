@@ -1,8 +1,8 @@
 /// Represents a unit of measurement. Will most commonly represent the minor unit of a currency.
-pub struct Unit<U> {
-    pub(crate) metadata: U,
+pub struct Unit<UnitMetadata> {
+    pub(crate) metadata: UnitMetadata,
 }
-impl<U> Unit<U> {
+impl<UnitMetadata> Unit<UnitMetadata> {
     /// Gets the metadata of the unit.
     ///
     /// ## Example
@@ -13,7 +13,7 @@ impl<U> Unit<U> {
     /// # let unit = book.get_unit(unit_key);
     /// assert_eq!(*unit.metadata(), "USD");
     /// ```
-    pub fn metadata(&self) -> &U {
+    pub fn metadata(&self) -> &UnitMetadata {
         &self.metadata
     }
 }

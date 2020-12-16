@@ -37,7 +37,7 @@ impl Balance {
     /// ```
     /// # use bookkeeping::*;
     /// # use std::collections::HashSet;
-    /// # let mut book = Book::<(), (), (), (), ()>::new(());
+    /// # let mut book = Book::new(());
     /// # let usd_key = book.new_unit(());
     /// # let thb_key = book.new_unit(());
     /// # let ils_key = book.new_unit(());
