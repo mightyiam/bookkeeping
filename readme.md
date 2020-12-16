@@ -254,17 +254,17 @@ assert_eq!(book.get_unit(usd_key).metadata().decimal_places, 2);
 // Sweet!
 book.insert_transaction(0, "Withdrawal");
 assert_eq!(
-    book.transactions().nth(0).unwrap().metadata(),
+    book.transactions().next().unwrap().metadata(),
     &"Withdrawal"
 );
 // Rad!
 book.insert_move(0, 0, bank_key, wallet_key, Sum::new(), ());
 assert_eq!(
     book.transactions()
-        .nth(0)
+        .next()
         .unwrap()
         .moves()
-        .nth(0)
+        .next()
         .unwrap()
         .metadata(),
     &(),

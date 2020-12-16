@@ -25,11 +25,11 @@ impl Balance {
         amount_op: fn(i128, u64) -> i128,
     ) {
         self.0
-            .entry(unit.clone())
+            .entry(*unit)
             .and_modify(|balance| {
                 *balance = amount_op(*balance, *amount);
             })
-            .or_insert(amount_op(0, *amount));
+            .or_insert_with(|| amount_op(0, *amount));
     }
     /// Gets the amounts of all units in undefined order.
     ///
@@ -108,18 +108,16 @@ impl ops::SubAssign<&(UnitKey, u64)> for Balance {
 }
 impl ops::Sub<&Sum> for Balance {
     type Output = Self;
-    fn sub(self, sum: &Sum) -> Self::Output {
-        let mut result = self.clone();
-        result -= sum;
-        result
+    fn sub(mut self, sum: &Sum) -> Self::Output {
+        self -= sum;
+        self
     }
 }
 impl ops::Sub<&(UnitKey, u64)> for Balance {
     type Output = Self;
-    fn sub(self, unit_amount: &(UnitKey, u64)) -> Self::Output {
-        let mut result = self.clone();
-        result -= unit_amount;
-        result
+    fn sub(mut self, unit_amount: &(UnitKey, u64)) -> Self::Output {
+        self -= unit_amount;
+        self
     }
 }
 impl ops::AddAssign<&Sum> for Balance {
@@ -138,18 +136,16 @@ impl ops::AddAssign<&(UnitKey, u64)> for Balance {
 }
 impl ops::Add<&Sum> for Balance {
     type Output = Self;
-    fn add(self, sum: &Sum) -> Self::Output {
-        let mut result = self.clone();
-        result += sum;
-        result
+    fn add(mut self, sum: &Sum) -> Self::Output {
+        self += sum;
+        self
     }
 }
 impl ops::Add<&(UnitKey, u64)> for Balance {
     type Output = Self;
-    fn add(self, unit_amount: &(UnitKey, u64)) -> Self::Output {
-        let mut result = self.clone();
-        result += unit_amount;
-        result
+    fn add(mut self, unit_amount: &(UnitKey, u64)) -> Self::Output {
+        self += unit_amount;
+        self
     }
 }
 #[cfg(test)]
@@ -208,7 +204,7 @@ mod test {
         let mut actual = Balance::new();
         actual -= &sum!(9, unit_key);
         let expected = Balance(btreemap! {
-            unit_key.clone() => -9,
+            unit_key => -9,
         });
         assert_eq!(actual, expected);
     }
@@ -220,7 +216,7 @@ mod test {
         let immutable = Balance::new();
         let actual = immutable - &sum!(9, unit_key);
         let expected = Balance(btreemap! {
-            unit_key.clone() => -9,
+            unit_key => -9,
         });
         assert_eq!(actual, expected);
     }
@@ -232,7 +228,7 @@ mod test {
         let mut actual = Balance::new();
         actual += &sum!(9, unit_key);
         let expected = Balance(btreemap! {
-            unit_key.clone() => 9,
+            unit_key => 9,
         });
         assert_eq!(actual, expected);
     }
@@ -244,7 +240,7 @@ mod test {
         let immutable = Balance::new();
         let actual = immutable + &sum!(9, unit_key);
         let expected = Balance(btreemap! {
-            unit_key.clone() => 9,
+            unit_key => 9,
         });
         assert_eq!(actual, expected);
     }

@@ -20,8 +20,8 @@ impl<M> Move<M> {
         );
         Self {
             metadata,
-            debit_account_key: debit_account_key,
-            credit_account_key: credit_account_key,
+            debit_account_key,
+            credit_account_key,
             sum,
         }
     }
@@ -150,9 +150,7 @@ mod test {
         let mut book = test_book!("");
         let debit_account_key = book.new_account("");
         let credit_account_key = book.new_account("");
-        let sum = sum!();
-        let move_ =
-            Move::new(debit_account_key, credit_account_key, sum.clone(), 5);
+        let move_ = Move::new(debit_account_key, credit_account_key, sum!(), 5);
         assert_eq!(*move_.metadata(), 5);
     }
 }

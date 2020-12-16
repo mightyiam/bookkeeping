@@ -8,6 +8,7 @@
 #![deny(invalid_codeblock_attributes)]
 #![doc(test(attr(deny(warnings))))]
 #![feature(external_doc)]
+#![deny(clippy::all)]
 #![doc(include = "../readme.md")]
 #[macro_use]
 mod macros;

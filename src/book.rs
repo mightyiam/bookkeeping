@@ -368,6 +368,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     /// # book.insert_move(0, 0, bank_key, wallet_key, sum, ());
     /// let _balance = book.account_balance_at_transaction(wallet_key, 0);
     /// ```
+    #[allow(clippy::type_complexity)]
     pub fn account_balance_at_transaction(
         &self,
         account_key: AccountKey,
