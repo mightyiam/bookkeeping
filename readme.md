@@ -91,7 +91,7 @@ sum.set_amount_for_unit(2000, usd_key);
 // "Wait — support for multiple units?" (that's you, asking).
 // Yes. Sums support multiple units. Thank Joe for that. It's his idea.
 // We'll get to using multiple units later. For now, this sum represents
-// a hundred USD.
+// 2000 USD.
 
 // So now the book contains two accounts, one unit and one transaction
 // and also a sum that we own directly. So now we can move money around.
@@ -108,7 +108,7 @@ book.insert_move(0, 0, income_key, bank_key, sum, ());
 //    0. transaction
 //       0. move
 //
-// The move is of 100 dollars from the income account and to the bank
+// The move is of 2000 dollars from the income account and to the bank
 // account. What a miracle...
 
 // As you may have guessed, you may add more accounts, units,
