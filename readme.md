@@ -40,7 +40,7 @@ use bookkeeping::*;
 // The first thing you should know is that all records are stored in
 // books. So, here's a new book:
 let mut book = Book::<(), (), (), (), ()>::new(());
-// "What are are all of these extra types?" — you must be wondering.
+// "What are all of these extra types?" — you must be wondering.
 // Let me explain. You know what — I won't explain that right now.
 // The important part is that we have a book.
 // In that book, we can store accounts, units, transactions and moves.
