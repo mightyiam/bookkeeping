@@ -398,8 +398,8 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
     ///     .account_balance_at_transaction(wallet_key, TransactionIndex(0));
     /// ```
     #[allow(clippy::type_complexity)]
-    pub fn account_balance_at_transaction(
-        &self,
+    pub fn account_balance_at_transaction<'a>(
+        &'a self,
         account_key: AccountKey,
         transaction_index: TransactionIndex,
     ) -> Balance {
@@ -408,7 +408,7 @@ impl<B, A, U, M, T> Book<B, A, U, M, T> {
             .iter()
             .take(transaction_index.0 + 1)
             .flat_map(|transaction| transaction.moves.iter())
-            .filter_map(|move_| -> Option<(fn(&mut Balance, _), &Sum)> {
+            .filter_map(|move_| -> Option<(fn(&mut Balance, &'a Sum), &Sum)> {
                 if move_.debit_account_key == account_key {
                     Some((ops::SubAssign::sub_assign, &move_.sum))
                 } else if move_.credit_account_key == account_key {
