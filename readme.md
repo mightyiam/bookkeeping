@@ -307,5 +307,16 @@ assert_eq!(
 // Dope!
 ```
 
+## FAQ
+
+> This API can panic in a bunch of places. I don't like that. I don't feel safe.
+> How about returning `Result`s, instead?
+
+`Result`s and errors are for when a function might fail regardless of usage.
+In this crate, panics would only occur on wrong usage.
+Having this crate return `Result`s would complicate the API and — worse —
+would give the impression that function calls could fail regardless of usage.
+I'd like the user to be confidant that with correct usage the API is safe.
+
 [ci]: https://img.shields.io/github/workflow/status/mightyiam/bookkeeping/Rust/master?logo=github
 [bookkeeping]: https://en.wikipedia.org/wiki/Bookkeeping
