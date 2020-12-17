@@ -7,7 +7,7 @@ impl<U> Unit<U> {
     ///
     /// ## Example
     /// ```
-    /// # use bookkeeping::Book;
+    /// # use bookkeeping::*;
     /// # let mut book = Book::<(), (), &str, (), ()>::new(());
     /// # let unit_key = book.new_unit("USD");
     /// # let unit = book.get_unit(unit_key);

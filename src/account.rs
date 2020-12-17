@@ -7,7 +7,7 @@ impl<A> Account<A> {
     ///
     /// ## Example
     /// ```
-    /// # use bookkeeping::Book;
+    /// # use bookkeeping::*;
     /// # let mut book = Book::<(), &str, (), (), ()>::new(());
     /// # let account_key = book.new_account("wallet");
     /// # let account = book.get_account(account_key);

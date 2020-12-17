@@ -74,7 +74,7 @@ let usd_key = book.new_unit(());
 // So, we know that we need a move. But... moves are not directly inside
 // a book — they live inside _transactions_. So we'll make a transaction
 // to hold the move:
-book.insert_transaction(0, ());
+book.insert_transaction(TransactionIndex(0), ());
 
 // That `0` argument is the index in which to insert the transaction
 // into the book. You see, a book holds a single ordered collection of
@@ -97,7 +97,14 @@ sum.set_amount_for_unit(2000, usd_key);
 // and also a sum that we own directly. So now we can move money around.
 // Exciting, isn't it? And this is as far as this motif goes.
 // Because now we really can move money around. Look:
-book.insert_move(0, 0, income_key, bank_key, sum, ());
+book.insert_move(
+    TransactionIndex(0),
+    MoveIndex(0),
+    income_key,
+    bank_key,
+    sum,
+    ()
+);
 // What this did is created a new move and inserted it into the existing
 // transaction that is at index `0`. We only have one transaction, so
 // that's where it is. And the move was inserted at index `0` in the
@@ -122,12 +129,14 @@ book.insert_move(0, 0, income_key, bank_key, sum, ());
 
 // At this point (no pun intended), we would like to see the balance of
 // the accounts. Well, I would — and I'm writing this tutorial, so:
-let balance = book.account_balance_at_transaction(income_key, 0);
+let balance = book
+    .account_balance_at_transaction(income_key, TransactionIndex(0));
 assert_eq!(
     balance.amounts().collect::<Vec<_>>(),
     vec![(usd_key, &-2000)] // negative amount
 );
-let balance = book.account_balance_at_transaction(bank_key, 0);
+let balance = book
+    .account_balance_at_transaction(bank_key, TransactionIndex(0));
 assert_eq!(
     balance.amounts().collect::<Vec<_>>(),
     vec![(usd_key, &2000)] // positive amount
@@ -137,44 +146,61 @@ assert_eq!(
 // Let's move more money around, just to confirm our understanding:
 let wallet_key = book.new_account(());
 // This created a new account that represents a wallet.
-book.insert_transaction(1, ());
+book.insert_transaction(TransactionIndex(1), ());
 // This created a new empty transaction and inserted it at index `1`.
 let mut sum = Sum::new();
 sum.set_amount_for_unit(100, usd_key);
-book.insert_move(1, 0, bank_key, wallet_key, sum, ());
+book.insert_move(
+    TransactionIndex(1),
+    MoveIndex(0),
+    bank_key,
+    wallet_key,
+    sum,
+    ()
+);
 // Created and inserted a move of 100 USD from the bank account to the
 // wallet account. Isn't this fun?
 
 // Now, let's see some balances, using the index of this most recent
 // transaction:
-let balance = book.account_balance_at_transaction(income_key, 1);
+let balance = book
+    .account_balance_at_transaction(income_key, TransactionIndex(1));
 assert_eq!(
     balance.amounts().collect::<Vec<_>>(),
     vec![(usd_key, &-2000)]
 );
-let balance = book.account_balance_at_transaction(bank_key, 1);
+let balance = book
+    .account_balance_at_transaction(bank_key, TransactionIndex(1));
 assert_eq!(
     balance.amounts().collect::<Vec<_>>(),
     vec![(usd_key, &1900)]
 );
-let balance = book.account_balance_at_transaction(wallet_key, 1);
+let balance = book
+    .account_balance_at_transaction(wallet_key, TransactionIndex(1));
 assert_eq!(
     balance.amounts().collect::<Vec<_>>(),
     vec![(usd_key, &100)]
 );
 
 // Now, let's insert a new transaction between the two existing ones:
-book.insert_transaction(1, ());
+book.insert_transaction(TransactionIndex(1), ());
 let mut sum = Sum::new();
 sum.set_amount_for_unit(1000, usd_key);
-book.insert_move(1, 0, income_key, bank_key, sum, ());
+book.insert_move(
+    TransactionIndex(1),
+    MoveIndex(0),
+    income_key,
+    bank_key,
+    sum,
+    ()
+);
 // And look at a running balance of the bank account:
 let bank_running_balance: Vec<i128> = [0, 1, 2]
     .iter()
     .map(|transaction_index| {
         book.account_balance_at_transaction(
             bank_key,
-            *transaction_index,
+            TransactionIndex(*transaction_index),
         )
         .unit_amount(usd_key)
         .unwrap()
@@ -193,8 +219,8 @@ let _accounts: Vec<(AccountKey, &Account<()>)> =
 let _units: Vec<(UnitKey, &Unit<()>)> = book.units().collect();
 // Note that the order of the iterator returned from [Book::accounts] is
 // undefined. And this way for transactions:
-let _transactions: Vec<(usize, &Transaction<(), ()>)> =
-    book.transactions().enumerate().collect();
+let _transactions: Vec<(TransactionIndex, &Transaction<(), ()>)> =
+    book.transactions().collect();
 ```
 
 ### Metadata
@@ -252,20 +278,29 @@ let usd_key = book.new_unit(UnitMetadata {
 assert_eq!(&book.get_unit(usd_key).metadata().currency_code, &"USD");
 assert_eq!(book.get_unit(usd_key).metadata().decimal_places, 2);
 // Sweet!
-book.insert_transaction(0, "Withdrawal");
+book.insert_transaction(TransactionIndex(0), "Withdrawal");
 assert_eq!(
-    book.transactions().next().unwrap().metadata(),
+    book.transactions().next().unwrap().1.metadata(),
     &"Withdrawal"
 );
 // Rad!
-book.insert_move(0, 0, bank_key, wallet_key, Sum::new(), ());
+book.insert_move(
+    TransactionIndex(0),
+    MoveIndex(0),
+    bank_key,
+    wallet_key,
+    Sum::new(),
+    ()
+);
 assert_eq!(
     book.transactions()
         .next()
         .unwrap()
+        .1
         .moves()
         .next()
         .unwrap()
+        .1
         .metadata(),
     &(),
 );

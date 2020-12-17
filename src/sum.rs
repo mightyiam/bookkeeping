@@ -7,7 +7,7 @@ pub struct Sum(pub(crate) BTreeMap<UnitKey, u64>);
 impl Sum {
     /// Creates an empty sum.
     /// ```
-    /// # use bookkeeping::Sum;
+    /// # use bookkeeping::*;
     /// let _sum = Sum::new();
     /// ```
     pub fn new() -> Self {
@@ -15,8 +15,7 @@ impl Sum {
     }
     /// Sets the amount of a unit in a sum.
     /// ```
-    /// # use bookkeeping::Book;
-    /// # use bookkeeping::Sum;
+    /// # use bookkeeping::*;
     /// # let mut book = Book::<(), (), (), (), ()>::new(());
     /// # let usd_key = book.new_unit(());
     /// # let mut sum = Sum::new();
@@ -28,8 +27,7 @@ impl Sum {
     }
     /// Gets the amounts of all units in undefined order.
     /// ```
-    /// # use bookkeeping::Book;
-    /// # use bookkeeping::Sum;
+    /// # use bookkeeping::*;
     /// # let mut book = Book::<(), (), (), (), ()>::new(());
     /// # let usd_key = book.new_unit(());
     /// # let thb_key = book.new_unit(());
