@@ -29,13 +29,27 @@ impl<M> Move<M> {
     ///
     /// ## Example
     /// ```
-    /// # use bookkeeping::{ Book, Sum };
+    /// # use bookkeeping::*;
     /// # let mut book = Book::<(), (), (), (), ()>::new(());
     /// let wallet_key = book.new_account(());
     /// # let bank_key = book.new_account(());
-    /// # book.insert_transaction(0, ());
-    /// book.insert_move(0, 0, wallet_key, bank_key, Sum::new(), ());
-    /// let move_ = book.transactions().nth(0).unwrap().moves().nth(0).unwrap();
+    /// # book.insert_transaction(TransactionIndex(0), ());
+    /// book.insert_move(
+    ///     TransactionIndex(0),
+    ///     MoveIndex(0),
+    ///     wallet_key,
+    ///     bank_key,
+    ///     Sum::new(),
+    ///     ()
+    /// );
+    /// let (_move_index, move_) = book
+    ///     .transactions()
+    ///     .nth(0)
+    ///     .unwrap()
+    ///     .1
+    ///     .moves()
+    ///     .nth(0)
+    ///     .unwrap();
     /// assert_eq!(move_.debit_account_key(), wallet_key);
     /// ```
     pub fn debit_account_key(&self) -> AccountKey {
@@ -45,13 +59,27 @@ impl<M> Move<M> {
     ///
     /// ## Example
     /// ```
-    /// # use bookkeeping::{ Book, Sum };
+    /// # use bookkeeping::*;
     /// # let mut book = Book::<(), (), (), (), ()>::new(());
     /// # let wallet_key = book.new_account(());
     /// let bank_key = book.new_account(());
-    /// # book.insert_transaction(0, ());
-    /// book.insert_move(0, 0, wallet_key, bank_key, Sum::new(), ());
-    /// let move_ = book.transactions().nth(0).unwrap().moves().nth(0).unwrap();
+    /// # book.insert_transaction(TransactionIndex(0), ());
+    /// book.insert_move(
+    ///     TransactionIndex(0),
+    ///     MoveIndex(0),
+    ///     wallet_key,
+    ///     bank_key,
+    ///     Sum::new(),
+    ///     ()
+    /// );
+    /// let (_move_index, move_) = book
+    ///     .transactions()
+    ///     .nth(0)
+    ///     .unwrap()
+    ///     .1
+    ///     .moves()
+    ///     .nth(0)
+    ///     .unwrap();
     /// assert_eq!(move_.credit_account_key(), bank_key);
     /// ```
     pub fn credit_account_key(&self) -> AccountKey {
@@ -61,16 +89,23 @@ impl<M> Move<M> {
     ///
     /// ## Example
     /// ```
-    /// # use bookkeeping::{ Book, Sum };
+    /// # use bookkeeping::*;
     /// # let mut book = Book::<(), (), (), (), ()>::new(());
     /// # let wallet_key = book.new_account(());
     /// # let bank_key = book.new_account(());
     /// # let usd_key = book.new_unit(());
-    /// book.insert_transaction(0, ());
+    /// book.insert_transaction(TransactionIndex(0), ());
     /// let mut sum = Sum::new();
     /// sum.set_amount_for_unit(100, usd_key);
-    /// book.insert_move(0, 0, wallet_key, bank_key, sum.clone(), ());
-    /// let move_ = book.transactions().nth(0).unwrap().moves().nth(0).unwrap();
+    /// book.insert_move(TransactionIndex(0), MoveIndex(0), wallet_key, bank_key, sum.clone(), ());
+    /// let (_move_index, move_) = book
+    ///     .transactions()
+    ///     .nth(0)
+    ///     .unwrap()
+    ///     .1
+    ///     .moves()
+    ///     .nth(0)
+    ///     .unwrap();
     /// assert_eq!(*move_.sum(), sum);
     /// ```
     pub fn sum(&self) -> &Sum {
@@ -80,13 +115,20 @@ impl<M> Move<M> {
     ///
     /// ## Example
     /// ```
-    /// # use bookkeeping::{ Book, Sum };
+    /// # use bookkeeping::*;
     /// # let mut book = Book::<(), (), (), &str, ()>::new(());
     /// # let wallet_key = book.new_account(());
     /// # let bank_key = book.new_account(());
-    /// # book.insert_transaction(0, ());
-    /// # book.insert_move(0, 0, wallet_key, bank_key, Sum::new(), "deposit");
-    /// # let move_ = book.transactions().nth(0).unwrap().moves().nth(0).unwrap();
+    /// # book.insert_transaction(TransactionIndex(0), ());
+    /// # book.insert_move(TransactionIndex(0), MoveIndex(0), wallet_key, bank_key, Sum::new(), "deposit");
+    /// # let (_move_index, move_) = book
+    /// #     .transactions()
+    /// #     .nth(0)
+    /// #     .unwrap()
+    /// #     .1
+    /// #     .moves()
+    /// #     .nth(0)
+    /// #     .unwrap();
     /// assert_eq!(*move_.metadata(), "deposit");
     /// ```
     pub fn metadata(&self) -> &M {

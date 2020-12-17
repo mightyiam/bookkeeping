@@ -35,8 +35,7 @@ impl Balance {
     ///
     /// ## Example
     /// ```
-    /// # use bookkeeping::Book;
-    /// # use bookkeeping::Sum;
+    /// # use bookkeeping::*;
     /// # use std::collections::HashSet;
     /// # let mut book = Book::<(), (), (), (), ()>::new(());
     /// # let usd_key = book.new_unit(());
@@ -48,9 +47,17 @@ impl Balance {
     /// # sum.set_amount_for_unit(100, usd_key);
     /// # sum.set_amount_for_unit(200, thb_key);
     /// # sum.set_amount_for_unit(300, ils_key);
-    /// # book.insert_transaction(0, ());
-    /// # book.insert_move(0, 0, wallet_key, bank_key, sum, ());
-    /// # let balance = book.account_balance_at_transaction(bank_key, 0);
+    /// # book.insert_transaction(TransactionIndex(0), ());
+    /// # book.insert_move(
+    /// #     TransactionIndex(0),
+    /// #     MoveIndex(0),
+    /// #     wallet_key,
+    /// #     bank_key,
+    /// #     sum,
+    /// #     ()
+    /// # );
+    /// # let balance = book
+    ///     .account_balance_at_transaction(bank_key, TransactionIndex(0));
     /// let amounts = balance.amounts().collect::<HashSet<_>>();
     /// assert!(amounts.contains(&(usd_key, &100)));
     /// assert!(amounts.contains(&(thb_key, &200)));
@@ -63,8 +70,7 @@ impl Balance {
     ///
     /// ## Example
     /// ```
-    /// # use bookkeeping::Book;
-    /// # use bookkeeping::Sum;
+    /// # use bookkeeping::*;
     /// # let mut book = Book::<(), (), (), (), ()>::new(());
     /// # let usd_key = book.new_unit(());
     /// # let thb_key = book.new_unit(());
@@ -74,9 +80,15 @@ impl Balance {
     /// # let mut sum = Sum::new();
     /// # sum.set_amount_for_unit(100, usd_key);
     /// # sum.set_amount_for_unit(200, thb_key);
-    /// # book.insert_transaction(0, ());
-    /// # book.insert_move(0, 0, wallet_key, bank_key, sum, ());
-    /// # let balance = book.account_balance_at_transaction(bank_key, 0);
+    /// # book.insert_transaction(TransactionIndex(0), ());
+    /// # book.insert_move(
+    /// #     TransactionIndex(0),
+    /// #     MoveIndex(0),
+    /// #     wallet_key,
+    /// #     bank_key, sum, ()
+    /// # );
+    /// # let balance = book
+    /// #     .account_balance_at_transaction(bank_key, TransactionIndex(0));
     /// assert_eq!(balance.unit_amount(usd_key).unwrap(), &100);
     /// assert_eq!(balance.unit_amount(thb_key).unwrap(), &200);
     /// assert_eq!(balance.unit_amount(ils_key), None);
