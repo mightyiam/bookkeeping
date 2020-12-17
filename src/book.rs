@@ -15,11 +15,11 @@ new_key_type! {
 }
 /// Represents a book.
 pub struct Book<
-    Metadata = (),
-    AccountMetadata = (),
-    UnitMetadata = (),
-    MoveMetadata = (),
-    TransactionMetadata = (),
+    Metadata,
+    AccountMetadata,
+    UnitMetadata,
+    MoveMetadata,
+    TransactionMetadata,
 > {
     metadata: Metadata,
     accounts: DenseSlotMap<AccountKey, Account<AccountMetadata>>,
