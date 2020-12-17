@@ -35,7 +35,7 @@ impl<M, T> Transaction<M, T> {
     /// assert_eq!(
     ///     book
     ///         .transactions()
-    ///         .nth(0)
+    ///         .next()
     ///         .unwrap()
     ///         .1
     ///         .moves()
@@ -58,7 +58,7 @@ impl<M, T> Transaction<M, T> {
     /// # book.insert_transaction(TransactionIndex(0), "deposit");
     /// # let (_transaction_index, transaction) = book
     /// #     .transactions()
-    /// #     .nth(0)
+    /// #     .next()
     /// #     .unwrap();
     /// assert_eq!(
     ///     *transaction.metadata(),

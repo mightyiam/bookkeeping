@@ -44,11 +44,11 @@ impl<M> Move<M> {
     /// );
     /// let (_move_index, move_) = book
     ///     .transactions()
-    ///     .nth(0)
+    ///     .next()
     ///     .unwrap()
     ///     .1
     ///     .moves()
-    ///     .nth(0)
+    ///     .next()
     ///     .unwrap();
     /// assert_eq!(move_.debit_account_key(), wallet_key);
     /// ```
@@ -74,11 +74,11 @@ impl<M> Move<M> {
     /// );
     /// let (_move_index, move_) = book
     ///     .transactions()
-    ///     .nth(0)
+    ///     .next()
     ///     .unwrap()
     ///     .1
     ///     .moves()
-    ///     .nth(0)
+    ///     .next()
     ///     .unwrap();
     /// assert_eq!(move_.credit_account_key(), bank_key);
     /// ```
@@ -100,11 +100,11 @@ impl<M> Move<M> {
     /// book.insert_move(TransactionIndex(0), MoveIndex(0), wallet_key, bank_key, sum.clone(), ());
     /// let (_move_index, move_) = book
     ///     .transactions()
-    ///     .nth(0)
+    ///     .next()
     ///     .unwrap()
     ///     .1
     ///     .moves()
-    ///     .nth(0)
+    ///     .next()
     ///     .unwrap();
     /// assert_eq!(*move_.sum(), sum);
     /// ```
@@ -123,11 +123,11 @@ impl<M> Move<M> {
     /// # book.insert_move(TransactionIndex(0), MoveIndex(0), wallet_key, bank_key, Sum::new(), "deposit");
     /// # let (_move_index, move_) = book
     /// #     .transactions()
-    /// #     .nth(0)
+    /// #     .next()
     /// #     .unwrap()
     /// #     .1
     /// #     .moves()
-    /// #     .nth(0)
+    /// #     .next()
     /// #     .unwrap();
     /// assert_eq!(*move_.metadata(), "deposit");
     /// ```
