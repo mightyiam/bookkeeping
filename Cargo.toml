@@ -4,7 +4,6 @@ version = "0.4.6"
 authors = ["Shahar Or (mightyiam) <mightyiampresence@gmail.com>"]
 edition = "2018"
 description = "Minimalistic and unopinionated bookkeeping library."
-readme = "readme.md"
 license = "ISC"
 repository = "https://github.com/mightyiam/bookkeeping"
 
