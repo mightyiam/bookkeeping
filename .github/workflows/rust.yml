@@ -17,8 +17,6 @@ jobs:
       - uses: actions/checkout@v2
       - name: Test
         run: cargo test --features=fail-on-warnings --verbose
-      - name: Build on stable Rust
-        run: cargo +stable build
       - name: Clippy
         run: cargo clippy
       - name: Check formatting
