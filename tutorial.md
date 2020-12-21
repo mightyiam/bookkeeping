@@ -1,27 +1,5 @@
-![GitHub Workflow Status (branch)][ci]
-
-This crate tries to model the very basics of the [bookkeeping][bookkeeping] activity.
-_it is a new rustacean's first open source crate_.
-
-## Outline
-
-A book contains
-- accounts,
-- units (may represent currencies)
-- and transactions, which in turn, contain moves.
-
-## Features
-
-- Book balance guaranteed at compile time.
-- Arbitrary metadata may be stored in books, accounts, units, transactions and moves.
-
-## Defficiencies
-
-- No optimization of balance calculations.
-
-## Tutorial
-
-### Moving money around and getting balances
+# Tutorial
+## Moving money around and getting balances
 
 ```rust
 // Yo, welcome to the `bookkeeping` crate.
@@ -40,7 +18,7 @@ use bookkeeping::*;
 // The first thing you should know is that all records are stored in
 // books. So, here's a new book:
 let mut book = Book::<(), (), (), (), ()>::new(());
-// "What are are all of these extra types?" — you must be wondering.
+// "What are all of these extra types?" — you must be wondering.
 // Let me explain. You know what — I won't explain that right now.
 // The important part is that we have a book.
 // In that book, we can store accounts, units, transactions and moves.
@@ -223,7 +201,7 @@ let _transactions: Vec<(TransactionIndex, &Transaction<(), ()>)> =
     book.transactions().collect();
 ```
 
-### Metadata
+## Metadata
 
 ```rust
 use bookkeeping::*;
@@ -306,17 +284,3 @@ assert_eq!(
 );
 // Dope!
 ```
-
-## FAQ
-
-> This API can panic in a bunch of places. I don't like that. I don't feel safe.
-> How about returning `Result`s, instead?
-
-`Result`s and errors are for when a function might fail regardless of usage.
-In this crate, panics would only occur on wrong usage.
-Having this crate return `Result`s would complicate the API and — worse —
-would give the impression that function calls could fail regardless of usage.
-I'd like the user to be confidant that with correct usage the API is safe.
-
-[ci]: https://img.shields.io/github/workflow/status/mightyiam/bookkeeping/Rust/master?logo=github
-[bookkeeping]: https://en.wikipedia.org/wiki/Bookkeeping
