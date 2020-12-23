@@ -32,67 +32,10 @@ impl Balance {
             .or_insert_with(|| amount_op(0, *amount));
     }
     /// Gets the amounts of all units in undefined order.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # use std::collections::HashSet;
-    /// # let mut book = Book::<(), (), (), (), ()>::new(());
-    /// # let usd_key = book.new_unit(());
-    /// # let thb_key = book.new_unit(());
-    /// # let ils_key = book.new_unit(());
-    /// # let wallet_key = book.new_account(());
-    /// # let bank_key = book.new_account(());
-    /// # let mut sum = Sum::new();
-    /// # sum.set_amount_for_unit(100, usd_key);
-    /// # sum.set_amount_for_unit(200, thb_key);
-    /// # sum.set_amount_for_unit(300, ils_key);
-    /// # book.insert_transaction(TransactionIndex(0), ());
-    /// # book.insert_move(
-    /// #     TransactionIndex(0),
-    /// #     MoveIndex(0),
-    /// #     wallet_key,
-    /// #     bank_key,
-    /// #     sum,
-    /// #     ()
-    /// # );
-    /// # let balance = book
-    ///     .account_balance_at_transaction(bank_key, TransactionIndex(0));
-    /// let amounts = balance.amounts().collect::<HashSet<_>>();
-    /// assert!(amounts.contains(&(usd_key, &100)));
-    /// assert!(amounts.contains(&(thb_key, &200)));
-    /// assert!(amounts.contains(&(ils_key, &300)));
-    /// ```
     pub fn amounts(&self) -> impl Iterator<Item = (UnitKey, &i128)> {
         self.0.iter().map(|(unit_key, amount)| (*unit_key, amount))
     }
     /// Gets the amount of a provided unit.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), (), (), ()>::new(());
-    /// # let usd_key = book.new_unit(());
-    /// # let thb_key = book.new_unit(());
-    /// # let ils_key = book.new_unit(());
-    /// # let wallet_key = book.new_account(());
-    /// # let bank_key = book.new_account(());
-    /// # let mut sum = Sum::new();
-    /// # sum.set_amount_for_unit(100, usd_key);
-    /// # sum.set_amount_for_unit(200, thb_key);
-    /// # book.insert_transaction(TransactionIndex(0), ());
-    /// # book.insert_move(
-    /// #     TransactionIndex(0),
-    /// #     MoveIndex(0),
-    /// #     wallet_key,
-    /// #     bank_key, sum, ()
-    /// # );
-    /// # let balance = book
-    /// #     .account_balance_at_transaction(bank_key, TransactionIndex(0));
-    /// assert_eq!(balance.unit_amount(usd_key).unwrap(), &100);
-    /// assert_eq!(balance.unit_amount(thb_key).unwrap(), &200);
-    /// assert_eq!(balance.unit_amount(ils_key), None);
-    /// ```
     pub fn unit_amount(&self, unit_key: UnitKey) -> Option<&i128> {
         self.0.get(&unit_key)
     }

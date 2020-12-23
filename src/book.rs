@@ -52,12 +52,6 @@ impl<
     >
 {
     /// Creates a new book
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// let _book = Book::<&str, (), (), (), ()>::new("some book");
-    /// ```
     pub fn new(metadata: Metadata) -> Self {
         Self {
             metadata,
@@ -67,49 +61,18 @@ impl<
         }
     }
     /// Gets the book's metadata.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let book = Book::<&str, (), (), (), ()>::new("some book");
-    /// assert_eq!(*book.metadata(), "some book");
-    /// ```
     pub fn metadata(&self) -> &Metadata {
         &self.metadata
     }
     /// Sets the book's metadata.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<&str, (), (), (), ()>::new("some booc");
-    /// book.set_book_metadata("some book");
-    /// ```
     pub fn set_book_metadata(&mut self, metadata: Metadata) {
         self.metadata = metadata;
     }
     /// Creates a new account.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), &str, (), (), ()>::new(());
-    /// let _wallet_key = book.new_account("wallet");
-    /// let _bank_key = book.new_account("bank");
-    /// ```
     pub fn new_account(&mut self, metadata: AccountMetadata) -> AccountKey {
         self.accounts.insert(Account { metadata })
     }
     /// Creates a new unit.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), &str, (), ()>::new(());
-    /// let _usd_key = book.new_unit("USD");
-    /// let _thb_key = book.new_unit("THB");
-    /// let _ils_key = book.new_unit("ILS");
-    /// ```
     pub fn new_unit(&mut self, metadata: UnitMetadata) -> UnitKey {
         self.units.insert(Unit { metadata })
     }
@@ -118,13 +81,6 @@ impl<
     /// ## Panics
     ///
     /// - `transaction_index` out of bounds.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), (), (), &str>::new(());
-    /// book.insert_transaction(TransactionIndex(0), "deposit");
-    /// ```
     pub fn insert_transaction(
         &mut self,
         transaction_index: TransactionIndex,
@@ -152,26 +108,6 @@ impl<
     /// - Some of `debit_account_key` and `credit_account_key` are not in the book.
     /// - `debit_account_key` and `credit_account_key` are equal.
     /// - Some unit keys in the `sum` are not in the book.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), (), &str, ()>::new(());
-    /// # let wallet_key = book.new_account(());
-    /// # let bank_key = book.new_account(());
-    /// # let usd_key = book.new_unit(());
-    /// let mut sum = Sum::new();
-    /// sum.set_amount_for_unit(800, usd_key);
-    /// book.insert_transaction(TransactionIndex(0), ());
-    /// book.insert_move(
-    ///     TransactionIndex(0),
-    ///     MoveIndex(0),
-    ///     bank_key,
-    ///     wallet_key,
-    ///     sum,
-    ///     "withdrawal"
-    /// );
-    /// ```
     pub fn insert_move(
         &mut self,
         transaction_index: TransactionIndex,
@@ -200,14 +136,6 @@ impl<
     /// ## Panics
     ///
     /// - `account_key` is not in the book.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), (), (), ()>::new(());
-    /// # let wallet_key = book.new_account(());
-    /// let _wallet = book.get_account(wallet_key);
-    /// ```
     pub fn get_account(
         &self,
         account_key: AccountKey,
@@ -220,73 +148,23 @@ impl<
     /// ## Panics
     ///
     /// - `unit_key` is not in the book.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), (), (), ()>::new(());
-    /// # let usd_key = book.new_unit(());
-    /// let _usd = book.get_unit(usd_key);
-    /// ```
     pub fn get_unit(&self, unit_key: UnitKey) -> &Unit<UnitMetadata> {
         self.assert_has_unit(unit_key);
         self.units.get(unit_key).unwrap()
     }
     /// Gets an iterator of existing accounts in order of creation.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), &str, (), (), ()>::new(());
-    /// # let wallet_key = book.new_account("wallet");
-    /// # let bank_key = book.new_account("bank");
-    /// assert_eq!(
-    ///     book.accounts()
-    ///         .map(|(account_key, account)| (account_key, account.metadata()))
-    ///         .collect::<Vec<_>>(),
-    ///     vec![(wallet_key, &"wallet"), (bank_key, &"bank")],
-    /// );
-    /// ```
     pub fn accounts(
         &self,
     ) -> impl Iterator<Item = (AccountKey, &Account<AccountMetadata>)> {
         self.accounts.iter()
     }
     /// Gets an iterator of existing units in order of creation.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), &str, (), ()>::new(());
-    /// # let usd_key = book.new_unit("USD");
-    /// # let thb_key = book.new_unit("THB");
-    /// assert_eq!(
-    ///     book.units()
-    ///     .map(|(unit_key, unit)| (unit_key, unit.metadata()))
-    ///     .collect::<Vec<_>>(),
-    ///     vec![(usd_key, &"USD"), (thb_key, &"THB")],
-    /// );
-    /// ```
     pub fn units(
         &self,
     ) -> impl Iterator<Item = (UnitKey, &Unit<UnitMetadata>)> {
         self.units.iter()
     }
     /// Gets an iterator of existing transactions in their order.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), (), (), &str>::new(());
-    /// book.insert_transaction(TransactionIndex(0), "deposit");
-    /// book.insert_transaction(TransactionIndex(1), "withdrawal");
-    /// assert_eq!(
-    ///     book.transactions()
-    ///         .map(|(_transaction_index, transaction)| transaction.metadata())
-    ///         .collect::<Vec<_>>(),
-    ///     vec![&"deposit", &"withdrawal"],
-    /// );
-    /// ```
     pub fn transactions(
         &self,
     ) -> impl Iterator<
@@ -304,14 +182,6 @@ impl<
     ///
     /// ## Panics
     /// - `account_key` is not in the book.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), &str, (), (), ()>::new(());
-    /// # let bank_key = book.new_account("banc");
-    /// book.set_account_metadata(bank_key, "bank");
-    /// ```
     pub fn set_account_metadata(
         &mut self,
         account_key: AccountKey,
@@ -324,14 +194,6 @@ impl<
     ///
     /// ## Panics
     /// - `unit_key` is not in the book.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), &str, (), ()>::new(());
-    /// # let usd_key = book.new_unit("USd");
-    /// book.set_unit_metadata(usd_key, "USD");
-    /// ```
     pub fn set_unit_metadata(
         &mut self,
         unit_key: UnitKey,
@@ -344,14 +206,6 @@ impl<
     ///
     /// ## Panics
     /// - `transaction_index` out of bounds.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), (), (), &str>::new(());
-    /// # book.insert_transaction(TransactionIndex(0), "withdrawa");
-    /// book.set_transaction_metadata(TransactionIndex(0), "withdrawal");
-    /// ```
     pub fn set_transaction_metadata(
         &mut self,
         transaction_index: TransactionIndex,
@@ -367,24 +221,6 @@ impl<
     /// ## Panics
     /// - `transaction_index` out of bounds.
     /// - `move_index` out of bounds.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), (), &str, ()>::new(());
-    /// # let wallet_key = book.new_account(());
-    /// # let bank_key = book.new_account(());
-    /// # book.insert_transaction(TransactionIndex(0), ());
-    /// # book.insert_move(
-    /// #     TransactionIndex(0),
-    /// #     MoveIndex(0),
-    /// #     bank_key,
-    /// #     wallet_key,
-    /// #     Sum::new(),
-    /// #     "withdrawa"
-    /// # );
-    /// book.set_move_metadata(TransactionIndex(0), MoveIndex(0), "withdrawal");
-    /// ```
     pub fn set_move_metadata(
         &mut self,
         transaction_index: TransactionIndex,
@@ -405,28 +241,6 @@ impl<
     /// ## Panics
     ///
     /// - `account_key` is not in the book.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), (), (), ()>::new(());
-    /// # let wallet_key = book.new_account(());
-    /// # let bank_key = book.new_account(());
-    /// # let usd_key = book.new_unit(());
-    /// # let mut sum = Sum::new();
-    /// # sum.set_amount_for_unit(800, usd_key);
-    /// # book.insert_transaction(TransactionIndex(0), ());
-    /// # book.insert_move(
-    /// #     TransactionIndex(0),
-    /// #     MoveIndex(0),
-    /// #     bank_key,
-    /// #     wallet_key,
-    /// #     sum,
-    /// #     ()
-    /// # );
-    /// let _balance = book
-    ///     .account_balance_at_transaction(wallet_key, TransactionIndex(0));
-    /// ```
     #[allow(clippy::type_complexity)]
     pub fn account_balance_at_transaction<'a>(
         &'a self,
@@ -457,14 +271,6 @@ impl<
     /// ## Panics
     ///
     /// - `transaction_index` out of bounds.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), (), (), ()>::new(());
-    /// # book.insert_transaction(TransactionIndex(0), ());
-    /// book.remove_transaction(TransactionIndex(0));
-    /// ```
     pub fn remove_transaction(&mut self, transaction_index: TransactionIndex) {
         self.transactions.remove(transaction_index.0);
     }
@@ -474,24 +280,6 @@ impl<
     ///
     /// - `transaction_index` out of bounds.
     /// - `move_index` out of bounds.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), (), (), ()>::new(());
-    /// # book.insert_transaction(TransactionIndex(0), ());
-    /// # let wallet_key = book.new_account(());
-    /// # let bank_key = book.new_account(());
-    /// # book.insert_move(
-    /// #     TransactionIndex(0),
-    /// #     MoveIndex(0),
-    /// #     wallet_key,
-    /// #     bank_key,
-    /// #     Sum::new(),
-    /// #     ()
-    /// # );
-    /// book.remove_move(TransactionIndex(0), MoveIndex(0));
-    /// ```
     pub fn remove_move(
         &mut self,
         transaction_index: TransactionIndex,
@@ -507,24 +295,6 @@ impl<
     ///
     /// - `transaction_index` out of bounds.
     /// - `move_index` out of bounds.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), (), (), ()>::new(());
-    /// # book.insert_transaction(TransactionIndex(0), ());
-    /// # let wallet_key = book.new_account(());
-    /// # let bank_key = book.new_account(());
-    /// # book.insert_move(
-    /// #     TransactionIndex(0),
-    /// #     MoveIndex(0),
-    /// #     wallet_key,
-    /// #     bank_key,
-    /// #     Sum::new(),
-    /// #     ()
-    /// # );
-    /// book.set_move_sum(TransactionIndex(0), MoveIndex(0), Sum::new());
-    /// ```
     pub fn set_move_sum(
         &mut self,
         transaction_index: TransactionIndex,
@@ -542,30 +312,6 @@ impl<
     /// - `move_index` out of bounds.
     /// - `account_key` is not in the book.
     /// - `side` is same as other side.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), (), (), ()>::new(());
-    /// # book.insert_transaction(TransactionIndex(0), ());
-    /// # let safe_key = book.new_account(());
-    /// # let wallet_key = book.new_account(());
-    /// # book.insert_move(
-    ///     TransactionIndex(0),
-    ///     MoveIndex(0),
-    ///     safe_key,
-    ///     wallet_key,
-    ///     Sum::new(),
-    ///     ()
-    /// );
-    /// # let bank_key = book.new_account(());
-    /// book.set_move_side(
-    ///     TransactionIndex(0),
-    ///     MoveIndex(0),
-    ///     Side::Debit,
-    ///     bank_key
-    /// );
-    /// ```
     pub fn set_move_side(
         &mut self,
         transaction_index: TransactionIndex,

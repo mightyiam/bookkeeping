@@ -26,111 +26,18 @@ impl<MoveMetadata> Move<MoveMetadata> {
         }
     }
     /// Gets the debit account key of a move.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), (), (), ()>::new(());
-    /// let wallet_key = book.new_account(());
-    /// # let bank_key = book.new_account(());
-    /// # book.insert_transaction(TransactionIndex(0), ());
-    /// book.insert_move(
-    ///     TransactionIndex(0),
-    ///     MoveIndex(0),
-    ///     wallet_key,
-    ///     bank_key,
-    ///     Sum::new(),
-    ///     ()
-    /// );
-    /// let (_move_index, move_) = book
-    ///     .transactions()
-    ///     .next()
-    ///     .unwrap()
-    ///     .1
-    ///     .moves()
-    ///     .next()
-    ///     .unwrap();
-    /// assert_eq!(move_.debit_account_key(), wallet_key);
-    /// ```
     pub fn debit_account_key(&self) -> AccountKey {
         self.debit_account_key
     }
     /// Gets the credit account key of a move.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), (), (), ()>::new(());
-    /// # let wallet_key = book.new_account(());
-    /// let bank_key = book.new_account(());
-    /// # book.insert_transaction(TransactionIndex(0), ());
-    /// book.insert_move(
-    ///     TransactionIndex(0),
-    ///     MoveIndex(0),
-    ///     wallet_key,
-    ///     bank_key,
-    ///     Sum::new(),
-    ///     ()
-    /// );
-    /// let (_move_index, move_) = book
-    ///     .transactions()
-    ///     .next()
-    ///     .unwrap()
-    ///     .1
-    ///     .moves()
-    ///     .next()
-    ///     .unwrap();
-    /// assert_eq!(move_.credit_account_key(), bank_key);
-    /// ```
     pub fn credit_account_key(&self) -> AccountKey {
         self.credit_account_key
     }
     /// Gets the sum of a move.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), (), (), ()>::new(());
-    /// # let wallet_key = book.new_account(());
-    /// # let bank_key = book.new_account(());
-    /// # let usd_key = book.new_unit(());
-    /// book.insert_transaction(TransactionIndex(0), ());
-    /// let mut sum = Sum::new();
-    /// sum.set_amount_for_unit(100, usd_key);
-    /// book.insert_move(TransactionIndex(0), MoveIndex(0), wallet_key, bank_key, sum.clone(), ());
-    /// let (_move_index, move_) = book
-    ///     .transactions()
-    ///     .next()
-    ///     .unwrap()
-    ///     .1
-    ///     .moves()
-    ///     .next()
-    ///     .unwrap();
-    /// assert_eq!(*move_.sum(), sum);
-    /// ```
     pub fn sum(&self) -> &Sum {
         &self.sum
     }
     /// Gets the metadata of the move.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), (), &str, ()>::new(());
-    /// # let wallet_key = book.new_account(());
-    /// # let bank_key = book.new_account(());
-    /// # book.insert_transaction(TransactionIndex(0), ());
-    /// # book.insert_move(TransactionIndex(0), MoveIndex(0), wallet_key, bank_key, Sum::new(), "deposit");
-    /// # let (_move_index, move_) = book
-    /// #     .transactions()
-    /// #     .next()
-    /// #     .unwrap()
-    /// #     .1
-    /// #     .moves()
-    /// #     .next()
-    /// #     .unwrap();
-    /// assert_eq!(*move_.metadata(), "deposit");
-    /// ```
     pub fn metadata(&self) -> &MoveMetadata {
         &self.metadata
     }

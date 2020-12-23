@@ -4,15 +4,6 @@ pub struct Unit<UnitMetadata> {
 }
 impl<UnitMetadata> Unit<UnitMetadata> {
     /// Gets the metadata of the unit.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), &str, (), ()>::new(());
-    /// # let unit_key = book.new_unit("USD");
-    /// # let unit = book.get_unit(unit_key);
-    /// assert_eq!(*unit.metadata(), "USD");
-    /// ```
     pub fn metadata(&self) -> &UnitMetadata {
         &self.metadata
     }
