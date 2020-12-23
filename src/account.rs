@@ -4,15 +4,6 @@ pub struct Account<AccountMetadata> {
 }
 impl<AccountMetadata> Account<AccountMetadata> {
     /// Gets the metadata of the account.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), &str, (), (), ()>::new(());
-    /// # let account_key = book.new_account("wallet");
-    /// # let account = book.get_account(account_key);
-    /// assert_eq!(*account.metadata(), "wallet");
-    /// ```
     pub fn metadata(&self) -> &AccountMetadata {
         &self.metadata
     }

@@ -3,7 +3,6 @@
 #![deny(broken_intra_doc_links)]
 //#![deny(private_intra_doc_links)]
 //#![deny(missing_crate_level_docs)]
-//#![deny(missing_doc_code_examples)]
 //#![deny(private_doc_tests)]
 #![deny(invalid_codeblock_attributes)]
 #![doc(test(attr(deny(warnings))))]

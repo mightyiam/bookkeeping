@@ -10,41 +10,6 @@ impl<MoveMetadata, TransactionMetadata>
     Transaction<MoveMetadata, TransactionMetadata>
 {
     /// Gets an iterator of existing moves in their order.
-    ///
-    /// # Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), (), &str, ()>::new(());
-    /// # let wallet_key = book.new_account(());
-    /// # let bank_key = book.new_account(());
-    /// # book.insert_transaction(TransactionIndex(0), ());
-    /// book.insert_move(
-    ///     TransactionIndex(0),
-    ///     MoveIndex(0),
-    ///     wallet_key,
-    ///     bank_key,
-    ///     Sum::new(),
-    ///     "deposit"
-    /// );
-    /// book.insert_move(
-    ///     TransactionIndex(0),
-    ///     MoveIndex(1),
-    ///     bank_key,
-    ///     wallet_key,
-    ///     Sum::new(),
-    ///     "withdrawal"
-    /// );
-    /// assert_eq!(
-    ///     book
-    ///         .transactions()
-    ///         .next()
-    ///         .unwrap()
-    ///         .1
-    ///         .moves()
-    ///         .map(|(_move_index, move_)| move_.metadata())
-    ///         .collect::<Vec<_>>(),
-    ///     [&"deposit", &"withdrawal"],
-    /// );
     pub fn moves(
         &self,
     ) -> impl Iterator<Item = (MoveIndex, &Move<MoveMetadata>)> {
@@ -54,21 +19,6 @@ impl<MoveMetadata, TransactionMetadata>
             .map(|(index, move_)| (MoveIndex(index), move_))
     }
     /// Gets the metadata of the transaction.
-    ///
-    /// ## Example
-    /// ```
-    /// # use bookkeeping::*;
-    /// # let mut book = Book::<(), (), (), (), &str>::new(());
-    /// # book.insert_transaction(TransactionIndex(0), "deposit");
-    /// # let (_transaction_index, transaction) = book
-    /// #     .transactions()
-    /// #     .next()
-    /// #     .unwrap();
-    /// assert_eq!(
-    ///     *transaction.metadata(),
-    ///     "deposit",
-    /// );
-    /// ```
     pub fn metadata(&self) -> &TransactionMetadata {
         &self.metadata
     }
