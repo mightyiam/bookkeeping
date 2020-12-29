@@ -35,7 +35,7 @@ fn book() {
 }
 #[test]
 fn move_() {
-    type TestMove = Move<(), TestUnit>;
+    type TestMove = Move<TestUnit, ()>;
     TestMove::debit_account_key;
     TestMove::credit_account_key;
     TestMove::sum;

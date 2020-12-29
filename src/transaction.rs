@@ -3,13 +3,13 @@ use crate::unit::Unit;
 /// Represents a transaction.
 pub struct Transaction<U: Unit, M, T> {
     pub(crate) metadata: T,
-    pub(crate) moves: Vec<Move<M, U>>,
+    pub(crate) moves: Vec<Move<U, M>>,
 }
 /// Used to index moves in a transaction.
 pub struct MoveIndex(pub usize);
 impl<U: Unit, M, T> Transaction<U, M, T> {
     /// Gets an iterator of existing moves in their order.
-    pub fn moves(&self) -> impl Iterator<Item = (MoveIndex, &Move<M, U>)> {
+    pub fn moves(&self) -> impl Iterator<Item = (MoveIndex, &Move<U, M>)> {
         self.moves
             .iter()
             .enumerate()
