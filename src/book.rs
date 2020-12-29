@@ -219,7 +219,7 @@ impl<B, U: Unit, A, M, T> Book<B, U, A, M, T> {
             .moves
             .remove(move_index.0);
     }
-    /// Sets the debit account of an existing move.
+    /// Sets the sum of an existing move.
     ///
     /// ## Panics
     ///
