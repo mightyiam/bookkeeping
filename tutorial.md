@@ -1,7 +1,8 @@
 # Tutorial
-## Moving money around and getting balances
 
 ```rust
+// ## Moving money around and getting balances
+
 // Yo, welcome to the `bookkeeping` crate.
 use bookkeeping::*;
 // You may be wondering why a crate tutorial starts with "Yo".
@@ -15,13 +16,26 @@ use bookkeeping::*;
 // moving around. So, our goal in this tutorial is to teach you how to
 // keep records of money moving around using this crate.
 
-// The first thing you should know is that all records are stored in
-// books. So, here's a new book:
-let mut book = Book::<(), (), (), (), ()>::new(());
-// "What are all of these extra types?" — you must be wondering.
-// Let me explain. You know what — I won't explain that right now.
-// The important part is that we have a book.
-// In that book, we can store accounts, units, transactions and moves.
+// Before we start moving money around, let's define money in this
+// context. Units may represent currencies. Or cryptocurrencies. Or
+// units of distance or volume... But if we're honest, they will usually
+// represent some money currency. Yet, it's not this crate's scope to
+// make such decisions. This crate lets you define your own money type,
+// by providing the [`Unit`][Unit] marker trait. In this example, our
+// `Unit` is a newtype around a static lifetime string slice that we
+// call `Currency`:
+#[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Copy, Debug)]
+struct Currency(&'static str);
+impl Unit for Currency {};
+
+// Now that we can have units, we can also have books. Let's create a
+// book that is generic over this unit.
+let mut book = Book::<(), Currency, (), (), ()>::new(());
+// "What are the other type arguments? — you must be wondering.
+// Those are for metadata. They are explained in the next tutorial.
+// In this tutorial, they're filled with Rust's
+// [unit][std::primitive::unit] type. Now back to the book.
+// In this book, we can store accounts, transactions and moves.
 // And doing all of that, is quite simple. So let's get to it.
 
 // Let's start by adding an account for some income channel:
@@ -36,15 +50,8 @@ let bank_key = book.new_account(());
 // And now, that we have two accounts, we can move money around.
 // Which is exciting. I know. But, actually, we can't do that yet.
 // Because we don't have any units. So let's talk about units.
-
-// Units may represent currencies. Or cryptocurrencies. Or units of
-// distance or volume... But if we're honest, they will usually
-// represent some form of money. Yet, it's not this crate's scope to
-// make such decisions. As far as this crate is concerned — they're just
-// units. We'll talk more about this later.
-let usd_key = book.new_unit(());
-// Look — we have dollars! US dollars (USD). And that `()` argument —
-// thank you for being patient and not mentioning it.
+let usd = Currency("USD");
+// Look — we have dollars! US dollars (USD).
 
 // Now that we have two accounts and a unit, we can move money around.
 // Which is exciting. I know. But, actually, we can't do that yet.
@@ -64,7 +71,7 @@ book.insert_transaction(TransactionIndex(0), ());
 // But, actually, we can't do that yet. Cool motif, huh? We now need a
 // _sum_. "A what—now?" you ask? A sum. Look:
 let mut sum = Sum::new();
-sum.set_amount_for_unit(2000, usd_key);
+sum.set_amount_for_unit(2000, usd);
 // We have created a sum and set the amount of a specific unit in it.
 // "Wait — support for multiple units?" (that's you, asking).
 // Yes. Sums support multiple units. Thank Joe for that. It's his idea.
@@ -111,13 +118,13 @@ let balance = book
     .account_balance_at_transaction(income_key, TransactionIndex(0));
 assert_eq!(
     balance.amounts().collect::<Vec<_>>(),
-    vec![(usd_key, &-2000)] // negative amount
+    vec![(&usd, &-2000)] // negative amount
 );
 let balance = book
     .account_balance_at_transaction(bank_key, TransactionIndex(0));
 assert_eq!(
     balance.amounts().collect::<Vec<_>>(),
-    vec![(usd_key, &2000)] // positive amount
+    vec![(&usd, &2000)] // positive amount
 );
 // Cool?
 
@@ -127,7 +134,7 @@ let wallet_key = book.new_account(());
 book.insert_transaction(TransactionIndex(1), ());
 // This created a new empty transaction and inserted it at index `1`.
 let mut sum = Sum::new();
-sum.set_amount_for_unit(100, usd_key);
+sum.set_amount_for_unit(100, usd);
 book.insert_move(
     TransactionIndex(1),
     MoveIndex(0),
@@ -145,25 +152,25 @@ let balance = book
     .account_balance_at_transaction(income_key, TransactionIndex(1));
 assert_eq!(
     balance.amounts().collect::<Vec<_>>(),
-    vec![(usd_key, &-2000)]
+    vec![(&usd, &-2000)]
 );
 let balance = book
     .account_balance_at_transaction(bank_key, TransactionIndex(1));
 assert_eq!(
     balance.amounts().collect::<Vec<_>>(),
-    vec![(usd_key, &1900)]
+    vec![(&usd, &1900)]
 );
 let balance = book
     .account_balance_at_transaction(wallet_key, TransactionIndex(1));
 assert_eq!(
     balance.amounts().collect::<Vec<_>>(),
-    vec![(usd_key, &100)]
+    vec![(&usd, &100)]
 );
 
 // Now, let's insert a new transaction between the two existing ones:
 book.insert_transaction(TransactionIndex(1), ());
 let mut sum = Sum::new();
-sum.set_amount_for_unit(1000, usd_key);
+sum.set_amount_for_unit(1000, usd);
 book.insert_move(
     TransactionIndex(1),
     MoveIndex(0),
@@ -180,7 +187,7 @@ let bank_running_balance: Vec<i128> = [0, 1, 2]
             bank_key,
             TransactionIndex(*transaction_index),
         )
-        .unit_amount(usd_key)
+        .unit_amount(usd)
         .unwrap()
         .clone()
     })
@@ -191,20 +198,16 @@ assert_eq!(bank_running_balance, vec![2000, 3000, 2900]);
 // and one that calculates a balance. You may have noticed that in order
 // to call [Book::account_balance_at_transaction], we need to have both
 // a key of an existing account and an index of an existing transaction.
-// So, how can we obtain these? This way for accounts and units:
+// So, how can we obtain these? This way for accounts:
 let _accounts: Vec<(AccountKey, &Account<()>)> =
     book.accounts().collect();
-let _units: Vec<(UnitKey, &Unit<()>)> = book.units().collect();
 // Note that the order of the iterator returned from [Book::accounts] is
 // undefined. And this way for transactions:
-let _transactions: Vec<(TransactionIndex, &Transaction<(), ()>)> =
+let _transactions: Vec<(TransactionIndex, &Transaction<Currency, (), ()>)> =
     book.transactions().collect();
-```
 
-## Metadata
+// ## Metadata
 
-```rust
-use bookkeeping::*;
 // It's probably time to explain all those `()` arguments that we've so
 // far been patient regarding. This crate allows arbitrary data to be
 // attached/added/included in the book itself and all records in it:
@@ -217,11 +220,7 @@ struct AccountMetadata {
     id: u8,
     name: &'static str,
 }
-struct UnitMetadata {
-    currency_code: &'static str,
-    decimal_places: u8,
-}
-let mut book: Book<u8, AccountMetadata, UnitMetadata, (), &str> =
+let mut book: Book<u8, Currency, AccountMetadata, (), &str> =
     Book::new(5);
 // In order, the types of metadata that are defined in this example are:
 //
@@ -249,13 +248,6 @@ assert_eq!(&book.get_account(wallet_key).metadata().name, &"Wallet");
 assert_eq!(&book.get_account(bank_key).metadata().id, &8);
 assert_eq!(&book.get_account(bank_key).metadata().name, &"Bank");
 // Cool!
-let usd_key = book.new_unit(UnitMetadata {
-    currency_code: "USD",
-    decimal_places: 2,
-});
-assert_eq!(&book.get_unit(usd_key).metadata().currency_code, &"USD");
-assert_eq!(book.get_unit(usd_key).metadata().decimal_places, 2);
-// Sweet!
 book.insert_transaction(TransactionIndex(0), "Withdrawal");
 assert_eq!(
     book.transactions().next().unwrap().1.metadata(),
