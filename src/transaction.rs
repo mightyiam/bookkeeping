@@ -7,7 +7,7 @@ pub struct Transaction<U: Unit, M, T> {
 }
 /// Used to index moves in a transaction.
 pub struct MoveIndex(pub usize);
-impl<M, U: Unit, T> Transaction<U, M, T> {
+impl<U: Unit, M, T> Transaction<U, M, T> {
     /// Gets an iterator of existing moves in their order.
     pub fn moves(&self) -> impl Iterator<Item = (MoveIndex, &Move<M, U>)> {
         self.moves
