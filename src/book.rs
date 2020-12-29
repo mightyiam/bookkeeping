@@ -11,7 +11,7 @@ new_key_type! {
     pub struct AccountKey;
 }
 /// Represents a book.
-pub struct Book<B, U: Unit, A, M, T> {
+pub struct Book<U: Unit, B, A, M, T> {
     metadata: B,
     accounts: DenseSlotMap<AccountKey, Account<A>>,
     transactions: Vec<Transaction<U, M, T>>,
@@ -26,7 +26,7 @@ pub enum Side {
 
 /// Used to index transactions in the book.
 pub struct TransactionIndex(pub usize);
-impl<B, U: Unit, A, M, T> Book<B, U, A, M, T> {
+impl<U: Unit, B, A, M, T> Book<U, B, A, M, T> {
     /// Creates a new book
     pub fn new(metadata: B) -> Self {
         Self {
