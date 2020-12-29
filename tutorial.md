@@ -30,7 +30,7 @@ impl Unit for Currency {};
 
 // Now that we can have units, we can also have books. Let's create a
 // book that is generic over this unit.
-let mut book = Book::<(), Currency, (), (), ()>::new(());
+let mut book = Book::<Currency, (), (), (), ()>::new(());
 // "What are the other type arguments? — you must be wondering.
 // Those are for metadata. They are explained in the next tutorial.
 // In this tutorial, they're filled with Rust's
@@ -220,7 +220,7 @@ struct AccountMetadata {
     id: u8,
     name: &'static str,
 }
-let mut book: Book<u8, Currency, AccountMetadata, (), &str> =
+let mut book: Book<Currency, u8, AccountMetadata, (), &str> =
     Book::new(5);
 // In order, the types of metadata that are defined in this example are:
 //

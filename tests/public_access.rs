@@ -15,7 +15,7 @@ fn balance() {
 }
 #[test]
 fn book() {
-    type TestBook = bookkeeping::Book<(), TestUnit, (), (), ()>;
+    type TestBook = bookkeeping::Book<TestUnit, (), (), (), ()>;
     TestBook::new;
     TestBook::metadata;
     TestBook::set_book_metadata;

@@ -3,8 +3,8 @@
 macro_rules! test_book {
     ($metadata:expr) => {{
         type TestBook = crate::book::Book<
-            &'static str,
             crate::unit::TestUnit,
+            &'static str,
             &'static str,
             &'static str,
             &'static str,
