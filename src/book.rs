@@ -11,6 +11,12 @@ new_key_type! {
     pub struct AccountKey;
 }
 /// Represents a book.
+///
+/// - U: unit type
+/// - B: Book metadata
+/// - A: Account metadata
+/// - M: Move metadata
+/// - T: Transaction metadata
 pub struct Book<U: Unit, B, A, M, T> {
     metadata: B,
     accounts: DenseSlotMap<AccountKey, Account<A>>,
