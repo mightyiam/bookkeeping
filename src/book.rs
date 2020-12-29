@@ -11,16 +11,10 @@ new_key_type! {
     pub struct AccountKey;
 }
 /// Represents a book.
-pub struct Book<
-    Metadata,
-    U: Unit,
-    AccountMetadata,
-    MoveMetadata,
-    TransactionMetadata,
-> {
-    metadata: Metadata,
-    accounts: DenseSlotMap<AccountKey, Account<AccountMetadata>>,
-    transactions: Vec<Transaction<U, MoveMetadata, TransactionMetadata>>,
+pub struct Book<B, U: Unit, A, M, T> {
+    metadata: B,
+    accounts: DenseSlotMap<AccountKey, Account<A>>,
+    transactions: Vec<Transaction<U, M, T>>,
 }
 /// Represents a side of a [Move].
 pub enum Side {
@@ -32,11 +26,9 @@ pub enum Side {
 
 /// Used to index transactions in the book.
 pub struct TransactionIndex(pub usize);
-impl<Metadata, U: Unit, AccountMetadata, MoveMetadata, TransactionMetadata>
-    Book<Metadata, U, AccountMetadata, MoveMetadata, TransactionMetadata>
-{
+impl<B, U: Unit, A, M, T> Book<B, U, A, M, T> {
     /// Creates a new book
-    pub fn new(metadata: Metadata) -> Self {
+    pub fn new(metadata: B) -> Self {
         Self {
             metadata,
             accounts: DenseSlotMap::with_key(),
@@ -44,15 +36,15 @@ impl<Metadata, U: Unit, AccountMetadata, MoveMetadata, TransactionMetadata>
         }
     }
     /// Gets the book's metadata.
-    pub fn metadata(&self) -> &Metadata {
+    pub fn metadata(&self) -> &B {
         &self.metadata
     }
     /// Sets the book's metadata.
-    pub fn set_book_metadata(&mut self, metadata: Metadata) {
+    pub fn set_book_metadata(&mut self, metadata: B) {
         self.metadata = metadata;
     }
     /// Creates a new account.
-    pub fn new_account(&mut self, metadata: AccountMetadata) -> AccountKey {
+    pub fn new_account(&mut self, metadata: A) -> AccountKey {
         self.accounts.insert(Account { metadata })
     }
     /// Creates a transaction and inserts it at an index.
@@ -63,7 +55,7 @@ impl<Metadata, U: Unit, AccountMetadata, MoveMetadata, TransactionMetadata>
     pub fn insert_transaction(
         &mut self,
         transaction_index: TransactionIndex,
-        metadata: TransactionMetadata,
+        metadata: T,
     ) {
         self.transactions.insert(
             transaction_index.0,
@@ -89,7 +81,7 @@ impl<Metadata, U: Unit, AccountMetadata, MoveMetadata, TransactionMetadata>
         debit_account_key: AccountKey,
         credit_account_key: AccountKey,
         sum: Sum<U>,
-        metadata: MoveMetadata,
+        metadata: M,
     ) {
         [debit_account_key, credit_account_key].iter().for_each(
             |account_key| {
@@ -109,28 +101,18 @@ impl<Metadata, U: Unit, AccountMetadata, MoveMetadata, TransactionMetadata>
     /// ## Panics
     ///
     /// - `account_key` is not in the book.
-    pub fn get_account(
-        &self,
-        account_key: AccountKey,
-    ) -> &Account<AccountMetadata> {
+    pub fn get_account(&self, account_key: AccountKey) -> &Account<A> {
         self.assert_has_account(account_key);
         self.accounts.get(account_key).unwrap()
     }
     /// Gets an iterator of existing accounts in order of creation.
-    pub fn accounts(
-        &self,
-    ) -> impl Iterator<Item = (AccountKey, &Account<AccountMetadata>)> {
+    pub fn accounts(&self) -> impl Iterator<Item = (AccountKey, &Account<A>)> {
         self.accounts.iter()
     }
     /// Gets an iterator of existing transactions in their order.
     pub fn transactions(
         &self,
-    ) -> impl Iterator<
-        Item = (
-            TransactionIndex,
-            &Transaction<U, MoveMetadata, TransactionMetadata>,
-        ),
-    > {
+    ) -> impl Iterator<Item = (TransactionIndex, &Transaction<U, M, T>)> {
         self.transactions
             .iter()
             .enumerate()
@@ -143,7 +125,7 @@ impl<Metadata, U: Unit, AccountMetadata, MoveMetadata, TransactionMetadata>
     pub fn set_account_metadata(
         &mut self,
         account_key: AccountKey,
-        metadata: AccountMetadata,
+        metadata: A,
     ) {
         self.assert_has_account(account_key);
         self.accounts.get_mut(account_key).unwrap().metadata = metadata;
@@ -155,7 +137,7 @@ impl<Metadata, U: Unit, AccountMetadata, MoveMetadata, TransactionMetadata>
     pub fn set_transaction_metadata(
         &mut self,
         transaction_index: TransactionIndex,
-        metadata: TransactionMetadata,
+        metadata: T,
     ) {
         self.transactions
             .get_mut(transaction_index.0)
@@ -171,7 +153,7 @@ impl<Metadata, U: Unit, AccountMetadata, MoveMetadata, TransactionMetadata>
         &mut self,
         transaction_index: TransactionIndex,
         move_index: MoveIndex,
-        metadata: MoveMetadata,
+        metadata: M,
     ) {
         let transaction = std::ops::IndexMut::index_mut(
             &mut self.transactions,
