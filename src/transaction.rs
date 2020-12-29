@@ -1,26 +1,22 @@
 use crate::move_::Move;
 use crate::unit::Unit;
 /// Represents a transaction.
-pub struct Transaction<U: Unit, MoveMetadata, TransactionMetadata> {
-    pub(crate) metadata: TransactionMetadata,
-    pub(crate) moves: Vec<Move<MoveMetadata, U>>,
+pub struct Transaction<U: Unit, M, T> {
+    pub(crate) metadata: T,
+    pub(crate) moves: Vec<Move<M, U>>,
 }
 /// Used to index moves in a transaction.
 pub struct MoveIndex(pub usize);
-impl<MoveMetadata, U: Unit, TransactionMetadata>
-    Transaction<U, MoveMetadata, TransactionMetadata>
-{
+impl<M, U: Unit, T> Transaction<U, M, T> {
     /// Gets an iterator of existing moves in their order.
-    pub fn moves(
-        &self,
-    ) -> impl Iterator<Item = (MoveIndex, &Move<MoveMetadata, U>)> {
+    pub fn moves(&self) -> impl Iterator<Item = (MoveIndex, &Move<M, U>)> {
         self.moves
             .iter()
             .enumerate()
             .map(|(index, move_)| (MoveIndex(index), move_))
     }
     /// Gets the metadata of the transaction.
-    pub fn metadata(&self) -> &TransactionMetadata {
+    pub fn metadata(&self) -> &T {
         &self.metadata
     }
 }

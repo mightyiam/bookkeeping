@@ -2,18 +2,18 @@ use crate::book::AccountKey;
 use crate::sum::Sum;
 use crate::unit::Unit;
 /// Represents a move of a [Sum] of [Unit](crate::Unit)s from one account to another.
-pub struct Move<MoveMetadata, U: Unit> {
-    pub(crate) metadata: MoveMetadata,
+pub struct Move<M, U: Unit> {
+    pub(crate) metadata: M,
     pub(crate) debit_account_key: AccountKey,
     pub(crate) credit_account_key: AccountKey,
     pub(crate) sum: Sum<U>,
 }
-impl<U: Unit, MoveMetadata> Move<MoveMetadata, U> {
+impl<U: Unit, M> Move<M, U> {
     pub(crate) fn new(
         debit_account_key: AccountKey,
         credit_account_key: AccountKey,
         sum: Sum<U>,
-        metadata: MoveMetadata,
+        metadata: M,
     ) -> Self {
         assert!(
             debit_account_key != credit_account_key,
@@ -39,7 +39,7 @@ impl<U: Unit, MoveMetadata> Move<MoveMetadata, U> {
         &self.sum
     }
     /// Gets the metadata of the move.
-    pub fn metadata(&self) -> &MoveMetadata {
+    pub fn metadata(&self) -> &M {
         &self.metadata
     }
 }
