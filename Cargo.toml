@@ -10,7 +10,6 @@ repository = "https://github.com/mightyiam/bookkeeping"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-duplicate = "0.2.9"
 slotmap = "0.4.0"
 
 [dev_dependencies]

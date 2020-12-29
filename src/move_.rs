@@ -1,17 +1,18 @@
 use crate::book::AccountKey;
 use crate::sum::Sum;
+use crate::unit::Unit;
 /// Represents a move of a [Sum] of [Unit](crate::Unit)s from one account to another.
-pub struct Move<MoveMetadata> {
+pub struct Move<MoveMetadata, U: Unit> {
     pub(crate) metadata: MoveMetadata,
     pub(crate) debit_account_key: AccountKey,
     pub(crate) credit_account_key: AccountKey,
-    pub(crate) sum: Sum,
+    pub(crate) sum: Sum<U>,
 }
-impl<MoveMetadata> Move<MoveMetadata> {
+impl<U: Unit, MoveMetadata> Move<MoveMetadata, U> {
     pub(crate) fn new(
         debit_account_key: AccountKey,
         credit_account_key: AccountKey,
-        sum: Sum,
+        sum: Sum<U>,
         metadata: MoveMetadata,
     ) -> Self {
         assert!(
@@ -34,7 +35,7 @@ impl<MoveMetadata> Move<MoveMetadata> {
         self.credit_account_key
     }
     /// Gets the sum of a move.
-    pub fn sum(&self) -> &Sum {
+    pub fn sum(&self) -> &Sum<U> {
         &self.sum
     }
     /// Gets the metadata of the move.
@@ -45,6 +46,7 @@ impl<MoveMetadata> Move<MoveMetadata> {
 #[cfg(test)]
 mod test {
     use super::Move;
+    use crate::unit::TestUnit;
     #[test]
     #[should_panic(expected = "Debit and credit accounts are the same.")]
     fn new_panic_debit_and_credit_accounts_are_the_same() {
@@ -87,9 +89,9 @@ mod test {
         let mut book = test_book!("");
         let debit_account_key = book.new_account("");
         let credit_account_key = book.new_account("");
-        let thb_key = book.new_unit("");
-        let ils_key = book.new_unit("");
-        let sum = sum!(100, thb_key; 200, ils_key);
+        let thb = TestUnit("THB");
+        let ils = TestUnit("ILS");
+        let sum = sum!(100, thb; 200, ils);
         let move_ =
             Move::new(debit_account_key, credit_account_key, sum.clone(), "");
         assert_eq!(*move_.sum(), sum);

@@ -1,19 +1,8 @@
 /// Represents a unit of measurement. Will most commonly represent the minor unit of a currency.
-pub struct Unit<UnitMetadata> {
-    pub(crate) metadata: UnitMetadata,
-}
-impl<UnitMetadata> Unit<UnitMetadata> {
-    /// Gets the metadata of the unit.
-    pub fn metadata(&self) -> &UnitMetadata {
-        &self.metadata
-    }
-}
+pub trait Unit: Ord + Clone {}
+
 #[cfg(test)]
-mod test {
-    use super::Unit;
-    #[test]
-    fn metadata() {
-        let unit = Unit { metadata: 5 };
-        assert_eq!(*unit.metadata(), 5);
-    }
-}
+#[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
+pub(crate) struct TestUnit(pub(crate) &'static str);
+#[cfg(test)]
+impl Unit for TestUnit {}

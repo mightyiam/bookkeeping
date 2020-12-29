@@ -4,27 +4,23 @@ use crate::move_::Move;
 use crate::sum::Sum;
 use crate::transaction::{MoveIndex, Transaction};
 use crate::unit::Unit;
-use duplicate::duplicate;
 use slotmap::{new_key_type, DenseSlotMap};
 use std::ops;
 new_key_type! {
     /// A key type for referencing accounts.
     pub struct AccountKey;
-    /// A key type for referencing units.
-    pub struct UnitKey;
 }
 /// Represents a book.
 pub struct Book<
     Metadata,
+    U: Unit,
     AccountMetadata,
-    UnitMetadata,
     MoveMetadata,
     TransactionMetadata,
 > {
     metadata: Metadata,
     accounts: DenseSlotMap<AccountKey, Account<AccountMetadata>>,
-    units: DenseSlotMap<UnitKey, Unit<UnitMetadata>>,
-    transactions: Vec<Transaction<MoveMetadata, TransactionMetadata>>,
+    transactions: Vec<Transaction<U, MoveMetadata, TransactionMetadata>>,
 }
 /// Represents a side of a [Move].
 pub enum Side {
@@ -36,27 +32,14 @@ pub enum Side {
 
 /// Used to index transactions in the book.
 pub struct TransactionIndex(pub usize);
-impl<
-        Metadata,
-        AccountMetadata,
-        UnitMetadata,
-        MoveMetadata,
-        TransactionMetadata,
-    >
-    Book<
-        Metadata,
-        AccountMetadata,
-        UnitMetadata,
-        MoveMetadata,
-        TransactionMetadata,
-    >
+impl<Metadata, U: Unit, AccountMetadata, MoveMetadata, TransactionMetadata>
+    Book<Metadata, U, AccountMetadata, MoveMetadata, TransactionMetadata>
 {
     /// Creates a new book
     pub fn new(metadata: Metadata) -> Self {
         Self {
             metadata,
             accounts: DenseSlotMap::with_key(),
-            units: DenseSlotMap::with_key(),
             transactions: Vec::new(),
         }
     }
@@ -71,10 +54,6 @@ impl<
     /// Creates a new account.
     pub fn new_account(&mut self, metadata: AccountMetadata) -> AccountKey {
         self.accounts.insert(Account { metadata })
-    }
-    /// Creates a new unit.
-    pub fn new_unit(&mut self, metadata: UnitMetadata) -> UnitKey {
-        self.units.insert(Unit { metadata })
     }
     /// Creates a transaction and inserts it at an index.
     ///
@@ -94,11 +73,6 @@ impl<
             },
         )
     }
-    fn assert_has_units_of_sum(&self, sum: &Sum) {
-        sum.0.keys().for_each(|unit_key| {
-            self.assert_has_unit(*unit_key);
-        });
-    }
     /// Creates a new move and inserts it into a transaction at an index.
     ///
     /// ## Panics
@@ -114,7 +88,7 @@ impl<
         move_index: MoveIndex,
         debit_account_key: AccountKey,
         credit_account_key: AccountKey,
-        sum: Sum,
+        sum: Sum<U>,
         metadata: MoveMetadata,
     ) {
         [debit_account_key, credit_account_key].iter().for_each(
@@ -122,7 +96,6 @@ impl<
                 self.assert_has_account(*account_key);
             },
         );
-        self.assert_has_units_of_sum(&sum);
         let move_ =
             Move::new(debit_account_key, credit_account_key, sum, metadata);
         let transaction = std::ops::IndexMut::index_mut(
@@ -143,26 +116,11 @@ impl<
         self.assert_has_account(account_key);
         self.accounts.get(account_key).unwrap()
     }
-    /// Gets a unit using a key.
-    ///
-    /// ## Panics
-    ///
-    /// - `unit_key` is not in the book.
-    pub fn get_unit(&self, unit_key: UnitKey) -> &Unit<UnitMetadata> {
-        self.assert_has_unit(unit_key);
-        self.units.get(unit_key).unwrap()
-    }
     /// Gets an iterator of existing accounts in order of creation.
     pub fn accounts(
         &self,
     ) -> impl Iterator<Item = (AccountKey, &Account<AccountMetadata>)> {
         self.accounts.iter()
-    }
-    /// Gets an iterator of existing units in order of creation.
-    pub fn units(
-        &self,
-    ) -> impl Iterator<Item = (UnitKey, &Unit<UnitMetadata>)> {
-        self.units.iter()
     }
     /// Gets an iterator of existing transactions in their order.
     pub fn transactions(
@@ -170,7 +128,7 @@ impl<
     ) -> impl Iterator<
         Item = (
             TransactionIndex,
-            &Transaction<MoveMetadata, TransactionMetadata>,
+            &Transaction<U, MoveMetadata, TransactionMetadata>,
         ),
     > {
         self.transactions
@@ -189,18 +147,6 @@ impl<
     ) {
         self.assert_has_account(account_key);
         self.accounts.get_mut(account_key).unwrap().metadata = metadata;
-    }
-    /// Sets the metadata for a unit.
-    ///
-    /// ## Panics
-    /// - `unit_key` is not in the book.
-    pub fn set_unit_metadata(
-        &mut self,
-        unit_key: UnitKey,
-        metadata: UnitMetadata,
-    ) {
-        self.assert_has_unit(unit_key);
-        self.units.get_mut(unit_key).unwrap().metadata = metadata;
     }
     /// Sets the metadata for a transaction.
     ///
@@ -246,21 +192,23 @@ impl<
         &'a self,
         account_key: AccountKey,
         transaction_index: TransactionIndex,
-    ) -> Balance {
+    ) -> Balance<U> {
         self.assert_has_account(account_key);
         self.transactions
             .iter()
             .take(transaction_index.0 + 1)
             .flat_map(|transaction| transaction.moves.iter())
-            .filter_map(|move_| -> Option<(fn(&mut Balance, &'a Sum), &Sum)> {
-                if move_.debit_account_key == account_key {
-                    Some((ops::SubAssign::sub_assign, &move_.sum))
-                } else if move_.credit_account_key == account_key {
-                    Some((ops::AddAssign::add_assign, &move_.sum))
-                } else {
-                    None
-                }
-            })
+            .filter_map(
+                |move_| -> Option<(fn(&mut Balance<U>, &'a Sum<U>), &Sum<U>)> {
+                    if move_.debit_account_key == account_key {
+                        Some((ops::SubAssign::sub_assign, &move_.sum))
+                    } else if move_.credit_account_key == account_key {
+                        Some((ops::AddAssign::add_assign, &move_.sum))
+                    } else {
+                        None
+                    }
+                },
+            )
             .fold(Balance::new(), |mut balance, (operation, sum)| {
                 operation(&mut balance, sum);
                 balance
@@ -299,9 +247,8 @@ impl<
         &mut self,
         transaction_index: TransactionIndex,
         move_index: MoveIndex,
-        sum: Sum,
+        sum: Sum<U>,
     ) {
-        self.assert_has_units_of_sum(&sum);
         self.transactions[transaction_index.0].moves[move_index.0].sum = sum;
     }
     /// Sets the account for one of the sides of an existing move.
@@ -333,17 +280,10 @@ impl<
             }
         }
     }
-}
-#[duplicate(
-    assert_has               Key              plural         string         ;
-    [assert_has_account]     [AccountKey]     [accounts]     ["account"]    ;
-    [assert_has_unit]        [UnitKey]        [units]        ["unit"]       ;
-)]
-impl<B, A, U, M, T> Book<B, A, U, M, T> {
-    fn assert_has(&self, key: Key) {
+    fn assert_has_account(&self, key: AccountKey) {
         assert!(
-            self.plural.contains_key(key),
-            format!("No {} found for key {:?}", string, key),
+            self.accounts.contains_key(key),
+            format!("No account found for key {:?}", key),
         );
     }
 }
@@ -355,12 +295,12 @@ mod test {
         TransactionIndex,
     };
     use crate::transaction::MoveIndex;
+    use crate::unit::TestUnit;
     #[test]
     fn new() {
         let book = test_book!("");
         assert_eq!(book.metadata, "");
         assert!(book.accounts.is_empty());
-        assert!(book.units.is_empty());
         assert!(book.transactions.is_empty());
     }
     #[test]
@@ -368,12 +308,6 @@ mod test {
         let mut book = test_book!("");
         book.new_account("");
         assert_eq!(book.accounts.len(), 1);
-    }
-    #[test]
-    fn new_unit() {
-        let mut book = test_book!("");
-        book.new_unit("");
-        assert_eq!(book.units.len(), 1,);
     }
     #[test]
     #[should_panic(expected = "insertion index (is 1) should be <= len (is 0)")]
@@ -447,25 +381,6 @@ mod test {
         );
     }
     #[test]
-    #[should_panic(expected = "No unit found for key ")]
-    fn insert_move_panic_unit_not_found() {
-        let mut book = test_book!("");
-        let debit_key = book.new_account("");
-        let credit_key = book.new_account("");
-        let unit_key = book.new_unit("");
-        book.units.remove(unit_key);
-        let sum = sum!(0, unit_key);
-        book.insert_transaction(TransactionIndex(0), "");
-        book.insert_move(
-            TransactionIndex(0),
-            MoveIndex(0),
-            debit_key,
-            credit_key,
-            sum,
-            "",
-        );
-    }
-    #[test]
     fn insert_move() {
         let mut book = test_book!("");
         book.insert_transaction(TransactionIndex(0), "");
@@ -526,19 +441,6 @@ mod test {
         assert_eq!(actual, expected);
     }
     #[test]
-    fn units() {
-        let mut book = test_book!("");
-        assert!(book.units().next().is_none());
-        let unit_a_key = book.new_unit("a");
-        let unit_b_key = book.new_unit("b");
-        let expected = vec![(unit_a_key, &"a"), (unit_b_key, &"b")];
-        let actual = book
-            .units()
-            .map(|(unit_key, unit)| (unit_key, &unit.metadata))
-            .collect::<Vec<_>>();
-        assert_eq!(actual, expected);
-    }
-    #[test]
     fn get_account() {
         let mut book = test_book!("");
         book.new_account("");
@@ -548,29 +450,12 @@ mod test {
         assert_eq!(*account.metadata(), "!");
     }
     #[test]
-    fn get_unit() {
-        let mut book = test_book!("");
-        book.new_unit("");
-        let unit_key = book.new_unit("!");
-        book.new_unit("");
-        let unit = book.get_unit(unit_key);
-        assert_eq!(*unit.metadata(), "!");
-    }
-    #[test]
     #[should_panic(expected = "No account found for key ")]
     fn assert_has_account() {
         let mut book = test_book!("");
         let account_key = book.new_account("");
         book.accounts.remove(account_key);
         book.assert_has_account(account_key);
-    }
-    #[test]
-    #[should_panic(expected = "No unit found for key ")]
-    fn assert_has_unit() {
-        let mut book = test_book!("");
-        let unit_key = book.new_unit("");
-        book.units.remove(unit_key);
-        book.assert_has_unit(unit_key);
     }
     #[test]
     #[should_panic(expected = "No account found for key ")]
@@ -586,14 +471,14 @@ mod test {
         let mut book = test_book!("");
         let account_a_key = book.new_account("");
         let account_b_key = book.new_account("");
-        let unit_key = book.new_unit("");
+        let usd = TestUnit("USD");
         book.insert_transaction(TransactionIndex(0), "");
         book.insert_move(
             TransactionIndex(0),
             MoveIndex(0),
             account_a_key,
             account_b_key,
-            sum!(3, unit_key),
+            sum!(3, usd),
             "",
         );
         assert_eq!(
@@ -601,14 +486,14 @@ mod test {
                 account_a_key,
                 TransactionIndex(0)
             ),
-            Balance::new() - &sum!(3, unit_key),
+            Balance::new() - &sum!(3, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction(
                 account_b_key,
                 TransactionIndex(0)
             ),
-            Balance::new() + &sum!(3, unit_key),
+            Balance::new() + &sum!(3, usd),
         );
         book.insert_transaction(TransactionIndex(1), "");
         book.insert_move(
@@ -616,7 +501,7 @@ mod test {
             MoveIndex(0),
             account_a_key,
             account_b_key,
-            sum!(4, unit_key),
+            sum!(4, usd),
             "",
         );
         assert_eq!(
@@ -624,28 +509,28 @@ mod test {
                 account_a_key,
                 TransactionIndex(0)
             ),
-            Balance::new() - &sum!(3, unit_key),
+            Balance::new() - &sum!(3, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction(
                 account_b_key,
                 TransactionIndex(0)
             ),
-            Balance::new() + &sum!(3, unit_key),
+            Balance::new() + &sum!(3, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction(
                 account_a_key,
                 TransactionIndex(1)
             ),
-            Balance::new() - &sum!(7, unit_key),
+            Balance::new() - &sum!(7, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction(
                 account_b_key,
                 TransactionIndex(1)
             ),
-            Balance::new() + &sum!(7, unit_key),
+            Balance::new() + &sum!(7, usd),
         );
         book.insert_transaction(TransactionIndex(0), "");
         book.insert_move(
@@ -653,7 +538,7 @@ mod test {
             MoveIndex(0),
             account_a_key,
             account_b_key,
-            sum!(1, unit_key),
+            sum!(1, usd),
             "",
         );
         assert_eq!(
@@ -661,42 +546,42 @@ mod test {
                 account_a_key,
                 TransactionIndex(0)
             ),
-            Balance::new() - &sum!(1, unit_key),
+            Balance::new() - &sum!(1, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction(
                 account_b_key,
                 TransactionIndex(0)
             ),
-            Balance::new() + &sum!(1, unit_key),
+            Balance::new() + &sum!(1, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction(
                 account_a_key,
                 TransactionIndex(1)
             ),
-            Balance::new() - &sum!(4, unit_key),
+            Balance::new() - &sum!(4, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction(
                 account_b_key,
                 TransactionIndex(1)
             ),
-            Balance::new() + &sum!(4, unit_key),
+            Balance::new() + &sum!(4, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction(
                 account_a_key,
                 TransactionIndex(2)
             ),
-            Balance::new() - &sum!(8, unit_key),
+            Balance::new() - &sum!(8, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction(
                 account_b_key,
                 TransactionIndex(2)
             ),
-            Balance::new() + &sum!(8, unit_key),
+            Balance::new() + &sum!(8, usd),
         );
     }
     #[test]
@@ -724,21 +609,6 @@ mod test {
         let account_key = book.new_account("");
         book.set_account_metadata(account_key, "!");
         assert_eq!(*book.accounts.get(account_key).unwrap().metadata(), "!");
-    }
-    #[test]
-    #[should_panic(expected = "No unit found for key ")]
-    fn set_unit_metadata_panic() {
-        let mut book = test_book!("");
-        let unit_key = book.new_unit("");
-        book.units.remove(unit_key);
-        book.set_unit_metadata(unit_key, "!");
-    }
-    #[test]
-    fn set_unit_metadata() {
-        let mut book = test_book!("");
-        let unit_key = book.new_unit("");
-        book.set_unit_metadata(unit_key, "!");
-        assert_eq!(*book.units.get(unit_key).unwrap().metadata(), "!");
     }
     #[test]
     #[should_panic(expected = "index out of bounds")]
@@ -991,29 +861,6 @@ mod test {
         book.set_move_sum(TransactionIndex(0), MoveIndex(0), sum!());
     }
     #[test]
-    #[should_panic(expected = "No unit found for key ")]
-    fn set_move_sum_panic_unit_not_found() {
-        let mut book = test_book!("");
-        let debit_account_key = book.new_account("");
-        let credit_account_key = book.new_account("");
-        book.insert_transaction(TransactionIndex(0), "");
-        book.insert_move(
-            TransactionIndex(0),
-            MoveIndex(0),
-            debit_account_key,
-            credit_account_key,
-            sum!(),
-            "",
-        );
-        let unit_key = book.new_unit("");
-        book.units.remove(unit_key);
-        book.set_move_sum(
-            TransactionIndex(0),
-            MoveIndex(0),
-            sum!(100, unit_key),
-        );
-    }
-    #[test]
     fn set_move_sum() {
         let mut book = test_book!("");
         let debit_account_key = book.new_account("");
@@ -1027,14 +874,10 @@ mod test {
             sum!(),
             "",
         );
-        let unit_key = book.new_unit("");
-        book.set_move_sum(
-            TransactionIndex(0),
-            MoveIndex(0),
-            sum!(100, unit_key),
-        );
+        let usd = TestUnit("USD");
+        book.set_move_sum(TransactionIndex(0), MoveIndex(0), sum!(100, usd));
         assert_eq!(
-            book.transactions[0].moves[0].sum.0.get(&unit_key).unwrap(),
+            book.transactions[0].moves[0].sum.0.get(&usd).unwrap(),
             &100,
         );
     }

@@ -1,104 +1,104 @@
-use crate::book::UnitKey;
 use crate::sum::Sum;
+use crate::unit::Unit;
 use std::collections::BTreeMap;
 use std::fmt;
 use std::ops;
 /// Represents a [balance](https://en.wikipedia.org/wiki/Balance_(accounting)), yet not necessarily the current balance.
 #[derive(PartialEq, Clone)]
-pub struct Balance(pub(crate) BTreeMap<UnitKey, i128>);
-impl Balance {
+pub struct Balance<U: Unit>(pub(crate) BTreeMap<U, i128>);
+impl<U: Unit> Balance<U> {
     pub(crate) fn new() -> Self {
         Self(Default::default())
     }
     fn apply_sum_operation(
         &mut self,
-        rhs: &Sum,
+        rhs: &Sum<U>,
         amount_op: fn(i128, u64) -> i128,
     ) {
         rhs.0.iter().for_each(|(unit, amount)| {
-            self.apply_unit_operation(&(*unit, *amount), amount_op)
+            self.apply_unit_operation(&(unit.clone(), *amount), amount_op)
         });
     }
     fn apply_unit_operation(
         &mut self,
-        (unit, amount): &(UnitKey, u64),
+        (unit, amount): &(U, u64),
         amount_op: fn(i128, u64) -> i128,
     ) {
         self.0
-            .entry(*unit)
+            .entry(unit.clone())
             .and_modify(|balance| {
                 *balance = amount_op(*balance, *amount);
             })
             .or_insert_with(|| amount_op(0, *amount));
     }
     /// Gets the amounts of all units in undefined order.
-    pub fn amounts(&self) -> impl Iterator<Item = (UnitKey, &i128)> {
-        self.0.iter().map(|(unit_key, amount)| (*unit_key, amount))
+    pub fn amounts(&self) -> impl Iterator<Item = (&U, &i128)> {
+        self.0.iter()
     }
     /// Gets the amount of a provided unit.
-    pub fn unit_amount(&self, unit_key: UnitKey) -> Option<&i128> {
-        self.0.get(&unit_key)
+    pub fn unit_amount(&self, unit: U) -> Option<&i128> {
+        self.0.get(&unit)
     }
 }
-impl fmt::Debug for Balance {
+impl<U: Unit + fmt::Debug> fmt::Debug for Balance<U> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Balance(")?;
         f.debug_map().entries(self.0.clone()).finish()?;
         f.write_str(")")
     }
 }
-impl ops::SubAssign<&Sum> for Balance {
-    fn sub_assign(&mut self, sum: &Sum) {
+impl<U: Unit> ops::SubAssign<&Sum<U>> for Balance<U> {
+    fn sub_assign(&mut self, sum: &Sum<U>) {
         self.apply_sum_operation(sum, |balance_amount, sum_amount| {
             balance_amount - sum_amount as i128
         });
     }
 }
-impl ops::SubAssign<&(UnitKey, u64)> for Balance {
-    fn sub_assign(&mut self, unit_amount: &(UnitKey, u64)) {
+impl<U: Unit> ops::SubAssign<&(U, u64)> for Balance<U> {
+    fn sub_assign(&mut self, unit_amount: &(U, u64)) {
         self.apply_unit_operation(unit_amount, |balance, amount| {
             balance - amount as i128
         });
     }
 }
-impl ops::Sub<&Sum> for Balance {
+impl<U: Unit> ops::Sub<&Sum<U>> for Balance<U> {
     type Output = Self;
-    fn sub(mut self, sum: &Sum) -> Self::Output {
+    fn sub(mut self, sum: &Sum<U>) -> Self::Output {
         self -= sum;
         self
     }
 }
-impl ops::Sub<&(UnitKey, u64)> for Balance {
+impl<U: Unit> ops::Sub<&(U, u64)> for Balance<U> {
     type Output = Self;
-    fn sub(mut self, unit_amount: &(UnitKey, u64)) -> Self::Output {
+    fn sub(mut self, unit_amount: &(U, u64)) -> Self::Output {
         self -= unit_amount;
         self
     }
 }
-impl ops::AddAssign<&Sum> for Balance {
-    fn add_assign(&mut self, sum: &Sum) {
+impl<U: Unit> ops::AddAssign<&Sum<U>> for Balance<U> {
+    fn add_assign(&mut self, sum: &Sum<U>) {
         self.apply_sum_operation(sum, |balance_amount, sum_amount| {
             balance_amount + sum_amount as i128
         });
     }
 }
-impl ops::AddAssign<&(UnitKey, u64)> for Balance {
-    fn add_assign(&mut self, unit_amount: &(UnitKey, u64)) {
+impl<U: Unit> ops::AddAssign<&(U, u64)> for Balance<U> {
+    fn add_assign(&mut self, unit_amount: &(U, u64)) {
         self.apply_unit_operation(unit_amount, |balance, amount| {
             balance + amount as i128
         });
     }
 }
-impl ops::Add<&Sum> for Balance {
+impl<U: Unit> ops::Add<&Sum<U>> for Balance<U> {
     type Output = Self;
-    fn add(mut self, sum: &Sum) -> Self::Output {
+    fn add(mut self, sum: &Sum<U>) -> Self::Output {
         self += sum;
         self
     }
 }
-impl ops::Add<&(UnitKey, u64)> for Balance {
+impl<U: Unit> ops::Add<&(U, u64)> for Balance<U> {
     type Output = Self;
-    fn add(mut self, unit_amount: &(UnitKey, u64)) -> Self::Output {
+    fn add(mut self, unit_amount: &(U, u64)) -> Self::Output {
         self += unit_amount;
         self
     }
@@ -107,10 +107,11 @@ impl ops::Add<&(UnitKey, u64)> for Balance {
 mod test {
     use super::BTreeMap;
     use super::Balance;
+    use crate::unit::TestUnit;
     use maplit::btreemap;
     #[test]
     fn new() {
-        let actual = Balance::new();
+        let actual = Balance::<TestUnit>::new();
         let expected = Balance(BTreeMap::new());
         assert_eq!(actual, expected);
     }
@@ -118,110 +119,102 @@ mod test {
     fn apply_sum_operation() {
         use maplit::btreemap;
         let mut actual = Balance::new();
-        let mut book = test_book!("");
-        let unit_a_key = book.new_unit("");
-        let unit_b_key = book.new_unit("");
-        let sum = sum!(2, unit_a_key; 3, unit_b_key);
+        let usd = TestUnit("USD");
+        let thb = TestUnit("THB");
+        let sum = sum!(2, usd; 3, thb);
         actual.apply_sum_operation(&sum, |balance, amount| {
             balance + amount as i128
         });
-        let sum = sum!(2, unit_a_key; 3, unit_b_key);
+        let sum = sum!(2, usd; 3, thb);
         actual.apply_sum_operation(&sum, |balance, amount| {
             balance * amount as i128
         });
         let expected = Balance(btreemap! {
-            unit_a_key => 4,
-            unit_b_key => 9,
+            usd => 4,
+            thb => 9,
         });
         assert_eq!(actual, expected);
     }
     #[test]
     fn fmt_debug() {
-        let mut book = test_book!("");
-        let unit_a_key = book.new_unit("");
-        let amount_a = 76;
-        let unit_b_key = book.new_unit("");
-        let amount_b = 45;
-        let sum = sum!(amount_a, unit_a_key; amount_b, unit_b_key);
+        let usd = TestUnit("USD");
+        let amount_usd = 76;
+        let thb = TestUnit("THB");
+        let amount_thb = 45;
+        let sum = sum!(amount_usd, usd; amount_thb, thb);
         let balance = Balance::new() + &sum;
         let actual = format!("{:?}", balance);
         let expected = format!(
             "Balance({{{:?}: {:?}, {:?}: {:?}}})",
-            unit_a_key, amount_a, unit_b_key, amount_b
+            thb, amount_thb, usd, amount_usd
         );
         assert_eq!(actual, expected);
     }
     #[test]
     fn sub_assign_sum() {
         use maplit::btreemap;
-        let mut book = test_book!("");
-        let unit_key = book.new_unit("");
+        let usd = TestUnit("USD");
         let mut actual = Balance::new();
-        actual -= &sum!(9, unit_key);
+        actual -= &sum!(9, usd);
         let expected = Balance(btreemap! {
-            unit_key => -9,
+            usd => -9,
         });
         assert_eq!(actual, expected);
     }
     #[test]
     fn sub_sum() {
         use maplit::btreemap;
-        let mut book = test_book!("");
-        let unit_key = book.new_unit("");
+        let usd = TestUnit("USD");
         let immutable = Balance::new();
-        let actual = immutable - &sum!(9, unit_key);
+        let actual = immutable - &sum!(9, usd);
         let expected = Balance(btreemap! {
-            unit_key => -9,
+            usd => -9,
         });
         assert_eq!(actual, expected);
     }
     #[test]
     fn add_assign_sum() {
         use maplit::btreemap;
-        let mut book = test_book!("");
-        let unit_key = book.new_unit("");
+        let usd = TestUnit("USD");
         let mut actual = Balance::new();
-        actual += &sum!(9, unit_key);
+        actual += &sum!(9, usd);
         let expected = Balance(btreemap! {
-            unit_key => 9,
+            usd => 9,
         });
         assert_eq!(actual, expected);
     }
     #[test]
     fn add_sum() {
         use maplit::btreemap;
-        let mut book = test_book!("");
-        let unit_key = book.new_unit("");
+        let usd = TestUnit("USD");
         let immutable = Balance::new();
-        let actual = immutable + &sum!(9, unit_key);
+        let actual = immutable + &sum!(9, usd);
         let expected = Balance(btreemap! {
-            unit_key => 9,
+            usd => 9,
         });
         assert_eq!(actual, expected);
     }
     #[test]
     fn amounts() {
-        let mut book = test_book!("");
-        let usd_key = book.new_unit("");
-        let thb_key = book.new_unit("");
-        let ils_key = book.new_unit("");
+        let usd = TestUnit("USD");
+        let thb = TestUnit("THB");
+        let ils = TestUnit("ILS");
         let balance = Balance::new()
             + &sum! {
-                100, usd_key; 200, thb_key; 300, ils_key
+                100, usd; 200, thb; 300, ils
             };
         let actual = balance.amounts().collect::<Vec<_>>();
-        let expected = vec![(usd_key, &100), (thb_key, &200), (ils_key, &300)];
+        let expected = vec![(&ils, &300), (&thb, &200), (&usd, &100)];
         assert_eq!(actual, expected);
     }
     #[test]
     fn unit_amount() {
-        let mut book = test_book!("");
-        let usd_key = book.new_unit("");
-        let thb_key = book.new_unit("");
-        let ils_key = book.new_unit("");
-        let balance = Balance::new() + &sum!(200, usd_key; 100, thb_key);
-        assert_eq!(balance.unit_amount(usd_key).unwrap(), &200);
-        assert_eq!(balance.unit_amount(thb_key).unwrap(), &100);
-        assert_eq!(balance.unit_amount(ils_key), None);
+        let usd = TestUnit("USD");
+        let thb = TestUnit("THB");
+        let ils = TestUnit("ILS");
+        let balance = Balance::new() + &sum!(200, usd; 100, thb);
+        assert_eq!(balance.unit_amount(usd).unwrap(), &200);
+        assert_eq!(balance.unit_amount(thb).unwrap(), &100);
+        assert_eq!(balance.unit_amount(ils), None);
     }
 }
