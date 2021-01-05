@@ -1,14 +1,19 @@
 use crate::book::AccountKey;
 use crate::sum::Sum;
-use crate::unit::Unit;
-/// Represents a move of a [Sum] of [Unit](crate::Unit)s from one account to another.
-pub struct Move<U: Unit, Sn, M> {
+/// Represents a move of a [Sum] from one account to another.
+pub struct Move<U, Sn, M>
+where
+    U: Ord,
+{
     pub(crate) metadata: M,
     pub(crate) debit_account_key: AccountKey,
     pub(crate) credit_account_key: AccountKey,
     pub(crate) sum: Sum<U, Sn>,
 }
-impl<U: Unit, Sn, M> Move<U, Sn, M> {
+impl<U, Sn, M> Move<U, Sn, M>
+where
+    U: Ord,
+{
     pub(crate) fn new(
         debit_account_key: AccountKey,
         credit_account_key: AccountKey,
@@ -46,7 +51,7 @@ impl<U: Unit, Sn, M> Move<U, Sn, M> {
 #[cfg(test)]
 mod test {
     use super::Move;
-    use crate::unit::TestUnit;
+    use crate::test_utils::TestUnit;
     #[test]
     #[should_panic(expected = "Debit and credit accounts are the same.")]
     fn new_panic_debit_and_credit_accounts_are_the_same() {

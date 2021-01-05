@@ -45,7 +45,7 @@
 //! would give the impression that function calls could fail even when used correctly.
 //! I'd like the user to be confident that with correct usage the API is safe.
 #[macro_use]
-mod macros;
+mod test_utils;
 macro_rules! tutorial {
     ($doc:expr) => {
         #[doc = $doc]
@@ -59,11 +59,9 @@ mod book;
 mod move_;
 mod sum;
 mod transaction;
-mod unit;
 pub use account::Account;
 pub use balance::Balance;
 pub use book::{AccountKey, Book, Side, TransactionIndex};
 pub use move_::Move;
 pub use sum::Sum;
 pub use transaction::{MoveIndex, Transaction};
-pub use unit::Unit;

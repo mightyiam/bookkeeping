@@ -20,13 +20,9 @@ use bookkeeping::*;
 // context. Units may represent currencies. Or cryptocurrencies. Or
 // units of distance or volume... But if we're honest, they will usually
 // represent some money currency. Yet, it's not this crate's scope to
-// make such decisions. This crate lets you define your own money type,
-// by providing the [`Unit`][Unit] marker trait. In this example, our
-// `Unit` is a newtype around a static lifetime string slice that we
-// call `Currency`:
+// make such decisions. This crate lets you define your own unit type.
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Copy, Debug)]
 struct Currency(&'static str);
-impl Unit for Currency {};
 
 // Now that we can have units, we can also have books. Let's create a
 // book that is generic over this unit.

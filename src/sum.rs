@@ -1,10 +1,11 @@
-use crate::unit::Unit;
 use std::collections::BTreeMap;
 use std::fmt;
 /// Represents amounts of any number of units.
 #[derive(Clone, PartialEq, Default)]
-pub struct Sum<U: Unit, Sn>(pub(crate) BTreeMap<U, Sn>);
-impl<U: Unit, Sn> Sum<U, Sn> {
+pub struct Sum<U, Sn>(pub(crate) BTreeMap<U, Sn>)
+where
+    U: Ord;
+impl<U: Ord, Sn> Sum<U, Sn> {
     /// Creates an empty sum.
     pub fn new() -> Self {
         Self(BTreeMap::new())
@@ -18,7 +19,7 @@ impl<U: Unit, Sn> Sum<U, Sn> {
         self.0.iter()
     }
 }
-impl<U: Unit + fmt::Debug, Sn: fmt::Debug> fmt::Debug for Sum<U, Sn> {
+impl<U: Ord + fmt::Debug, Sn: fmt::Debug> fmt::Debug for Sum<U, Sn> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Sum(")?;
         f.debug_map().entries(self.0.iter()).finish()?;
@@ -28,7 +29,7 @@ impl<U: Unit + fmt::Debug, Sn: fmt::Debug> fmt::Debug for Sum<U, Sn> {
 #[cfg(test)]
 mod test {
     use super::Sum;
-    use crate::unit::TestUnit;
+    use crate::test_utils::TestUnit;
     use maplit::btreemap;
     #[test]
     fn new() {

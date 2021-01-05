@@ -3,7 +3,6 @@ use crate::balance::Balance;
 use crate::move_::Move;
 use crate::sum::Sum;
 use crate::transaction::{MoveIndex, Transaction};
-use crate::unit::Unit;
 use slotmap::{new_key_type, DenseSlotMap};
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 new_key_type! {
@@ -18,7 +17,10 @@ new_key_type! {
 /// - A: Account metadata
 /// - M: Move metadata
 /// - T: Transaction metadata
-pub struct Book<U: Unit, Sn, B, A, M, T> {
+pub struct Book<U, Sn, B, A, M, T>
+where
+    U: Ord,
+{
     metadata: B,
     accounts: DenseSlotMap<AccountKey, Account<A>>,
     transactions: Vec<Transaction<U, Sn, M, T>>,
@@ -33,7 +35,10 @@ pub enum Side {
 
 /// Used to index transactions in the book.
 pub struct TransactionIndex(pub usize);
-impl<U: Unit, Sn, B, A, M, T> Book<U, Sn, B, A, M, T> {
+impl<U, Sn, B, A, M, T> Book<U, Sn, B, A, M, T>
+where
+    U: Ord,
+{
     /// Creates a new book
     pub fn new(metadata: B) -> Self {
         Self {
@@ -63,7 +68,9 @@ impl<U: Unit, Sn, B, A, M, T> Book<U, Sn, B, A, M, T> {
         &mut self,
         transaction_index: TransactionIndex,
         metadata: T,
-    ) {
+    ) where
+        U: Ord,
+    {
         self.transactions.insert(
             transaction_index.0,
             Transaction {
@@ -89,7 +96,9 @@ impl<U: Unit, Sn, B, A, M, T> Book<U, Sn, B, A, M, T> {
         credit_account_key: AccountKey,
         sum: Sum<U, Sn>,
         metadata: M,
-    ) {
+    ) where
+        U: Ord,
+    {
         [debit_account_key, credit_account_key].iter().for_each(
             |account_key| {
                 self.assert_has_account(*account_key);
@@ -162,7 +171,9 @@ impl<U: Unit, Sn, B, A, M, T> Book<U, Sn, B, A, M, T> {
         transaction_index: TransactionIndex,
         move_index: MoveIndex,
         metadata: M,
-    ) {
+    ) where
+        U: Ord,
+    {
         let transaction = std::ops::IndexMut::index_mut(
             &mut self.transactions,
             transaction_index.0,
@@ -184,6 +195,7 @@ impl<U: Unit, Sn, B, A, M, T> Book<U, Sn, B, A, M, T> {
         transaction_index: TransactionIndex,
     ) -> Balance<U, Bn>
     where
+        U: Ord + Clone,
         Bn: Default + Sub<Output = Bn> + Add<Output = Bn> + Clone,
         Sn: Clone + Into<Bn>,
     {
@@ -229,7 +241,9 @@ impl<U: Unit, Sn, B, A, M, T> Book<U, Sn, B, A, M, T> {
         &mut self,
         transaction_index: TransactionIndex,
         move_index: MoveIndex,
-    ) {
+    ) where
+        U: Ord,
+    {
         self.transactions[transaction_index.0]
             .moves
             .remove(move_index.0);
@@ -245,7 +259,9 @@ impl<U: Unit, Sn, B, A, M, T> Book<U, Sn, B, A, M, T> {
         transaction_index: TransactionIndex,
         move_index: MoveIndex,
         sum: Sum<U, Sn>,
-    ) {
+    ) where
+        U: Ord,
+    {
         self.transactions[transaction_index.0].moves[move_index.0].sum = sum;
     }
     /// Sets the account for one of the sides of an existing move.
@@ -262,7 +278,9 @@ impl<U: Unit, Sn, B, A, M, T> Book<U, Sn, B, A, M, T> {
         move_index: MoveIndex,
         side: Side,
         account_key: AccountKey,
-    ) {
+    ) where
+        U: Ord,
+    {
         self.assert_has_account(account_key);
         let move_ =
             &mut self.transactions[transaction_index.0].moves[move_index.0];
@@ -291,8 +309,8 @@ mod test {
         Side::{Credit, Debit},
         TransactionIndex,
     };
+    use crate::test_utils::TestUnit;
     use crate::transaction::MoveIndex;
-    use crate::unit::TestUnit;
     #[test]
     fn new() {
         let book = test_book!("");

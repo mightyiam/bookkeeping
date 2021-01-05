@@ -1,13 +1,18 @@
 use crate::move_::Move;
-use crate::unit::Unit;
 /// Represents a transaction.
-pub struct Transaction<U: Unit, Sn, M, T> {
+pub struct Transaction<U, Sn, M, T>
+where
+    U: Ord,
+{
     pub(crate) metadata: T,
     pub(crate) moves: Vec<Move<U, Sn, M>>,
 }
 /// Used to index moves in a transaction.
 pub struct MoveIndex(pub usize);
-impl<U: Unit, Sn, M, T> Transaction<U, Sn, M, T> {
+impl<U, Sn, M, T> Transaction<U, Sn, M, T>
+where
+    U: Ord,
+{
     /// Gets an iterator of existing moves in their order.
     pub fn moves(&self) -> impl Iterator<Item = (MoveIndex, &Move<U, Sn, M>)> {
         self.moves
@@ -25,7 +30,7 @@ impl<U: Unit, Sn, M, T> Transaction<U, Sn, M, T> {
 mod test {
     use super::{MoveIndex, Transaction};
     use crate::book::TransactionIndex;
-    use crate::unit::TestUnit;
+    use crate::test_utils::TestUnit;
     #[test]
     fn moves() {
         let mut book = test_book!("");
