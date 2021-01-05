@@ -1,12 +1,14 @@
 use crate::sum::Sum;
-use crate::unit::Unit;
 use std::collections::BTreeMap;
 use std::fmt;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 /// Represents a [balance](https://en.wikipedia.org/wiki/Balance_(accounting)), yet not necessarily the current balance.
 #[derive(PartialEq, Clone)]
-pub struct Balance<U: Unit, Bn>(pub(crate) BTreeMap<U, Bn>);
-impl<U: Unit, Bn> Balance<U, Bn> {
+pub struct Balance<U, Bn>(pub(crate) BTreeMap<U, Bn>);
+impl<U, Bn> Balance<U, Bn>
+where
+    U: Ord + Clone,
+{
     pub(crate) fn new() -> Self {
         Self(Default::default())
     }
@@ -49,15 +51,20 @@ impl<U: Unit, Bn> Balance<U, Bn> {
         self.0.get(&unit)
     }
 }
-impl<U: Unit + fmt::Debug, Bn: fmt::Debug> fmt::Debug for Balance<U, Bn> {
+impl<U, Bn> fmt::Debug for Balance<U, Bn>
+where
+    U: fmt::Debug,
+    Bn: fmt::Debug,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Balance(")?;
         f.debug_map().entries(self.0.iter()).finish()?;
         f.write_str(")")
     }
 }
-impl<U: Unit, Bn, Sn> SubAssign<&Sum<U, Sn>> for Balance<U, Bn>
+impl<U, Bn, Sn> SubAssign<&Sum<U, Sn>> for Balance<U, Bn>
 where
+    U: Ord + Clone,
     Bn: Default + Sub<Output = Bn> + Clone,
     Sn: Clone + Into<Bn>,
 {
@@ -67,8 +74,9 @@ where
         });
     }
 }
-impl<U: Unit, Bn, Sn> SubAssign<&(U, Sn)> for Balance<U, Bn>
+impl<U, Bn, Sn> SubAssign<&(U, Sn)> for Balance<U, Bn>
 where
+    U: Ord + Clone,
     Bn: Default + Sub<Output = Bn> + Clone,
     Sn: Clone + Into<Bn>,
 {
@@ -78,8 +86,9 @@ where
         });
     }
 }
-impl<U: Unit, Bn, Sn> Sub<&Sum<U, Sn>> for Balance<U, Bn>
+impl<U, Bn, Sn> Sub<&Sum<U, Sn>> for Balance<U, Bn>
 where
+    U: Ord + Clone,
     Bn: Default + Sub<Output = Bn> + Clone,
     Sn: Clone + Into<Bn>,
 {
@@ -89,8 +98,9 @@ where
         self
     }
 }
-impl<U: Unit, Bn, Sn> Sub<&(U, Sn)> for Balance<U, Bn>
+impl<U, Bn, Sn> Sub<&(U, Sn)> for Balance<U, Bn>
 where
+    U: Ord + Clone,
     Bn: Default + Sub<Output = Bn> + Clone,
     Sn: Clone + Into<Bn>,
 {
@@ -100,8 +110,9 @@ where
         self
     }
 }
-impl<U: Unit, Bn, Sn> AddAssign<&Sum<U, Sn>> for Balance<U, Bn>
+impl<U, Bn, Sn> AddAssign<&Sum<U, Sn>> for Balance<U, Bn>
 where
+    U: Ord + Clone,
     Bn: Default + Add<Output = Bn> + Clone,
     Sn: Clone + Into<Bn>,
 {
@@ -111,8 +122,9 @@ where
         });
     }
 }
-impl<U: Unit, Bn, Sn> AddAssign<&(U, Sn)> for Balance<U, Bn>
+impl<U, Bn, Sn> AddAssign<&(U, Sn)> for Balance<U, Bn>
 where
+    U: Ord + Clone,
     Bn: Default + Add<Output = Bn> + Clone,
     Sn: Clone + Into<Bn>,
 {
@@ -122,8 +134,9 @@ where
         });
     }
 }
-impl<U: Unit, Bn, Sn> Add<&Sum<U, Sn>> for Balance<U, Bn>
+impl<U, Bn, Sn> Add<&Sum<U, Sn>> for Balance<U, Bn>
 where
+    U: Ord + Clone,
     Bn: Default + Add<Output = Bn> + Clone,
     Sn: Clone + Into<Bn>,
 {
@@ -133,8 +146,9 @@ where
         self
     }
 }
-impl<U: Unit, Bn, Sn> Add<&(U, Sn)> for Balance<U, Bn>
+impl<U, Bn, Sn> Add<&(U, Sn)> for Balance<U, Bn>
 where
+    U: Ord + Clone,
     Bn: Default + Add<Output = Bn> + Clone,
     Sn: Clone + Into<Bn>,
 {
@@ -148,7 +162,7 @@ where
 mod test {
     use super::BTreeMap;
     use super::Balance;
-    use crate::unit::TestUnit;
+    use crate::test_utils::TestUnit;
     use maplit::btreemap;
     #[test]
     fn new() {

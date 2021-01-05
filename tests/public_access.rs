@@ -2,7 +2,6 @@
 use bookkeeping::*;
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq)]
 struct TestUnit;
-impl Unit for TestUnit {}
 #[test]
 fn account() {
     Account::<()>::metadata;
