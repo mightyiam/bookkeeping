@@ -43,7 +43,7 @@ impl<U: Unit> Balance<U> {
 impl<U: Unit + fmt::Debug> fmt::Debug for Balance<U> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Balance(")?;
-        f.debug_map().entries(self.0.clone()).finish()?;
+        f.debug_map().entries(self.0.iter()).finish()?;
         f.write_str(")")
     }
 }
