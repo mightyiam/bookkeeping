@@ -9,9 +9,6 @@ impl<U, Bn> Balance<U, Bn>
 where
     U: Ord + Clone,
 {
-    pub(crate) fn new() -> Self {
-        Self(Default::default())
-    }
     fn apply_sum_operation<Sn>(
         &mut self,
         rhs: &Sum<U, Sn>,
@@ -49,6 +46,14 @@ where
     /// Gets the amount of a provided unit.
     pub fn unit_amount(&self, unit: U) -> Option<&Bn> {
         self.0.get(&unit)
+    }
+}
+impl<U, Bn> Default for Balance<U, Bn>
+where
+    U: Ord,
+{
+    fn default() -> Self {
+        Self(Default::default())
     }
 }
 impl<U, Bn> fmt::Debug for Balance<U, Bn>
@@ -160,26 +165,25 @@ where
 }
 #[cfg(test)]
 mod test {
-    use super::BTreeMap;
     use super::Balance;
-    use crate::test_utils::TestUnit;
+    use crate::test_utils::{TestBalance, TestUnit};
     use maplit::btreemap;
-    #[test]
-    fn new() {
-        let actual = Balance::<TestUnit, i128>::new();
-        let expected = Balance(BTreeMap::new());
-        assert_eq!(actual, expected);
-    }
     #[test]
     fn apply_sum_operation() {
         use maplit::btreemap;
-        let mut actual = Balance::new();
+        let mut actual: TestBalance = Default::default();
         let usd = TestUnit("USD");
         let thb = TestUnit("THB");
         let sum = sum!(2, usd; 3, thb);
-        actual.apply_sum_operation(&sum, |balance, amount| balance + amount);
+        actual.apply_sum_operation(&sum, |balance, amount| {
+            let rhs: i128 = amount.into();
+            balance + rhs
+        });
         let sum = sum!(2, usd; 3, thb);
-        actual.apply_sum_operation(&sum, |balance, amount| balance * amount);
+        actual.apply_sum_operation(&sum, |balance, amount| {
+            let rhs: i128 = amount.into();
+            balance * rhs
+        });
         let expected = Balance(btreemap! {
             usd => 4,
             thb => 9,
@@ -193,7 +197,7 @@ mod test {
         let thb = TestUnit("THB");
         let amount_thb = 45;
         let sum = sum!(amount_usd, usd; amount_thb, thb);
-        let balance = Balance::<TestUnit, i128>::new() + &sum;
+        let balance = <TestBalance as Default>::default() + &sum;
         let actual = format!("{:?}", balance);
         let expected = format!(
             "Balance({{{:?}: {:?}, {:?}: {:?}}})",
@@ -205,7 +209,7 @@ mod test {
     fn sub_assign_sum() {
         use maplit::btreemap;
         let usd = TestUnit("USD");
-        let mut actual = Balance::<TestUnit, i128>::new();
+        let mut actual: TestBalance = Default::default();
         actual -= &sum!(9, usd);
         let expected = Balance(btreemap! {
             usd => -9,
@@ -216,7 +220,7 @@ mod test {
     fn sub_sum() {
         use maplit::btreemap;
         let usd = TestUnit("USD");
-        let immutable = Balance::<TestUnit, i128>::new();
+        let immutable: TestBalance = Default::default();
         let actual = immutable - &sum!(9, usd);
         let expected = Balance(btreemap! {
             usd => -9,
@@ -227,7 +231,7 @@ mod test {
     fn add_assign_sum() {
         use maplit::btreemap;
         let usd = TestUnit("USD");
-        let mut actual = Balance::<TestUnit, i128>::new();
+        let mut actual: TestBalance = Default::default();
         actual += &sum!(9, usd);
         let expected = Balance(btreemap! {
             usd => 9,
@@ -238,7 +242,7 @@ mod test {
     fn add_sum() {
         use maplit::btreemap;
         let usd = TestUnit("USD");
-        let immutable = Balance::<TestUnit, i128>::new();
+        let immutable: TestBalance = Default::default();
         let actual = immutable + &sum!(9, usd);
         let expected = Balance(btreemap! {
             usd => 9,
@@ -250,7 +254,7 @@ mod test {
         let usd = TestUnit("USD");
         let thb = TestUnit("THB");
         let ils = TestUnit("ILS");
-        let balance = Balance::<TestUnit, i128>::new()
+        let balance = <TestBalance as Default>::default()
             + &sum! {
                 100, usd; 200, thb; 300, ils
             };
@@ -264,7 +268,7 @@ mod test {
         let thb = TestUnit("THB");
         let ils = TestUnit("ILS");
         let balance =
-            Balance::<TestUnit, i128>::new() + &sum!(200, usd; 100, thb);
+            <TestBalance as Default>::default() + &sum!(200, usd; 100, thb);
         assert_eq!(balance.unit_amount(usd).unwrap(), &200);
         assert_eq!(balance.unit_amount(thb).unwrap(), &100);
         assert_eq!(balance.unit_amount(ils), None);

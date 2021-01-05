@@ -25,3 +25,5 @@ macro_rules! sum {
 #[cfg(test)]
 #[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Copy, Debug)]
 pub(crate) struct TestUnit(pub(crate) &'static str);
+#[cfg(test)]
+pub(crate) type TestBalance = crate::Balance<TestUnit, i128>;

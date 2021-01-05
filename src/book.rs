@@ -218,10 +218,13 @@ where
                     }
                 },
             )
-            .fold(Balance::new(), |mut balance, (operation, sum)| {
-                operation(&mut balance, sum);
-                balance
-            })
+            .fold(
+                <Balance<U, Bn> as Default>::default(),
+                |mut balance, (operation, sum)| {
+                    operation(&mut balance, sum);
+                    balance
+                },
+            )
     }
     /// Removes an existing transaction from the book.
     ///
@@ -305,11 +308,10 @@ where
 #[cfg(test)]
 mod test {
     use super::{
-        Balance,
         Side::{Credit, Debit},
         TransactionIndex,
     };
-    use crate::test_utils::TestUnit;
+    use crate::test_utils::{TestBalance, TestUnit};
     use crate::transaction::MoveIndex;
     #[test]
     fn new() {
@@ -504,14 +506,14 @@ mod test {
                 account_a_key,
                 TransactionIndex(0)
             ),
-            Balance::new() - &sum!(3, usd),
+            <TestBalance as Default>::default() - &sum!(3, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction::<i128>(
                 account_b_key,
                 TransactionIndex(0)
             ),
-            Balance::new() + &sum!(3, usd),
+            <TestBalance as Default>::default() + &sum!(3, usd),
         );
         book.insert_transaction(TransactionIndex(1), "");
         book.insert_move(
@@ -527,28 +529,28 @@ mod test {
                 account_a_key,
                 TransactionIndex(0)
             ),
-            Balance::new() - &sum!(3, usd),
+            <TestBalance as Default>::default() - &sum!(3, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction::<i128>(
                 account_b_key,
                 TransactionIndex(0)
             ),
-            Balance::new() + &sum!(3, usd),
+            <TestBalance as Default>::default() + &sum!(3, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction::<i128>(
                 account_a_key,
                 TransactionIndex(1)
             ),
-            Balance::new() - &sum!(7, usd),
+            <TestBalance as Default>::default() - &sum!(7, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction::<i128>(
                 account_b_key,
                 TransactionIndex(1)
             ),
-            Balance::new() + &sum!(7, usd),
+            <TestBalance as Default>::default() + &sum!(7, usd),
         );
         book.insert_transaction(TransactionIndex(0), "");
         book.insert_move(
@@ -564,42 +566,42 @@ mod test {
                 account_a_key,
                 TransactionIndex(0)
             ),
-            Balance::new() - &sum!(1, usd),
+            <TestBalance as Default>::default() - &sum!(1, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction::<i128>(
                 account_b_key,
                 TransactionIndex(0)
             ),
-            Balance::new() + &sum!(1, usd),
+            <TestBalance as Default>::default() + &sum!(1, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction::<i128>(
                 account_a_key,
                 TransactionIndex(1)
             ),
-            Balance::new() - &sum!(4, usd),
+            <TestBalance as Default>::default() - &sum!(4, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction::<i128>(
                 account_b_key,
                 TransactionIndex(1)
             ),
-            Balance::new() + &sum!(4, usd),
+            <TestBalance as Default>::default() + &sum!(4, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction::<i128>(
                 account_a_key,
                 TransactionIndex(2)
             ),
-            Balance::new() - &sum!(8, usd),
+            <TestBalance as Default>::default() - &sum!(8, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction::<i128>(
                 account_b_key,
                 TransactionIndex(2)
             ),
-            Balance::new() + &sum!(8, usd),
+            <TestBalance as Default>::default() + &sum!(8, usd),
         );
     }
     #[test]
