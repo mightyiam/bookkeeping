@@ -21,7 +21,7 @@ impl<U: Unit> Sum<U> {
 impl<U: Unit + fmt::Debug> fmt::Debug for Sum<U> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Sum(")?;
-        f.debug_map().entries(self.0.clone()).finish()?;
+        f.debug_map().entries(self.0.iter()).finish()?;
         f.write_str(")")
     }
 }
