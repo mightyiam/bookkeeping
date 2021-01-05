@@ -30,9 +30,11 @@ impl Unit for Currency {};
 
 // Now that we can have units, we can also have books. Let's create a
 // book that is generic over this unit.
-let mut book = Book::<Currency, (), (), (), ()>::new(());
+let mut book = Book::<Currency, u64, (), (), (), ()>::new(());
 // "What are the other type arguments? — you must be wondering.
-// Those are for metadata. They are explained in the next tutorial.
+// The second type argument, `u64`, is for the number type that
+// is used in [Sum]s.
+// The rest are for metadata. They are explained in the next tutorial.
 // In this tutorial, they're filled with Rust's
 // [unit][std::primitive::unit] type. Now back to the book.
 // In this book, we can store accounts, transactions and moves.
@@ -115,15 +117,21 @@ book.insert_move(
 // At this point (no pun intended), we would like to see the balance of
 // the accounts. Well, I would — and I'm writing this tutorial, so:
 let balance = book
-    .account_balance_at_transaction(income_key, TransactionIndex(0));
+    .account_balance_at_transaction::<i128>(
+        income_key,
+        TransactionIndex(0)
+    );
 assert_eq!(
-    balance.amounts().collect::<Vec<_>>(),
+    balance.amounts().collect::<Vec<(&Currency, &i128)>>(),
     vec![(&usd, &-2000)] // negative amount
 );
 let balance = book
-    .account_balance_at_transaction(bank_key, TransactionIndex(0));
+    .account_balance_at_transaction::<i128>(
+        bank_key,
+        TransactionIndex(0)
+    );
 assert_eq!(
-    balance.amounts().collect::<Vec<_>>(),
+    balance.amounts().collect::<Vec<(&Currency, &i128)>>(),
     vec![(&usd, &2000)] // positive amount
 );
 // Cool?
@@ -149,19 +157,28 @@ book.insert_move(
 // Now, let's see some balances, using the index of this most recent
 // transaction:
 let balance = book
-    .account_balance_at_transaction(income_key, TransactionIndex(1));
+    .account_balance_at_transaction::<i128>(
+        income_key,
+        TransactionIndex(1)
+    );
 assert_eq!(
     balance.amounts().collect::<Vec<_>>(),
     vec![(&usd, &-2000)]
 );
 let balance = book
-    .account_balance_at_transaction(bank_key, TransactionIndex(1));
+    .account_balance_at_transaction::<i128>(
+        bank_key,
+        TransactionIndex(1)
+    );
 assert_eq!(
     balance.amounts().collect::<Vec<_>>(),
     vec![(&usd, &1900)]
 );
 let balance = book
-    .account_balance_at_transaction(wallet_key, TransactionIndex(1));
+    .account_balance_at_transaction::<i128>(
+        wallet_key,
+        TransactionIndex(1)
+    );
 assert_eq!(
     balance.amounts().collect::<Vec<_>>(),
     vec![(&usd, &100)]
@@ -183,7 +200,7 @@ book.insert_move(
 let bank_running_balance: Vec<i128> = [0, 1, 2]
     .iter()
     .map(|transaction_index| {
-        book.account_balance_at_transaction(
+        book.account_balance_at_transaction::<i128>(
             bank_key,
             TransactionIndex(*transaction_index),
         )
@@ -203,8 +220,10 @@ let _accounts: Vec<(AccountKey, &Account<()>)> =
     book.accounts().collect();
 // Note that the order of the iterator returned from [Book::accounts] is
 // undefined. And this way for transactions:
-let _transactions: Vec<(TransactionIndex, &Transaction<Currency, (), ()>)> =
-    book.transactions().collect();
+let _transactions: Vec<(
+    TransactionIndex,
+    &Transaction<Currency, u64, (), ()>
+)> = book.transactions().collect();
 
 // ## Metadata
 
@@ -220,7 +239,7 @@ struct AccountMetadata {
     id: u8,
     name: &'static str,
 }
-let mut book: Book<Currency, u8, AccountMetadata, (), &str> =
+let mut book: Book<Currency, u64, u8, AccountMetadata, (), &str> =
     Book::new(5);
 // In order, the types of metadata that are defined in this example are:
 //

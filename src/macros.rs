@@ -4,6 +4,7 @@ macro_rules! test_book {
     ($metadata:expr) => {{
         type TestBook = crate::book::Book<
             crate::unit::TestUnit,
+            u64,
             &'static str,
             &'static str,
             &'static str,
@@ -14,9 +15,9 @@ macro_rules! test_book {
 }
 #[cfg(test)]
 macro_rules! sum {
-    () => { crate::sum::Sum::<crate::unit::TestUnit>::new() };
+    () => { crate::sum::Sum::<crate::unit::TestUnit, u64>::new() };
     ($($amount:expr, $unit:ident);*) => {{
-        let mut sum = crate::sum::Sum::<crate::unit::TestUnit>::new();
+        let mut sum = crate::sum::Sum::<crate::unit::TestUnit, u64>::new();
         $(sum.set_amount_for_unit($amount, $unit);)*
         sum
     }}

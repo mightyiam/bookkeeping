@@ -13,14 +13,15 @@ new_key_type! {
 /// Represents a book.
 ///
 /// - U: unit type
+/// - Sn: The number type used in [Sum][Sum]
 /// - B: Book metadata
 /// - A: Account metadata
 /// - M: Move metadata
 /// - T: Transaction metadata
-pub struct Book<U: Unit, B, A, M, T> {
+pub struct Book<U: Unit, Sn, B, A, M, T> {
     metadata: B,
     accounts: DenseSlotMap<AccountKey, Account<A>>,
-    transactions: Vec<Transaction<U, M, T>>,
+    transactions: Vec<Transaction<U, Sn, M, T>>,
 }
 /// Represents a side of a [Move].
 pub enum Side {
@@ -32,7 +33,7 @@ pub enum Side {
 
 /// Used to index transactions in the book.
 pub struct TransactionIndex(pub usize);
-impl<U: Unit, B, A, M, T> Book<U, B, A, M, T> {
+impl<U: Unit, Sn, B, A, M, T> Book<U, Sn, B, A, M, T> {
     /// Creates a new book
     pub fn new(metadata: B) -> Self {
         Self {
@@ -86,7 +87,7 @@ impl<U: Unit, B, A, M, T> Book<U, B, A, M, T> {
         move_index: MoveIndex,
         debit_account_key: AccountKey,
         credit_account_key: AccountKey,
-        sum: Sum<U>,
+        sum: Sum<U, Sn>,
         metadata: M,
     ) {
         [debit_account_key, credit_account_key].iter().for_each(
@@ -118,7 +119,8 @@ impl<U: Unit, B, A, M, T> Book<U, B, A, M, T> {
     /// Gets an iterator of existing transactions in their order.
     pub fn transactions(
         &self,
-    ) -> impl Iterator<Item = (TransactionIndex, &Transaction<U, M, T>)> {
+    ) -> impl Iterator<Item = (TransactionIndex, &Transaction<U, Sn, M, T>)>
+    {
         self.transactions
             .iter()
             .enumerate()
@@ -176,18 +178,25 @@ impl<U: Unit, B, A, M, T> Book<U, B, A, M, T> {
     ///
     /// - `account_key` is not in the book.
     #[allow(clippy::type_complexity)]
-    pub fn account_balance_at_transaction<'a>(
+    pub fn account_balance_at_transaction<'a, Bn>(
         &'a self,
         account_key: AccountKey,
         transaction_index: TransactionIndex,
-    ) -> Balance<U> {
+    ) -> Balance<U, Bn>
+    where
+        Bn: Default + ops::Sub<Output = Bn> + ops::Add<Output = Bn> + Clone,
+        Sn: Clone + Into<Bn>,
+    {
         self.assert_has_account(account_key);
         self.transactions
             .iter()
             .take(transaction_index.0 + 1)
             .flat_map(|transaction| transaction.moves.iter())
             .filter_map(
-                |move_| -> Option<(fn(&mut Balance<U>, &'a Sum<U>), &Sum<U>)> {
+                |move_| -> Option<(
+                    fn(&mut Balance<U, Bn>, &'a Sum<U, Sn>),
+                    &Sum<U, Sn>,
+                )> {
                     if move_.debit_account_key == account_key {
                         Some((ops::SubAssign::sub_assign, &move_.sum))
                     } else if move_.credit_account_key == account_key {
@@ -235,7 +244,7 @@ impl<U: Unit, B, A, M, T> Book<U, B, A, M, T> {
         &mut self,
         transaction_index: TransactionIndex,
         move_index: MoveIndex,
-        sum: Sum<U>,
+        sum: Sum<U, Sn>,
     ) {
         self.transactions[transaction_index.0].moves[move_index.0].sum = sum;
     }
@@ -452,7 +461,10 @@ mod test {
         book.insert_transaction(TransactionIndex(0), "");
         let account_key = book.new_account("");
         book.accounts.remove(account_key);
-        book.account_balance_at_transaction(account_key, TransactionIndex(0));
+        book.account_balance_at_transaction::<i128>(
+            account_key,
+            TransactionIndex(0),
+        );
     }
     #[test]
     fn account_balance_at_transaction() {
@@ -470,14 +482,14 @@ mod test {
             "",
         );
         assert_eq!(
-            book.account_balance_at_transaction(
+            book.account_balance_at_transaction::<i128>(
                 account_a_key,
                 TransactionIndex(0)
             ),
             Balance::new() - &sum!(3, usd),
         );
         assert_eq!(
-            book.account_balance_at_transaction(
+            book.account_balance_at_transaction::<i128>(
                 account_b_key,
                 TransactionIndex(0)
             ),
@@ -493,28 +505,28 @@ mod test {
             "",
         );
         assert_eq!(
-            book.account_balance_at_transaction(
+            book.account_balance_at_transaction::<i128>(
                 account_a_key,
                 TransactionIndex(0)
             ),
             Balance::new() - &sum!(3, usd),
         );
         assert_eq!(
-            book.account_balance_at_transaction(
+            book.account_balance_at_transaction::<i128>(
                 account_b_key,
                 TransactionIndex(0)
             ),
             Balance::new() + &sum!(3, usd),
         );
         assert_eq!(
-            book.account_balance_at_transaction(
+            book.account_balance_at_transaction::<i128>(
                 account_a_key,
                 TransactionIndex(1)
             ),
             Balance::new() - &sum!(7, usd),
         );
         assert_eq!(
-            book.account_balance_at_transaction(
+            book.account_balance_at_transaction::<i128>(
                 account_b_key,
                 TransactionIndex(1)
             ),
@@ -530,42 +542,42 @@ mod test {
             "",
         );
         assert_eq!(
-            book.account_balance_at_transaction(
+            book.account_balance_at_transaction::<i128>(
                 account_a_key,
                 TransactionIndex(0)
             ),
             Balance::new() - &sum!(1, usd),
         );
         assert_eq!(
-            book.account_balance_at_transaction(
+            book.account_balance_at_transaction::<i128>(
                 account_b_key,
                 TransactionIndex(0)
             ),
             Balance::new() + &sum!(1, usd),
         );
         assert_eq!(
-            book.account_balance_at_transaction(
+            book.account_balance_at_transaction::<i128>(
                 account_a_key,
                 TransactionIndex(1)
             ),
             Balance::new() - &sum!(4, usd),
         );
         assert_eq!(
-            book.account_balance_at_transaction(
+            book.account_balance_at_transaction::<i128>(
                 account_b_key,
                 TransactionIndex(1)
             ),
             Balance::new() + &sum!(4, usd),
         );
         assert_eq!(
-            book.account_balance_at_transaction(
+            book.account_balance_at_transaction::<i128>(
                 account_a_key,
                 TransactionIndex(2)
             ),
             Balance::new() - &sum!(8, usd),
         );
         assert_eq!(
-            book.account_balance_at_transaction(
+            book.account_balance_at_transaction::<i128>(
                 account_b_key,
                 TransactionIndex(2)
             ),
