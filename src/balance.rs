@@ -2,7 +2,7 @@ use crate::sum::Sum;
 use crate::unit::Unit;
 use std::collections::BTreeMap;
 use std::fmt;
-use std::ops;
+use std::ops::{Add, AddAssign, Sub, SubAssign};
 /// Represents a [balance](https://en.wikipedia.org/wiki/Balance_(accounting)), yet not necessarily the current balance.
 #[derive(PartialEq, Clone)]
 pub struct Balance<U: Unit, Bn>(pub(crate) BTreeMap<U, Bn>);
@@ -56,9 +56,9 @@ impl<U: Unit + fmt::Debug, Bn: fmt::Debug> fmt::Debug for Balance<U, Bn> {
         f.write_str(")")
     }
 }
-impl<U: Unit, Bn, Sn> ops::SubAssign<&Sum<U, Sn>> for Balance<U, Bn>
+impl<U: Unit, Bn, Sn> SubAssign<&Sum<U, Sn>> for Balance<U, Bn>
 where
-    Bn: Default + ops::Sub<Output = Bn> + Clone,
+    Bn: Default + Sub<Output = Bn> + Clone,
     Sn: Clone + Into<Bn>,
 {
     fn sub_assign(&mut self, sum: &Sum<U, Sn>) {
@@ -67,9 +67,9 @@ where
         });
     }
 }
-impl<U: Unit, Bn, Sn> ops::SubAssign<&(U, Sn)> for Balance<U, Bn>
+impl<U: Unit, Bn, Sn> SubAssign<&(U, Sn)> for Balance<U, Bn>
 where
-    Bn: Default + ops::Sub<Output = Bn> + Clone,
+    Bn: Default + Sub<Output = Bn> + Clone,
     Sn: Clone + Into<Bn>,
 {
     fn sub_assign(&mut self, unit_amount: &(U, Sn)) {
@@ -78,9 +78,9 @@ where
         });
     }
 }
-impl<U: Unit, Bn, Sn> ops::Sub<&Sum<U, Sn>> for Balance<U, Bn>
+impl<U: Unit, Bn, Sn> Sub<&Sum<U, Sn>> for Balance<U, Bn>
 where
-    Bn: Default + ops::Sub<Output = Bn> + Clone,
+    Bn: Default + Sub<Output = Bn> + Clone,
     Sn: Clone + Into<Bn>,
 {
     type Output = Self;
@@ -89,9 +89,9 @@ where
         self
     }
 }
-impl<U: Unit, Bn, Sn> ops::Sub<&(U, Sn)> for Balance<U, Bn>
+impl<U: Unit, Bn, Sn> Sub<&(U, Sn)> for Balance<U, Bn>
 where
-    Bn: Default + ops::Sub<Output = Bn> + Clone,
+    Bn: Default + Sub<Output = Bn> + Clone,
     Sn: Clone + Into<Bn>,
 {
     type Output = Self;
@@ -100,9 +100,9 @@ where
         self
     }
 }
-impl<U: Unit, Bn, Sn> ops::AddAssign<&Sum<U, Sn>> for Balance<U, Bn>
+impl<U: Unit, Bn, Sn> AddAssign<&Sum<U, Sn>> for Balance<U, Bn>
 where
-    Bn: Default + ops::Add<Output = Bn> + Clone,
+    Bn: Default + Add<Output = Bn> + Clone,
     Sn: Clone + Into<Bn>,
 {
     fn add_assign(&mut self, sum: &Sum<U, Sn>) {
@@ -111,9 +111,9 @@ where
         });
     }
 }
-impl<U: Unit, Bn, Sn> ops::AddAssign<&(U, Sn)> for Balance<U, Bn>
+impl<U: Unit, Bn, Sn> AddAssign<&(U, Sn)> for Balance<U, Bn>
 where
-    Bn: Default + ops::Add<Output = Bn> + Clone,
+    Bn: Default + Add<Output = Bn> + Clone,
     Sn: Clone + Into<Bn>,
 {
     fn add_assign(&mut self, unit_amount: &(U, Sn)) {
@@ -122,9 +122,9 @@ where
         });
     }
 }
-impl<U: Unit, Bn, Sn> ops::Add<&Sum<U, Sn>> for Balance<U, Bn>
+impl<U: Unit, Bn, Sn> Add<&Sum<U, Sn>> for Balance<U, Bn>
 where
-    Bn: Default + ops::Add<Output = Bn> + Clone,
+    Bn: Default + Add<Output = Bn> + Clone,
     Sn: Clone + Into<Bn>,
 {
     type Output = Self;
@@ -133,9 +133,9 @@ where
         self
     }
 }
-impl<U: Unit, Bn, Sn> ops::Add<&(U, Sn)> for Balance<U, Bn>
+impl<U: Unit, Bn, Sn> Add<&(U, Sn)> for Balance<U, Bn>
 where
-    Bn: Default + ops::Add<Output = Bn> + Clone,
+    Bn: Default + Add<Output = Bn> + Clone,
     Sn: Clone + Into<Bn>,
 {
     type Output = Self;

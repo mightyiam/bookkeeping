@@ -5,7 +5,7 @@ use crate::sum::Sum;
 use crate::transaction::{MoveIndex, Transaction};
 use crate::unit::Unit;
 use slotmap::{new_key_type, DenseSlotMap};
-use std::ops;
+use std::ops::{Add, AddAssign, Sub, SubAssign};
 new_key_type! {
     /// A key type for referencing accounts.
     pub struct AccountKey;
@@ -184,7 +184,7 @@ impl<U: Unit, Sn, B, A, M, T> Book<U, Sn, B, A, M, T> {
         transaction_index: TransactionIndex,
     ) -> Balance<U, Bn>
     where
-        Bn: Default + ops::Sub<Output = Bn> + ops::Add<Output = Bn> + Clone,
+        Bn: Default + Sub<Output = Bn> + Add<Output = Bn> + Clone,
         Sn: Clone + Into<Bn>,
     {
         self.assert_has_account(account_key);
@@ -198,9 +198,9 @@ impl<U: Unit, Sn, B, A, M, T> Book<U, Sn, B, A, M, T> {
                     &Sum<U, Sn>,
                 )> {
                     if move_.debit_account_key == account_key {
-                        Some((ops::SubAssign::sub_assign, &move_.sum))
+                        Some((SubAssign::sub_assign, &move_.sum))
                     } else if move_.credit_account_key == account_key {
-                        Some((ops::AddAssign::add_assign, &move_.sum))
+                        Some((AddAssign::add_assign, &move_.sum))
                     } else {
                         None
                     }
