@@ -235,7 +235,7 @@ struct Account {
     id: u8,
     name: &'static str,
 }
-let mut book: Book<Currency, u64, u8, Account, (), &str> =
+let mut book: Book<Currency, u64, u8, Account, &str, ()> =
     Book::new(5);
 // In order, the types of metadata that are defined in this example are:
 //

@@ -9,19 +9,19 @@ new_key_type! {
     pub struct AccountKey;
 }
 /// Represents a book.
-pub struct Book<Unit, SumNumber, Meta, Account, MoveMeta, TransactionMeta>
+pub struct Book<Unit, SumNumber, Meta, Account, TransactionMeta, MoveMeta>
 where
     Unit: Ord,
 {
     metadata: Meta,
     accounts: DenseSlotMap<AccountKey, Account>,
-    transactions: Vec<Transaction<Unit, SumNumber, MoveMeta, TransactionMeta>>,
+    transactions: Vec<Transaction<Unit, SumNumber, TransactionMeta, MoveMeta>>,
 }
 
 /// Used to index transactions in the book.
 pub struct TransactionIndex(pub usize);
-impl<Unit, SumNumber, Meta, Account, MoveMeta, TransactionMeta>
-    Book<Unit, SumNumber, Meta, Account, MoveMeta, TransactionMeta>
+impl<Unit, SumNumber, Meta, Account, TransactionMeta, MoveMeta>
+    Book<Unit, SumNumber, Meta, Account, TransactionMeta, MoveMeta>
 where
     Unit: Ord,
 {
@@ -117,7 +117,7 @@ where
     ) -> impl Iterator<
         Item = (
             TransactionIndex,
-            &Transaction<Unit, SumNumber, MoveMeta, TransactionMeta>,
+            &Transaction<Unit, SumNumber, TransactionMeta, MoveMeta>,
         ),
     > {
         self.transactions
