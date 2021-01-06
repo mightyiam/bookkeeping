@@ -2,24 +2,31 @@ use std::collections::BTreeMap;
 use std::fmt;
 /// Represents amounts of any number of units.
 #[derive(Clone, PartialEq, Default)]
-pub struct Sum<U, Sn>(pub(crate) BTreeMap<U, Sn>)
+pub struct Sum<Unit, Number>(pub(crate) BTreeMap<Unit, Number>)
 where
-    U: Ord;
-impl<U: Ord, Sn> Sum<U, Sn> {
+    Unit: Ord;
+impl<Unit, Number> Sum<Unit, Number>
+where
+    Unit: Ord,
+{
     /// Creates an empty sum.
     pub fn new() -> Self {
         Self(BTreeMap::new())
     }
     /// Sets the amount of a unit in a sum.
-    pub fn set_amount_for_unit(&mut self, amount: Sn, unit_: U) {
+    pub fn set_amount_for_unit(&mut self, amount: Number, unit_: Unit) {
         self.0.insert(unit_, amount);
     }
     /// Gets the amounts of all units in undefined order.
-    pub fn amounts(&self) -> impl Iterator<Item = (&U, &Sn)> {
+    pub fn amounts(&self) -> impl Iterator<Item = (&Unit, &Number)> {
         self.0.iter()
     }
 }
-impl<U: Ord + fmt::Debug, Sn: fmt::Debug> fmt::Debug for Sum<U, Sn> {
+impl<Unit, Number> fmt::Debug for Sum<Unit, Number>
+where
+    Unit: Ord + fmt::Debug,
+    Number: fmt::Debug,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Sum(")?;
         f.debug_map().entries(self.0.iter()).finish()?;

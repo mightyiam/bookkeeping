@@ -4,18 +4,18 @@ use std::fmt;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 /// Represents a [balance](https://en.wikipedia.org/wiki/Balance_(accounting)), yet not necessarily the current balance.
 #[derive(PartialEq, Clone)]
-pub struct Balance<U, Bn>(pub(crate) BTreeMap<U, Bn>);
-impl<U, Bn> Balance<U, Bn>
+pub struct Balance<Unit, Number>(pub(crate) BTreeMap<Unit, Number>);
+impl<Unit, Number> Balance<Unit, Number>
 where
-    U: Ord + Clone,
+    Unit: Ord + Clone,
 {
-    fn apply_sum_operation<Sn>(
+    fn apply_sum_operation<SumNumber>(
         &mut self,
-        rhs: &Sum<U, Sn>,
-        amount_op: fn(Bn, Sn) -> Bn,
+        rhs: &Sum<Unit, SumNumber>,
+        amount_op: fn(Number, SumNumber) -> Number,
     ) where
-        Bn: Default + Clone,
-        Sn: Clone,
+        Number: Default + Clone,
+        SumNumber: Clone,
     {
         rhs.0.iter().for_each(|(unit, amount)| {
             self.apply_unit_operation(
@@ -24,13 +24,13 @@ where
             )
         });
     }
-    fn apply_unit_operation<Sn>(
+    fn apply_unit_operation<SumNumber>(
         &mut self,
-        (unit, amount): &(U, Sn),
-        amount_op: fn(Bn, Sn) -> Bn,
+        (unit, amount): &(Unit, SumNumber),
+        amount_op: fn(Number, SumNumber) -> Number,
     ) where
-        Bn: Default + Clone,
-        Sn: Clone,
+        Number: Default + Clone,
+        SumNumber: Clone,
     {
         self.0
             .entry(unit.clone())
@@ -40,26 +40,26 @@ where
             .or_insert_with(|| amount_op(Default::default(), amount.clone()));
     }
     /// Gets the amounts of all units in undefined order.
-    pub fn amounts(&self) -> impl Iterator<Item = (&U, &Bn)> {
+    pub fn amounts(&self) -> impl Iterator<Item = (&Unit, &Number)> {
         self.0.iter()
     }
     /// Gets the amount of a provided unit.
-    pub fn unit_amount(&self, unit: U) -> Option<&Bn> {
+    pub fn unit_amount(&self, unit: Unit) -> Option<&Number> {
         self.0.get(&unit)
     }
 }
-impl<U, Bn> Default for Balance<U, Bn>
+impl<Unit, Number> Default for Balance<Unit, Number>
 where
-    U: Ord,
+    Unit: Ord,
 {
     fn default() -> Self {
         Self(Default::default())
     }
 }
-impl<U, Bn> fmt::Debug for Balance<U, Bn>
+impl<Unit, Number> fmt::Debug for Balance<Unit, Number>
 where
-    U: fmt::Debug,
-    Bn: fmt::Debug,
+    Unit: fmt::Debug,
+    Number: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Balance(")?;
@@ -67,98 +67,104 @@ where
         f.write_str(")")
     }
 }
-impl<U, Bn, Sn> SubAssign<&Sum<U, Sn>> for Balance<U, Bn>
+impl<Unit, Number, SumNumber> SubAssign<&Sum<Unit, SumNumber>>
+    for Balance<Unit, Number>
 where
-    U: Ord + Clone,
-    Bn: Default + Sub<Output = Bn> + Clone,
-    Sn: Clone + Into<Bn>,
+    Unit: Ord + Clone,
+    Number: Default + Sub<Output = Number> + Clone,
+    SumNumber: Clone + Into<Number>,
 {
-    fn sub_assign(&mut self, sum: &Sum<U, Sn>) {
+    fn sub_assign(&mut self, sum: &Sum<Unit, SumNumber>) {
         self.apply_sum_operation(sum, |balance_amount, sum_amount| {
             balance_amount - sum_amount.into()
         });
     }
 }
-impl<U, Bn, Sn> SubAssign<&(U, Sn)> for Balance<U, Bn>
+impl<Unit, Number, SumNumber> SubAssign<&(Unit, SumNumber)>
+    for Balance<Unit, Number>
 where
-    U: Ord + Clone,
-    Bn: Default + Sub<Output = Bn> + Clone,
-    Sn: Clone + Into<Bn>,
+    Unit: Ord + Clone,
+    Number: Default + Sub<Output = Number> + Clone,
+    SumNumber: Clone + Into<Number>,
 {
-    fn sub_assign(&mut self, unit_amount: &(U, Sn)) {
+    fn sub_assign(&mut self, unit_amount: &(Unit, SumNumber)) {
         self.apply_unit_operation(unit_amount, |balance, amount| {
             balance - amount.into()
         });
     }
 }
-impl<U, Bn, Sn> Sub<&Sum<U, Sn>> for Balance<U, Bn>
+impl<Unit, Number, SumNumber> Sub<&Sum<Unit, SumNumber>>
+    for Balance<Unit, Number>
 where
-    U: Ord + Clone,
-    Bn: Default + Sub<Output = Bn> + Clone,
-    Sn: Clone + Into<Bn>,
+    Unit: Ord + Clone,
+    Number: Default + Sub<Output = Number> + Clone,
+    SumNumber: Clone + Into<Number>,
 {
     type Output = Self;
-    fn sub(mut self, sum: &Sum<U, Sn>) -> Self::Output {
+    fn sub(mut self, sum: &Sum<Unit, SumNumber>) -> Self::Output {
         self -= sum;
         self
     }
 }
-impl<U, Bn, Sn> Sub<&(U, Sn)> for Balance<U, Bn>
+impl<Unit, Number, SumNumber> Sub<&(Unit, SumNumber)> for Balance<Unit, Number>
 where
-    U: Ord + Clone,
-    Bn: Default + Sub<Output = Bn> + Clone,
-    Sn: Clone + Into<Bn>,
+    Unit: Ord + Clone,
+    Number: Default + Sub<Output = Number> + Clone,
+    SumNumber: Clone + Into<Number>,
 {
     type Output = Self;
-    fn sub(mut self, unit_amount: &(U, Sn)) -> Self::Output {
+    fn sub(mut self, unit_amount: &(Unit, SumNumber)) -> Self::Output {
         self -= unit_amount;
         self
     }
 }
-impl<U, Bn, Sn> AddAssign<&Sum<U, Sn>> for Balance<U, Bn>
+impl<Unit, Number, SumNumber> AddAssign<&Sum<Unit, SumNumber>>
+    for Balance<Unit, Number>
 where
-    U: Ord + Clone,
-    Bn: Default + Add<Output = Bn> + Clone,
-    Sn: Clone + Into<Bn>,
+    Unit: Ord + Clone,
+    Number: Default + Add<Output = Number> + Clone,
+    SumNumber: Clone + Into<Number>,
 {
-    fn add_assign(&mut self, sum: &Sum<U, Sn>) {
+    fn add_assign(&mut self, sum: &Sum<Unit, SumNumber>) {
         self.apply_sum_operation(sum, |balance_amount, sum_amount| {
             balance_amount + sum_amount.into()
         });
     }
 }
-impl<U, Bn, Sn> AddAssign<&(U, Sn)> for Balance<U, Bn>
+impl<Unit, Number, SumNumber> AddAssign<&(Unit, SumNumber)>
+    for Balance<Unit, Number>
 where
-    U: Ord + Clone,
-    Bn: Default + Add<Output = Bn> + Clone,
-    Sn: Clone + Into<Bn>,
+    Unit: Ord + Clone,
+    Number: Default + Add<Output = Number> + Clone,
+    SumNumber: Clone + Into<Number>,
 {
-    fn add_assign(&mut self, unit_amount: &(U, Sn)) {
+    fn add_assign(&mut self, unit_amount: &(Unit, SumNumber)) {
         self.apply_unit_operation(unit_amount, |balance, amount| {
             balance + amount.into()
         });
     }
 }
-impl<U, Bn, Sn> Add<&Sum<U, Sn>> for Balance<U, Bn>
+impl<Unit, Number, SumNumber> Add<&Sum<Unit, SumNumber>>
+    for Balance<Unit, Number>
 where
-    U: Ord + Clone,
-    Bn: Default + Add<Output = Bn> + Clone,
-    Sn: Clone + Into<Bn>,
+    Unit: Ord + Clone,
+    Number: Default + Add<Output = Number> + Clone,
+    SumNumber: Clone + Into<Number>,
 {
     type Output = Self;
-    fn add(mut self, sum: &Sum<U, Sn>) -> Self::Output {
+    fn add(mut self, sum: &Sum<Unit, SumNumber>) -> Self::Output {
         self += sum;
         self
     }
 }
-impl<U, Bn, Sn> Add<&(U, Sn)> for Balance<U, Bn>
+impl<Unit, Number, SumNumber> Add<&(Unit, SumNumber)> for Balance<Unit, Number>
 where
-    U: Ord + Clone,
-    Bn: Default + Add<Output = Bn> + Clone,
-    Sn: Clone + Into<Bn>,
+    Unit: Ord + Clone,
+    Number: Default + Add<Output = Number> + Clone,
+    SumNumber: Clone + Into<Number>,
 {
     type Output = Self;
-    fn add(mut self, unit_amount: &(U, Sn)) -> Self::Output {
+    fn add(mut self, unit_amount: &(Unit, SumNumber)) -> Self::Output {
         self += unit_amount;
         self
     }

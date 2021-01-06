@@ -1,10 +1,10 @@
 /// Represents an [account](https://en.wikipedia.org/wiki/Account_(bookkeeping)).
-pub struct Account<A> {
-    pub(crate) metadata: A,
+pub struct Account<Meta> {
+    pub(crate) metadata: Meta,
 }
-impl<A> Account<A> {
+impl<Meta> Account<Meta> {
     /// Gets the metadata of the account.
-    pub fn metadata(&self) -> &A {
+    pub fn metadata(&self) -> &Meta {
         &self.metadata
     }
 }
