@@ -15,9 +15,9 @@ macro_rules! test_book {
 }
 #[cfg(test)]
 macro_rules! sum {
-    () => { crate::sum::Sum::<&'static str, u64>::new() };
+    () => { crate::sum::Sum::<&'static str, u64>::default() };
     ($($amount:expr, $unit:ident);*) => {{
-        let mut sum = crate::sum::Sum::<&str, u64>::new();
+        let mut sum = crate::sum::Sum::<&str, u64>::default();
         $(sum.set_amount_for_unit($amount, $unit);)*
         sum
     }}

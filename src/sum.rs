@@ -9,10 +9,6 @@ impl<Unit, Number> Sum<Unit, Number>
 where
     Unit: Ord,
 {
-    /// Creates an empty sum.
-    pub fn new() -> Self {
-        Self(BTreeMap::new())
-    }
     /// Sets the amount of a unit in a sum.
     pub fn set_amount_for_unit(&mut self, amount: Number, unit_: Unit) {
         self.0.insert(unit_, amount);
@@ -38,8 +34,8 @@ mod test {
     use super::Sum;
     use maplit::btreemap;
     #[test]
-    fn new() {
-        let actual = Sum::<&str, usize>::new();
+    fn default() {
+        let actual = Sum::<&str, usize>::default();
         let expected = Sum(btreemap! {});
         assert_eq!(actual, expected);
     }
@@ -57,7 +53,7 @@ mod test {
     #[test]
     fn set_amount_for_unit() {
         let unit = "USD";
-        let mut actual = Sum::new();
+        let mut actual = Sum::default();
         actual.set_amount_for_unit(3, unit);
         let expected = Sum(btreemap! { unit => 3 });
         assert_eq!(actual, expected);

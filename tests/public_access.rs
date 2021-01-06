@@ -1,6 +1,6 @@
 #![allow(path_statements)]
 use bookkeeping::*;
-#[derive(Clone, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Default)]
 struct TestUnit;
 #[test]
 fn balance() {
@@ -38,7 +38,7 @@ fn move_() {
 #[test]
 fn sum() {
     type TestSum = Sum<TestUnit, u64>;
-    TestSum::new;
+    TestSum::default;
     TestSum::set_amount_for_unit;
     TestSum::amounts;
 }
