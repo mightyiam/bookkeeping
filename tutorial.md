@@ -21,7 +21,7 @@ use bookkeeping::*;
 // units of distance or volume... But if we're honest, they will usually
 // represent some money currency. Yet, it's not this crate's scope to
 // make such decisions. This crate lets you define your own unit type.
-#[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Copy, Debug)]
+#[derive(Ord, PartialOrd, Eq, PartialEq, Clone, Copy, Debug, Default)]
 struct Currency(&'static str);
 
 // Now that we can have units, we can also have books. Let's create a
@@ -68,7 +68,7 @@ book.insert_transaction(TransactionIndex(0), ());
 // So, now we can move money around. Which is exciting. I know.
 // But, actually, we can't do that yet. Cool motif, huh? We now need a
 // _sum_. "A what—now?" you ask? A sum. Look:
-let mut sum = Sum::new();
+let mut sum = Sum::default();
 sum.set_amount_for_unit(2000, usd);
 // We have created a sum and set the amount of a specific unit in it.
 // "Wait — support for multiple units?" (that's you, asking).
@@ -137,7 +137,7 @@ let wallet_key = book.insert_account(());
 // This created a new account that represents a wallet.
 book.insert_transaction(TransactionIndex(1), ());
 // This created a new empty transaction and inserted it at index `1`.
-let mut sum = Sum::new();
+let mut sum = Sum::default();
 sum.set_amount_for_unit(100, usd);
 book.insert_move(
     TransactionIndex(1),
@@ -182,7 +182,7 @@ assert_eq!(
 
 // Now, let's insert a new transaction between the two existing ones:
 book.insert_transaction(TransactionIndex(1), ());
-let mut sum = Sum::new();
+let mut sum = Sum::default();
 sum.set_amount_for_unit(1000, usd);
 book.insert_move(
     TransactionIndex(1),
@@ -274,7 +274,7 @@ book.insert_move(
     MoveIndex(0),
     bank_key,
     wallet_key,
-    Sum::new(),
+    Sum::default(),
     ()
 );
 assert_eq!(
