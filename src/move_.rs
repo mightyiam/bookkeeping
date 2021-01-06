@@ -8,24 +8,24 @@ pub enum Side {
     Credit,
 }
 /// Represents a move of a [Sum] from one account to another.
-pub struct Move<U, Sn, M>
+pub struct Move<Unit, Number, Meta>
 where
-    U: Ord,
+    Unit: Ord,
 {
-    pub(crate) metadata: M,
+    pub(crate) metadata: Meta,
     pub(crate) debit_account_key: AccountKey,
     pub(crate) credit_account_key: AccountKey,
-    pub(crate) sum: Sum<U, Sn>,
+    pub(crate) sum: Sum<Unit, Number>,
 }
-impl<U, Sn, M> Move<U, Sn, M>
+impl<Unit, Number, Meta> Move<Unit, Number, Meta>
 where
-    U: Ord,
+    Unit: Ord,
 {
     pub(crate) fn new(
         debit_account_key: AccountKey,
         credit_account_key: AccountKey,
-        sum: Sum<U, Sn>,
-        metadata: M,
+        sum: Sum<Unit, Number>,
+        metadata: Meta,
     ) -> Self {
         assert!(
             debit_account_key != credit_account_key,
@@ -46,11 +46,11 @@ where
         }
     }
     /// Gets the sum of a move.
-    pub fn sum(&self) -> &Sum<U, Sn> {
+    pub fn sum(&self) -> &Sum<Unit, Number> {
         &self.sum
     }
     /// Gets the metadata of the move.
-    pub fn metadata(&self) -> &M {
+    pub fn metadata(&self) -> &Meta {
         &self.metadata
     }
 }

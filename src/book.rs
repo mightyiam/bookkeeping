@@ -10,30 +10,24 @@ new_key_type! {
     pub struct AccountKey;
 }
 /// Represents a book.
-///
-/// - U: unit type
-/// - Sn: The number type used in [Sum][Sum]
-/// - B: Book metadata
-/// - A: Account metadata
-/// - M: Move metadata
-/// - T: Transaction metadata
-pub struct Book<U, Sn, B, A, M, T>
+pub struct Book<Unit, SumNumber, Meta, AccountMeta, MoveMeta, TransactionMeta>
 where
-    U: Ord,
+    Unit: Ord,
 {
-    metadata: B,
-    accounts: DenseSlotMap<AccountKey, Account<A>>,
-    transactions: Vec<Transaction<U, Sn, M, T>>,
+    metadata: Meta,
+    accounts: DenseSlotMap<AccountKey, Account<AccountMeta>>,
+    transactions: Vec<Transaction<Unit, SumNumber, MoveMeta, TransactionMeta>>,
 }
 
 /// Used to index transactions in the book.
 pub struct TransactionIndex(pub usize);
-impl<U, Sn, B, A, M, T> Book<U, Sn, B, A, M, T>
+impl<Unit, SumNumber, Meta, AccountMeta, MoveMeta, TransactionMeta>
+    Book<Unit, SumNumber, Meta, AccountMeta, MoveMeta, TransactionMeta>
 where
-    U: Ord,
+    Unit: Ord,
 {
     /// Creates a new book
-    pub fn new(metadata: B) -> Self {
+    pub fn new(metadata: Meta) -> Self {
         Self {
             metadata,
             accounts: DenseSlotMap::with_key(),
@@ -41,15 +35,15 @@ where
         }
     }
     /// Gets the book's metadata.
-    pub fn metadata(&self) -> &B {
+    pub fn metadata(&self) -> &Meta {
         &self.metadata
     }
     /// Sets the book's metadata.
-    pub fn set_book_metadata(&mut self, metadata: B) {
+    pub fn set_book_metadata(&mut self, metadata: Meta) {
         self.metadata = metadata;
     }
     /// Creates a new account.
-    pub fn new_account(&mut self, metadata: A) -> AccountKey {
+    pub fn new_account(&mut self, metadata: AccountMeta) -> AccountKey {
         self.accounts.insert(Account { metadata })
     }
     /// Creates a transaction and inserts it at an index.
@@ -60,9 +54,9 @@ where
     pub fn insert_transaction(
         &mut self,
         transaction_index: TransactionIndex,
-        metadata: T,
+        metadata: TransactionMeta,
     ) where
-        U: Ord,
+        Unit: Ord,
     {
         self.transactions.insert(
             transaction_index.0,
@@ -87,10 +81,10 @@ where
         move_index: MoveIndex,
         debit_account_key: AccountKey,
         credit_account_key: AccountKey,
-        sum: Sum<U, Sn>,
-        metadata: M,
+        sum: Sum<Unit, SumNumber>,
+        metadata: MoveMeta,
     ) where
-        U: Ord,
+        Unit: Ord,
     {
         [debit_account_key, credit_account_key].iter().for_each(
             |account_key| {
@@ -110,19 +104,28 @@ where
     /// ## Panics
     ///
     /// - `account_key` is not in the book.
-    pub fn get_account(&self, account_key: AccountKey) -> &Account<A> {
+    pub fn get_account(
+        &self,
+        account_key: AccountKey,
+    ) -> &Account<AccountMeta> {
         self.assert_has_account(account_key);
         self.accounts.get(account_key).unwrap()
     }
     /// Gets an iterator of existing accounts in order of creation.
-    pub fn accounts(&self) -> impl Iterator<Item = (AccountKey, &Account<A>)> {
+    pub fn accounts(
+        &self,
+    ) -> impl Iterator<Item = (AccountKey, &Account<AccountMeta>)> {
         self.accounts.iter()
     }
     /// Gets an iterator of existing transactions in their order.
     pub fn transactions(
         &self,
-    ) -> impl Iterator<Item = (TransactionIndex, &Transaction<U, Sn, M, T>)>
-    {
+    ) -> impl Iterator<
+        Item = (
+            TransactionIndex,
+            &Transaction<Unit, SumNumber, MoveMeta, TransactionMeta>,
+        ),
+    > {
         self.transactions
             .iter()
             .enumerate()
@@ -135,7 +138,7 @@ where
     pub fn set_account_metadata(
         &mut self,
         account_key: AccountKey,
-        metadata: A,
+        metadata: AccountMeta,
     ) {
         self.assert_has_account(account_key);
         self.accounts.get_mut(account_key).unwrap().metadata = metadata;
@@ -147,7 +150,7 @@ where
     pub fn set_transaction_metadata(
         &mut self,
         transaction_index: TransactionIndex,
-        metadata: T,
+        metadata: TransactionMeta,
     ) {
         self.transactions
             .get_mut(transaction_index.0)
@@ -163,9 +166,9 @@ where
         &mut self,
         transaction_index: TransactionIndex,
         move_index: MoveIndex,
-        metadata: M,
+        metadata: MoveMeta,
     ) where
-        U: Ord,
+        Unit: Ord,
     {
         let transaction = std::ops::IndexMut::index_mut(
             &mut self.transactions,
@@ -182,15 +185,18 @@ where
     ///
     /// - `account_key` is not in the book.
     #[allow(clippy::type_complexity)]
-    pub fn account_balance_at_transaction<'a, Bn>(
+    pub fn account_balance_at_transaction<'a, BalanceNumber>(
         &'a self,
         account_key: AccountKey,
         transaction_index: TransactionIndex,
-    ) -> Balance<U, Bn>
+    ) -> Balance<Unit, BalanceNumber>
     where
-        U: Ord + Clone,
-        Bn: Default + Sub<Output = Bn> + Add<Output = Bn> + Clone,
-        Sn: Clone + Into<Bn>,
+        Unit: Ord + Clone,
+        BalanceNumber: Default
+            + Sub<Output = BalanceNumber>
+            + Add<Output = BalanceNumber>
+            + Clone,
+        SumNumber: Clone + Into<BalanceNumber>,
     {
         self.assert_has_account(account_key);
         self.transactions
@@ -199,8 +205,11 @@ where
             .flat_map(|transaction| transaction.moves.iter())
             .filter_map(
                 |move_| -> Option<(
-                    fn(&mut Balance<U, Bn>, &'a Sum<U, Sn>),
-                    &Sum<U, Sn>,
+                    fn(
+                        &mut Balance<Unit, BalanceNumber>,
+                        &'a Sum<Unit, SumNumber>,
+                    ),
+                    &Sum<Unit, SumNumber>,
                 )> {
                     if move_.debit_account_key == account_key {
                         Some((SubAssign::sub_assign, &move_.sum))
@@ -212,7 +221,7 @@ where
                 },
             )
             .fold(
-                <Balance<U, Bn> as Default>::default(),
+                <Balance<Unit, BalanceNumber> as Default>::default(),
                 |mut balance, (operation, sum)| {
                     operation(&mut balance, sum);
                     balance
@@ -238,7 +247,7 @@ where
         transaction_index: TransactionIndex,
         move_index: MoveIndex,
     ) where
-        U: Ord,
+        Unit: Ord,
     {
         self.transactions[transaction_index.0]
             .moves
@@ -254,9 +263,9 @@ where
         &mut self,
         transaction_index: TransactionIndex,
         move_index: MoveIndex,
-        sum: Sum<U, Sn>,
+        sum: Sum<Unit, SumNumber>,
     ) where
-        U: Ord,
+        Unit: Ord,
     {
         self.transactions[transaction_index.0].moves[move_index.0].sum = sum;
     }
@@ -275,7 +284,7 @@ where
         side: Side,
         account_key: AccountKey,
     ) where
-        U: Ord,
+        Unit: Ord,
     {
         self.assert_has_account(account_key);
         let move_ =
