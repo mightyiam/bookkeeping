@@ -508,14 +508,14 @@ mod test {
                 account_a_key,
                 TransactionIndex(0)
             ),
-            <TestBalance as Default>::default() - &sum!(3, usd),
+            TestBalance::default() - &sum!(3, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction::<i128>(
                 account_b_key,
                 TransactionIndex(0)
             ),
-            <TestBalance as Default>::default() + &sum!(3, usd),
+            TestBalance::default() + &sum!(3, usd),
         );
         book.insert_transaction(TransactionIndex(1), "");
         book.insert_move(
@@ -531,28 +531,28 @@ mod test {
                 account_a_key,
                 TransactionIndex(0)
             ),
-            <TestBalance as Default>::default() - &sum!(3, usd),
+            TestBalance::default() - &sum!(3, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction::<i128>(
                 account_b_key,
                 TransactionIndex(0)
             ),
-            <TestBalance as Default>::default() + &sum!(3, usd),
+            TestBalance::default() + &sum!(3, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction::<i128>(
                 account_a_key,
                 TransactionIndex(1)
             ),
-            <TestBalance as Default>::default() - &sum!(7, usd),
+            TestBalance::default() - &sum!(7, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction::<i128>(
                 account_b_key,
                 TransactionIndex(1)
             ),
-            <TestBalance as Default>::default() + &sum!(7, usd),
+            TestBalance::default() + &sum!(7, usd),
         );
         book.insert_transaction(TransactionIndex(0), "");
         book.insert_move(
@@ -568,42 +568,42 @@ mod test {
                 account_a_key,
                 TransactionIndex(0)
             ),
-            <TestBalance as Default>::default() - &sum!(1, usd),
+            TestBalance::default() - &sum!(1, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction::<i128>(
                 account_b_key,
                 TransactionIndex(0)
             ),
-            <TestBalance as Default>::default() + &sum!(1, usd),
+            TestBalance::default() + &sum!(1, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction::<i128>(
                 account_a_key,
                 TransactionIndex(1)
             ),
-            <TestBalance as Default>::default() - &sum!(4, usd),
+            TestBalance::default() - &sum!(4, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction::<i128>(
                 account_b_key,
                 TransactionIndex(1)
             ),
-            <TestBalance as Default>::default() + &sum!(4, usd),
+            TestBalance::default() + &sum!(4, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction::<i128>(
                 account_a_key,
                 TransactionIndex(2)
             ),
-            <TestBalance as Default>::default() - &sum!(8, usd),
+            TestBalance::default() - &sum!(8, usd),
         );
         assert_eq!(
             book.account_balance_at_transaction::<i128>(
                 account_b_key,
                 TransactionIndex(2)
             ),
-            <TestBalance as Default>::default() + &sum!(8, usd),
+            TestBalance::default() + &sum!(8, usd),
         );
     }
     #[test]
