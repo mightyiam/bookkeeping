@@ -1,4 +1,3 @@
-use crate::account::Account;
 use crate::balance::Balance;
 use crate::move_::{Move, Side};
 use crate::sum::Sum;
@@ -10,19 +9,19 @@ new_key_type! {
     pub struct AccountKey;
 }
 /// Represents a book.
-pub struct Book<Unit, SumNumber, Meta, AccountMeta, MoveMeta, TransactionMeta>
+pub struct Book<Unit, SumNumber, Meta, Account, MoveMeta, TransactionMeta>
 where
     Unit: Ord,
 {
     metadata: Meta,
-    accounts: DenseSlotMap<AccountKey, Account<AccountMeta>>,
+    accounts: DenseSlotMap<AccountKey, Account>,
     transactions: Vec<Transaction<Unit, SumNumber, MoveMeta, TransactionMeta>>,
 }
 
 /// Used to index transactions in the book.
 pub struct TransactionIndex(pub usize);
-impl<Unit, SumNumber, Meta, AccountMeta, MoveMeta, TransactionMeta>
-    Book<Unit, SumNumber, Meta, AccountMeta, MoveMeta, TransactionMeta>
+impl<Unit, SumNumber, Meta, Account, MoveMeta, TransactionMeta>
+    Book<Unit, SumNumber, Meta, Account, MoveMeta, TransactionMeta>
 where
     Unit: Ord,
 {
@@ -42,9 +41,9 @@ where
     pub fn set_book_metadata(&mut self, metadata: Meta) {
         self.metadata = metadata;
     }
-    /// Creates a new account.
-    pub fn new_account(&mut self, metadata: AccountMeta) -> AccountKey {
-        self.accounts.insert(Account { metadata })
+    /// Inserts an account.
+    pub fn insert_account(&mut self, account: Account) -> AccountKey {
+        self.accounts.insert(account)
     }
     /// Creates a transaction and inserts it at an index.
     ///
@@ -104,17 +103,12 @@ where
     /// ## Panics
     ///
     /// - `account_key` is not in the book.
-    pub fn get_account(
-        &self,
-        account_key: AccountKey,
-    ) -> &Account<AccountMeta> {
+    pub fn get_account(&self, account_key: AccountKey) -> &Account {
         self.assert_has_account(account_key);
         self.accounts.get(account_key).unwrap()
     }
     /// Gets an iterator of existing accounts in order of creation.
-    pub fn accounts(
-        &self,
-    ) -> impl Iterator<Item = (AccountKey, &Account<AccountMeta>)> {
+    pub fn accounts(&self) -> impl Iterator<Item = (AccountKey, &Account)> {
         self.accounts.iter()
     }
     /// Gets an iterator of existing transactions in their order.
@@ -131,17 +125,13 @@ where
             .enumerate()
             .map(|(index, transaction)| (TransactionIndex(index), transaction))
     }
-    /// Sets the metadata for an account.
+    /// Sets an existing account.
     ///
     /// ## Panics
     /// - `account_key` is not in the book.
-    pub fn set_account_metadata(
-        &mut self,
-        account_key: AccountKey,
-        metadata: AccountMeta,
-    ) {
+    pub fn set_account(&mut self, account_key: AccountKey, account: Account) {
         self.assert_has_account(account_key);
-        self.accounts.get_mut(account_key).unwrap().metadata = metadata;
+        *self.accounts.get_mut(account_key).unwrap() = account;
     }
     /// Sets the metadata for a transaction.
     ///
@@ -323,9 +313,9 @@ mod test {
         assert!(book.transactions.is_empty());
     }
     #[test]
-    fn new_account() {
+    fn insert_account() {
         let mut book = test_book!("");
-        book.new_account("");
+        book.insert_account("");
         assert_eq!(book.accounts.len(), 1);
     }
     #[test]
@@ -353,8 +343,8 @@ mod test {
     #[should_panic(expected = "insertion index (is 1) should be <= len (is 0)")]
     fn insert_move_panic_index_out_of_bounds() {
         let mut book = test_book!("");
-        let debit_key = book.new_account("");
-        let credit_key = book.new_account("");
+        let debit_key = book.insert_account("");
+        let credit_key = book.insert_account("");
         book.insert_transaction(TransactionIndex(0), "");
         book.insert_move(
             TransactionIndex(0),
@@ -369,9 +359,9 @@ mod test {
     #[should_panic(expected = "No account found for key ")]
     fn insert_move_panic_debit_account_not_found() {
         let mut book = test_book!("");
-        let debit_key = book.new_account("");
+        let debit_key = book.insert_account("");
         book.accounts.remove(debit_key);
-        let credit_key = book.new_account("");
+        let credit_key = book.insert_account("");
         book.insert_transaction(TransactionIndex(0), "");
         book.insert_move(
             TransactionIndex(0),
@@ -386,8 +376,8 @@ mod test {
     #[should_panic(expected = "No account found for key ")]
     fn insert_move_panic_credit_account_not_found() {
         let mut book = test_book!("");
-        let debit_key = book.new_account("");
-        let credit_key = book.new_account("");
+        let debit_key = book.insert_account("");
+        let credit_key = book.insert_account("");
         book.accounts.remove(credit_key);
         book.insert_transaction(TransactionIndex(0), "");
         book.insert_move(
@@ -403,8 +393,8 @@ mod test {
     fn insert_move() {
         let mut book = test_book!("");
         book.insert_transaction(TransactionIndex(0), "");
-        let debit_key = book.new_account("");
-        let credit_key = book.new_account("");
+        let debit_key = book.insert_account("");
+        let credit_key = book.insert_account("");
         book.insert_move(
             TransactionIndex(0),
             MoveIndex(0),
@@ -450,29 +440,26 @@ mod test {
     fn accounts() {
         let mut book = test_book!("");
         assert!(book.accounts().next().is_none());
-        let account_a_key = book.new_account("a");
-        let account_b_key = book.new_account("b");
+        let account_a_key = book.insert_account("a");
+        let account_b_key = book.insert_account("b");
         let expected = vec![(account_a_key, &"a"), (account_b_key, &"b")];
-        let actual = book
-            .accounts()
-            .map(|(account_key, account)| (account_key, &account.metadata))
-            .collect::<Vec<_>>();
+        let actual = book.accounts().collect::<Vec<_>>();
         assert_eq!(actual, expected);
     }
     #[test]
     fn get_account() {
         let mut book = test_book!("");
-        book.new_account("");
-        let account_key = book.new_account("!");
-        book.new_account("");
+        book.insert_account("");
+        let account_key = book.insert_account("!");
+        book.insert_account("");
         let account = book.get_account(account_key);
-        assert_eq!(*account.metadata(), "!");
+        assert_eq!(*account, "!");
     }
     #[test]
     #[should_panic(expected = "No account found for key ")]
     fn assert_has_account() {
         let mut book = test_book!("");
-        let account_key = book.new_account("");
+        let account_key = book.insert_account("");
         book.accounts.remove(account_key);
         book.assert_has_account(account_key);
     }
@@ -481,7 +468,7 @@ mod test {
     fn account_balance_at_transaction_account_not_found() {
         let mut book = test_book!("");
         book.insert_transaction(TransactionIndex(0), "");
-        let account_key = book.new_account("");
+        let account_key = book.insert_account("");
         book.accounts.remove(account_key);
         book.account_balance_at_transaction::<i128>(
             account_key,
@@ -491,8 +478,8 @@ mod test {
     #[test]
     fn account_balance_at_transaction() {
         let mut book = test_book!("");
-        let account_a_key = book.new_account("");
-        let account_b_key = book.new_account("");
+        let account_a_key = book.insert_account("");
+        let account_b_key = book.insert_account("");
         let usd = TestUnit("USD");
         book.insert_transaction(TransactionIndex(0), "");
         book.insert_move(
@@ -619,18 +606,18 @@ mod test {
     }
     #[test]
     #[should_panic(expected = "No account found for key ")]
-    fn set_account_metadata_panic() {
+    fn set_account_panic() {
         let mut book = test_book!("");
-        let account_key = book.new_account("");
+        let account_key = book.insert_account("");
         book.accounts.remove(account_key);
-        book.set_account_metadata(account_key, "!");
+        book.set_account(account_key, "!");
     }
     #[test]
-    fn set_account_metadata() {
+    fn set_account() {
         let mut book = test_book!("");
-        let account_key = book.new_account("");
-        book.set_account_metadata(account_key, "!");
-        assert_eq!(*book.accounts.get(account_key).unwrap().metadata(), "!");
+        let account_key = book.insert_account("");
+        book.set_account(account_key, "!");
+        assert_eq!(*book.accounts.get(account_key).unwrap(), "!");
     }
     #[test]
     #[should_panic(expected = "index out of bounds")]
@@ -648,8 +635,8 @@ mod test {
     #[test]
     fn set_move_metadata() {
         let mut book = test_book!("");
-        let debit_key = book.new_account("");
-        let credit_key = book.new_account("");
+        let debit_key = book.insert_account("");
+        let credit_key = book.insert_account("");
         book.insert_transaction(TransactionIndex(0), "");
         book.insert_move(
             TransactionIndex(0),
@@ -696,8 +683,8 @@ mod test {
     #[test]
     fn remove_move() {
         let mut book = test_book!("");
-        let debit_account_key = book.new_account("");
-        let credit_account_key = book.new_account("");
+        let debit_account_key = book.insert_account("");
+        let credit_account_key = book.insert_account("");
         book.insert_transaction(TransactionIndex(0), "");
         book.insert_move(
             TransactionIndex(0),
@@ -726,7 +713,7 @@ mod test {
     )]
     fn set_move_side_panic_transaction_out_of_bounds() {
         let mut book = test_book!("");
-        let account_key = book.new_account("");
+        let account_key = book.insert_account("");
         book.set_move_side(
             TransactionIndex(0),
             MoveIndex(0),
@@ -740,7 +727,7 @@ mod test {
     )]
     fn set_move_side_panic_move_out_of_bounds() {
         let mut book = test_book!("");
-        let account_key = book.new_account("");
+        let account_key = book.insert_account("");
         book.insert_transaction(TransactionIndex(0), "");
         book.set_move_side(
             TransactionIndex(0),
@@ -753,8 +740,8 @@ mod test {
     #[should_panic(expected = "No account found for key ")]
     fn set_move_side_panic_account_not_found() {
         let mut book = test_book!("");
-        let debit_account_key = book.new_account("");
-        let credit_account_key = book.new_account("");
+        let debit_account_key = book.insert_account("");
+        let credit_account_key = book.insert_account("");
         book.insert_transaction(TransactionIndex(0), "");
         book.insert_move(
             TransactionIndex(0),
@@ -764,7 +751,7 @@ mod test {
             sum!(),
             "",
         );
-        let other_account_key = book.new_account("");
+        let other_account_key = book.insert_account("");
         book.accounts.remove(other_account_key);
         book.set_move_side(
             TransactionIndex(0),
@@ -779,8 +766,8 @@ mod test {
     )]
     fn set_move_side_panic_provided_debit_same_as_credit() {
         let mut book = test_book!("");
-        let debit_account_key = book.new_account("");
-        let credit_account_key = book.new_account("");
+        let debit_account_key = book.insert_account("");
+        let credit_account_key = book.insert_account("");
         book.insert_transaction(TransactionIndex(0), "");
         book.insert_move(
             TransactionIndex(0),
@@ -803,8 +790,8 @@ mod test {
     )]
     fn set_move_side_panic_provided_credit_same_as_debit() {
         let mut book = test_book!("");
-        let debit_account_key = book.new_account("");
-        let credit_account_key = book.new_account("");
+        let debit_account_key = book.insert_account("");
+        let credit_account_key = book.insert_account("");
         book.insert_transaction(TransactionIndex(0), "");
         book.insert_move(
             TransactionIndex(0),
@@ -824,9 +811,9 @@ mod test {
     #[test]
     fn set_move_side() {
         let mut book = test_book!("");
-        let account_a_key = book.new_account("");
-        let account_b_key = book.new_account("");
-        let account_c_key = book.new_account("");
+        let account_a_key = book.insert_account("");
+        let account_b_key = book.insert_account("");
+        let account_c_key = book.insert_account("");
         book.insert_transaction(TransactionIndex(0), "");
         book.insert_move(
             TransactionIndex(0),
@@ -885,8 +872,8 @@ mod test {
     #[test]
     fn set_move_sum() {
         let mut book = test_book!("");
-        let debit_account_key = book.new_account("");
-        let credit_account_key = book.new_account("");
+        let debit_account_key = book.insert_account("");
+        let credit_account_key = book.insert_account("");
         book.insert_transaction(TransactionIndex(0), "");
         book.insert_move(
             TransactionIndex(0),

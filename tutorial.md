@@ -37,14 +37,14 @@ let mut book = Book::<Currency, u64, (), (), (), ()>::new(());
 // And doing all of that, is quite simple. So let's get to it.
 
 // Let's start by adding an account for some income channel:
-let income_key = book.new_account(());
+let income_key = book.insert_account(());
 // "What's that extra..." — we will get to that. Trust me.
 // The important part is that we have an account.
 // Actually, _the book_ has an account. What we own is an account key.
 // We will later use this key to reference this account.
 
 // It's nice that we have an account, so let's have another one!
-let bank_key = book.new_account(());
+let bank_key = book.insert_account(());
 // And now, that we have two accounts, we can move money around.
 // Which is exciting. I know. But, actually, we can't do that yet.
 // Because we don't have any units. So let's talk about units.
@@ -133,7 +133,7 @@ assert_eq!(
 // Cool?
 
 // Let's move more money around, just to confirm our understanding:
-let wallet_key = book.new_account(());
+let wallet_key = book.insert_account(());
 // This created a new account that represents a wallet.
 book.insert_transaction(TransactionIndex(1), ());
 // This created a new empty transaction and inserted it at index `1`.
@@ -212,7 +212,7 @@ assert_eq!(bank_running_balance, vec![2000, 3000, 2900]);
 // to call [Book::account_balance_at_transaction], we need to have both
 // a key of an existing account and an index of an existing transaction.
 // So, how can we obtain these? This way for accounts:
-let _accounts: Vec<(AccountKey, &Account<()>)> =
+let _accounts: Vec<(AccountKey, &())> =
     book.accounts().collect();
 // Note that the order of the iterator returned from [Book::accounts] is
 // undefined. And this way for transactions:
@@ -231,11 +231,11 @@ let _transactions: Vec<(
 // When creating a book, the _types_ of these metadata must be provided.
 // So far, `()` has been provided as the metadata type for all records.
 // Let's define some non-`()` metadata types:
-struct AccountMetadata {
+struct Account {
     id: u8,
     name: &'static str,
 }
-let mut book: Book<Currency, u64, u8, AccountMetadata, (), &str> =
+let mut book: Book<Currency, u64, u8, Account, (), &str> =
     Book::new(5);
 // In order, the types of metadata that are defined in this example are:
 //
@@ -250,18 +250,18 @@ let mut book: Book<Currency, u64, u8, AccountMetadata, (), &str> =
 // Now, let's see how these metadata types are used:
 assert_eq!(book.metadata(), &5);
 // Alright!
-let wallet_key = book.new_account(AccountMetadata {
+let wallet_key = book.insert_account(Account {
     id: 7,
     name: "Wallet",
 });
-let bank_key = book.new_account(AccountMetadata {
+let bank_key = book.insert_account(Account {
     id: 8,
     name: "Bank",
 });
-assert_eq!(&book.get_account(wallet_key).metadata().id, &7);
-assert_eq!(&book.get_account(wallet_key).metadata().name, &"Wallet");
-assert_eq!(&book.get_account(bank_key).metadata().id, &8);
-assert_eq!(&book.get_account(bank_key).metadata().name, &"Bank");
+assert_eq!(&book.get_account(wallet_key).id, &7);
+assert_eq!(&book.get_account(wallet_key).name, &"Wallet");
+assert_eq!(&book.get_account(bank_key).id, &8);
+assert_eq!(&book.get_account(bank_key).name, &"Bank");
 // Cool!
 book.insert_transaction(TransactionIndex(0), "Withdrawal");
 assert_eq!(

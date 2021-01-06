@@ -39,8 +39,8 @@ mod test {
     fn moves() {
         let mut book = test_book!("");
         book.insert_transaction(TransactionIndex(0), "");
-        let debit_account_key = book.new_account("");
-        let credit_account_key = book.new_account("");
+        let debit_account_key = book.insert_account("");
+        let credit_account_key = book.insert_account("");
         book.insert_move(
             TransactionIndex(0),
             MoveIndex(0),

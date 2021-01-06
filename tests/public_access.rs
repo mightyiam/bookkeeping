@@ -3,10 +3,6 @@ use bookkeeping::*;
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq)]
 struct TestUnit;
 #[test]
-fn account() {
-    Account::<()>::metadata;
-}
-#[test]
 fn balance() {
     type TestBalance = Balance<TestUnit, i128>;
     TestBalance::amounts;
@@ -18,13 +14,13 @@ fn book() {
     TestBook::new;
     TestBook::metadata;
     TestBook::set_book_metadata;
-    TestBook::new_account;
+    TestBook::insert_account;
     TestBook::insert_transaction;
     TestBook::insert_move;
     TestBook::get_account;
     TestBook::accounts;
     TestBook::transactions;
-    TestBook::set_account_metadata;
+    TestBook::set_account;
     TestBook::set_transaction_metadata;
     TestBook::set_move_metadata;
     TestBook::account_balance_at_transaction::<i128>;
