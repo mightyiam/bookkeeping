@@ -53,13 +53,11 @@ macro_rules! tutorial {
     };
 }
 tutorial!(include_str!("../tutorial.md"));
-mod account;
 mod balance;
 mod book;
 mod move_;
 mod sum;
 mod transaction;
-pub use account::Account;
 pub use balance::Balance;
 pub use book::{AccountKey, Book, TransactionIndex};
 pub use move_::{Move, Side};
