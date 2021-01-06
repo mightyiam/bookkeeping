@@ -1,6 +1,6 @@
 use crate::move_::Move;
 /// Represents a transaction.
-pub struct Transaction<Unit, SumNumber, MoveMeta, Meta>
+pub struct Transaction<Unit, SumNumber, Meta, MoveMeta>
 where
     Unit: Ord,
 {
@@ -9,8 +9,8 @@ where
 }
 /// Used to index moves in a transaction.
 pub struct MoveIndex(pub usize);
-impl<Unit, SumNumber, MoveMeta, Meta>
-    Transaction<Unit, SumNumber, MoveMeta, Meta>
+impl<Unit, SumNumber, Meta, MoveMeta>
+    Transaction<Unit, SumNumber, Meta, MoveMeta>
 where
     Unit: Ord,
 {
@@ -85,7 +85,7 @@ mod test {
     }
     #[test]
     fn metadata() {
-        let transaction = Transaction::<&str, u8, (), &str> {
+        let transaction = Transaction::<&str, u8, &str, ()> {
             metadata: "deposit",
             moves: Vec::new(),
         };
