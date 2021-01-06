@@ -303,7 +303,7 @@ mod test {
         Side::{Credit, Debit},
         TransactionIndex,
     };
-    use crate::test_utils::{TestBalance, TestUnit};
+    use crate::test_utils::TestBalance;
     use crate::transaction::MoveIndex;
     #[test]
     fn new() {
@@ -480,7 +480,7 @@ mod test {
         let mut book = test_book!("");
         let account_a_key = book.insert_account("");
         let account_b_key = book.insert_account("");
-        let usd = TestUnit("USD");
+        let usd = "USD";
         book.insert_transaction(TransactionIndex(0), "");
         book.insert_move(
             TransactionIndex(0),
@@ -883,7 +883,7 @@ mod test {
             sum!(),
             "",
         );
-        let usd = TestUnit("USD");
+        let usd = "USD";
         book.set_move_sum(TransactionIndex(0), MoveIndex(0), sum!(100, usd));
         assert_eq!(
             book.transactions[0].moves[0].sum.0.get(&usd).unwrap(),

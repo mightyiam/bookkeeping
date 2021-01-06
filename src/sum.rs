@@ -36,18 +36,17 @@ where
 #[cfg(test)]
 mod test {
     use super::Sum;
-    use crate::test_utils::TestUnit;
     use maplit::btreemap;
     #[test]
     fn new() {
-        let actual = Sum::<TestUnit, usize>::new();
+        let actual = Sum::<&str, usize>::new();
         let expected = Sum(btreemap! {});
         assert_eq!(actual, expected);
     }
     #[test]
     fn from_entries() {
-        let thb = TestUnit("THB");
-        let usd = TestUnit("USD");
+        let thb = "THB";
+        let usd = "USD";
         let actual = sum!(100, thb; 200, usd);
         let expected = Sum(btreemap! {
             thb => 100,
@@ -57,7 +56,7 @@ mod test {
     }
     #[test]
     fn set_amount_for_unit() {
-        let unit = TestUnit("USD");
+        let unit = "USD";
         let mut actual = Sum::new();
         actual.set_amount_for_unit(3, unit);
         let expected = Sum(btreemap! { unit => 3 });
@@ -65,8 +64,8 @@ mod test {
     }
     #[test]
     fn amounts() {
-        let thb = TestUnit("THB");
-        let usd = TestUnit("USD");
+        let thb = "THB";
+        let usd = "USD";
         let sum = sum!(3, thb; 10, usd);
         let actual = sum.amounts().collect::<Vec<_>>();
         let expected = vec![(&thb, &3), (&usd, &10)];
@@ -74,9 +73,9 @@ mod test {
     }
     #[test]
     fn fmt_debug() {
-        let usd = TestUnit("USD");
+        let usd = "USD";
         let amount_usd = 76;
-        let thb = TestUnit("THB");
+        let thb = "THB";
         let amount_thb = 45;
         let sum = sum!(amount_usd, usd; amount_thb, thb);
         let actual = format!("{:?}", sum);
