@@ -1,6 +1,6 @@
 use crate::account::Account;
 use crate::balance::Balance;
-use crate::move_::Move;
+use crate::move_::{Move, Side};
 use crate::sum::Sum;
 use crate::transaction::{MoveIndex, Transaction};
 use slotmap::{new_key_type, DenseSlotMap};
@@ -24,13 +24,6 @@ where
     metadata: B,
     accounts: DenseSlotMap<AccountKey, Account<A>>,
     transactions: Vec<Transaction<U, Sn, M, T>>,
-}
-/// Represents a side of a [Move].
-pub enum Side {
-    #[allow(missing_docs)]
-    Debit,
-    #[allow(missing_docs)]
-    Credit,
 }
 
 /// Used to index transactions in the book.
