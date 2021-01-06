@@ -1,5 +1,12 @@
 use crate::book::AccountKey;
 use crate::sum::Sum;
+/// Represents a side of a [Move].
+pub enum Side {
+    #[allow(missing_docs)]
+    Debit,
+    #[allow(missing_docs)]
+    Credit,
+}
 /// Represents a move of a [Sum] from one account to another.
 pub struct Move<U, Sn, M>
 where
@@ -31,13 +38,12 @@ where
             sum,
         }
     }
-    /// Gets the debit account key of a move.
-    pub fn debit_account_key(&self) -> AccountKey {
-        self.debit_account_key
-    }
-    /// Gets the credit account key of a move.
-    pub fn credit_account_key(&self) -> AccountKey {
-        self.credit_account_key
+    /// Gets the account key of one of the sides of a move.
+    pub fn side_key(&self, side: Side) -> AccountKey {
+        match side {
+            Side::Debit => self.debit_account_key,
+            Side::Credit => self.credit_account_key,
+        }
     }
     /// Gets the sum of a move.
     pub fn sum(&self) -> &Sum<U, Sn> {
@@ -50,7 +56,7 @@ where
 }
 #[cfg(test)]
 mod test {
-    use super::Move;
+    use super::{Move, Side};
     use crate::test_utils::TestUnit;
     #[test]
     #[should_panic(expected = "Debit and credit accounts are the same.")]
@@ -72,22 +78,14 @@ mod test {
         assert_eq!(move_.sum, sum);
     }
     #[test]
-    fn debit_account() {
+    fn side() {
         let mut book = test_book!("");
         let debit_account_key = book.new_account("");
         let credit_account_key = book.new_account("");
         let move_ =
             Move::new(debit_account_key, credit_account_key, sum!(), "");
-        assert_eq!(move_.debit_account_key(), debit_account_key);
-    }
-    #[test]
-    fn credit_account() {
-        let mut book = test_book!("");
-        let debit_account_key = book.new_account("");
-        let credit_account_key = book.new_account("");
-        let move_ =
-            Move::new(debit_account_key, credit_account_key, sum!(), "");
-        assert_eq!(move_.credit_account_key(), credit_account_key);
+        assert_eq!(move_.side_key(Side::Debit), debit_account_key);
+        assert_eq!(move_.side_key(Side::Credit), credit_account_key);
     }
     #[test]
     fn sum() {

@@ -35,8 +35,7 @@ fn book() {
 #[test]
 fn move_() {
     type TestMove = Move<TestUnit, u64, ()>;
-    TestMove::debit_account_key;
-    TestMove::credit_account_key;
+    TestMove::side_key;
     TestMove::sum;
     TestMove::metadata;
 }
