@@ -57,7 +57,6 @@ where
 #[cfg(test)]
 mod test {
     use super::{Move, Side};
-    use crate::test_utils::TestUnit;
     #[test]
     #[should_panic(expected = "Debit and credit accounts are the same.")]
     fn new_panic_debit_and_credit_accounts_are_the_same() {
@@ -92,8 +91,8 @@ mod test {
         let mut book = test_book!("");
         let debit_account_key = book.insert_account("");
         let credit_account_key = book.insert_account("");
-        let thb = TestUnit("THB");
-        let ils = TestUnit("ILS");
+        let thb = "THB";
+        let ils = "ILS";
         let sum = sum!(100, thb; 200, ils);
         let move_ =
             Move::new(debit_account_key, credit_account_key, sum.clone(), "");

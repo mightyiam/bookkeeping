@@ -34,7 +34,6 @@ where
 mod test {
     use super::{MoveIndex, Transaction};
     use crate::book::TransactionIndex;
-    use crate::test_utils::TestUnit;
     #[test]
     fn moves() {
         let mut book = test_book!("");
@@ -86,7 +85,7 @@ mod test {
     }
     #[test]
     fn metadata() {
-        let transaction = Transaction::<TestUnit, u8, (), &str> {
+        let transaction = Transaction::<&str, u8, (), &str> {
             metadata: "deposit",
             moves: Vec::new(),
         };

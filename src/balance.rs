@@ -172,14 +172,14 @@ where
 #[cfg(test)]
 mod test {
     use super::Balance;
-    use crate::test_utils::{TestBalance, TestUnit};
+    use crate::test_utils::TestBalance;
     use maplit::btreemap;
     #[test]
     fn apply_sum_operation() {
         use maplit::btreemap;
         let mut actual: TestBalance = Default::default();
-        let usd = TestUnit("USD");
-        let thb = TestUnit("THB");
+        let usd = "USD";
+        let thb = "THB";
         let sum = sum!(2, usd; 3, thb);
         actual.apply_sum_operation(&sum, |balance, amount| {
             let rhs: i128 = amount.into();
@@ -198,9 +198,9 @@ mod test {
     }
     #[test]
     fn fmt_debug() {
-        let usd = TestUnit("USD");
+        let usd = "USD";
         let amount_usd = 76;
-        let thb = TestUnit("THB");
+        let thb = "THB";
         let amount_thb = 45;
         let sum = sum!(amount_usd, usd; amount_thb, thb);
         let balance = TestBalance::default() + &sum;
@@ -214,7 +214,7 @@ mod test {
     #[test]
     fn sub_assign_sum() {
         use maplit::btreemap;
-        let usd = TestUnit("USD");
+        let usd = "USD";
         let mut actual: TestBalance = Default::default();
         actual -= &sum!(9, usd);
         let expected = Balance(btreemap! {
@@ -225,7 +225,7 @@ mod test {
     #[test]
     fn sub_sum() {
         use maplit::btreemap;
-        let usd = TestUnit("USD");
+        let usd = "USD";
         let immutable: TestBalance = Default::default();
         let actual = immutable - &sum!(9, usd);
         let expected = Balance(btreemap! {
@@ -236,7 +236,7 @@ mod test {
     #[test]
     fn add_assign_sum() {
         use maplit::btreemap;
-        let usd = TestUnit("USD");
+        let usd = "USD";
         let mut actual: TestBalance = Default::default();
         actual += &sum!(9, usd);
         let expected = Balance(btreemap! {
@@ -247,7 +247,7 @@ mod test {
     #[test]
     fn add_sum() {
         use maplit::btreemap;
-        let usd = TestUnit("USD");
+        let usd = "USD";
         let immutable: TestBalance = Default::default();
         let actual = immutable + &sum!(9, usd);
         let expected = Balance(btreemap! {
@@ -257,9 +257,9 @@ mod test {
     }
     #[test]
     fn amounts() {
-        let usd = TestUnit("USD");
-        let thb = TestUnit("THB");
-        let ils = TestUnit("ILS");
+        let usd = "USD";
+        let thb = "THB";
+        let ils = "ILS";
         let balance = TestBalance::default()
             + &sum! {
                 100, usd; 200, thb; 300, ils
@@ -270,9 +270,9 @@ mod test {
     }
     #[test]
     fn unit_amount() {
-        let usd = TestUnit("USD");
-        let thb = TestUnit("THB");
-        let ils = TestUnit("ILS");
+        let usd = "USD";
+        let thb = "THB";
+        let ils = "ILS";
         let balance = TestBalance::default() + &sum!(200, usd; 100, thb);
         assert_eq!(balance.unit_amount(usd).unwrap(), &200);
         assert_eq!(balance.unit_amount(thb).unwrap(), &100);
