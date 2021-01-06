@@ -203,7 +203,7 @@ mod test {
         let thb = TestUnit("THB");
         let amount_thb = 45;
         let sum = sum!(amount_usd, usd; amount_thb, thb);
-        let balance = <TestBalance as Default>::default() + &sum;
+        let balance = TestBalance::default() + &sum;
         let actual = format!("{:?}", balance);
         let expected = format!(
             "Balance({{{:?}: {:?}, {:?}: {:?}}})",
@@ -260,7 +260,7 @@ mod test {
         let usd = TestUnit("USD");
         let thb = TestUnit("THB");
         let ils = TestUnit("ILS");
-        let balance = <TestBalance as Default>::default()
+        let balance = TestBalance::default()
             + &sum! {
                 100, usd; 200, thb; 300, ils
             };
@@ -273,8 +273,7 @@ mod test {
         let usd = TestUnit("USD");
         let thb = TestUnit("THB");
         let ils = TestUnit("ILS");
-        let balance =
-            <TestBalance as Default>::default() + &sum!(200, usd; 100, thb);
+        let balance = TestBalance::default() + &sum!(200, usd; 100, thb);
         assert_eq!(balance.unit_amount(usd).unwrap(), &200);
         assert_eq!(balance.unit_amount(thb).unwrap(), &100);
         assert_eq!(balance.unit_amount(ils), None);
