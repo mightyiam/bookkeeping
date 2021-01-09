@@ -1,16 +1,14 @@
 #![allow(path_statements)]
 use bookkeeping::*;
-#[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Default)]
-struct TestUnit;
 #[test]
 fn balance() {
-    type TestBalance = Balance<TestUnit, i128>;
+    type TestBalance = Balance<(), ()>;
     TestBalance::amounts;
     TestBalance::unit_amount;
 }
 #[test]
 fn book() {
-    type TestBook = bookkeeping::Book<TestUnit, u64, (), (), (), ()>;
+    type TestBook = bookkeeping::Book<(), u8, (), (), (), ()>;
     TestBook::new;
     TestBook::metadata;
     TestBook::set_book_metadata;
@@ -23,28 +21,28 @@ fn book() {
     TestBook::set_account;
     TestBook::set_transaction_metadata;
     TestBook::set_move_metadata;
-    TestBook::account_balance_at_transaction::<i128>;
+    TestBook::account_balance_at_transaction::<i16>;
     TestBook::remove_move;
     TestBook::set_move_sum;
     TestBook::set_move_side;
 }
 #[test]
 fn move_() {
-    type TestMove = Move<TestUnit, u64, ()>;
+    type TestMove = Move<(), (), ()>;
     TestMove::side_key;
     TestMove::sum;
     TestMove::metadata;
 }
 #[test]
 fn sum() {
-    type TestSum = Sum<TestUnit, u64>;
+    type TestSum = Sum<(), u64>;
     TestSum::default;
     TestSum::set_amount_for_unit;
     TestSum::amounts;
 }
 #[test]
 fn transaction() {
-    type TestTransaction = Transaction<TestUnit, u64, (), ()>;
+    type TestTransaction = Transaction<(), (), (), ()>;
     TestTransaction::moves;
     TestTransaction::metadata;
 }
