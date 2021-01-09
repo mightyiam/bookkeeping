@@ -9,50 +9,62 @@
 #![deny(clippy::all)]
 //! ![GitHub Workflow Status (branch)][ci]
 //!
-//! This crate tries to model the very basics of the [bookkeeping][bookkeeping] activity.
-//! _it is a new rustacean's first open source crate_.
-//!
-//! ## Outline
-//!
-//! A book contains
-//! - accounts,
-//! - units (may represent currencies)
-//! - and transactions, which in turn, contain moves.
+//! Minimal, safe and flexible [bookkeeping][bookkeeping] API
 //!
 //! ## Features
 //!
-//! - Book balance guaranteed at compile time.
-//! - Arbitrary metadata may be stored in books, accounts, units, transactions and moves.
+//! - The book balance is guaranteed at compile time.
+//! - Explicit ordering of transactions
+//! - Strong support for multiple units (currencies)
+//! - Generic number types
+//! - Generic metadata types (store arbitrary metadata)
+//! - A long [introduction][mod@introduction].
 //!
-//! ## Defficiencies
-//! - No optimization of balance calculations.
+//! ## Non-features
 //!
-//! [ci]: https://img.shields.io/github/workflow/status/mightyiam/bookkeeping/Rust/master?logo=github
-//! [bookkeeping]: https://en.wikipedia.org/wiki/Bookkeeping
+//! Everything in this list is beyond the scope of this library:
 //!
-//! ## Tutorial
+//! - Account types (asset/liability/income/expense/etc.)
+//! - Reports
 //!
-//! [Here][mod@tutorial].
+//! ## Todo
+//! - Cache balance calculations
+//! - Serialization
 //!
-//! ## FAQ
+//! ## Introduction
 //!
-//! > This API can panic in a bunch of places. I don't like that. I don't feel safe.
-//! > How about returning `Result`s, instead?
+//! Read [the entire introduction][mod@introduction].
+//!
+//! ## A note on panics
+//!
+//! > "This API can panic in a bunch of places. I don't like that. I don't feel safe.
+//! > How about returning `Result`s, instead?"
 //!
 //! `Result`s and errors are for when a function might fail despite all caution.
 //! In this crate, panics would only occur on wrong usage.
 //! Having this crate return `Result`s would complicate the API and — worse —
 //! would give the impression that function calls could fail even when used correctly.
 //! I'd like the user to be confident that with correct usage the API is safe.
+//!
+//! ## Get involved
+//!
+//! If you're using this crate, then please let me know—I'd be so happy!
+//!
+//! If you have a question, find an issue and/or would like to contribute,
+//! please open an issue on the tracker or send me an email to
+//! mightyiampresence@gmail.com.
+//!
+//! [ci]: https://img.shields.io/github/workflow/status/mightyiam/bookkeeping/Rust/master?logo=github
+//! [bookkeeping]: https://en.wikipedia.org/wiki/Bookkeeping
 #[macro_use]
 mod test_utils;
-macro_rules! tutorial {
+macro_rules! introduction {
     ($doc:expr) => {
         #[doc = $doc]
-        pub mod tutorial {}
+        pub mod introduction {}
     };
 }
-tutorial!(include_str!("../tutorial.md"));
+introduction!(include_str!("../introduction.md"));
 mod balance;
 mod book;
 mod move_;

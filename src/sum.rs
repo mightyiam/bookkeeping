@@ -17,6 +17,9 @@ where
     pub fn amounts(&self) -> impl Iterator<Item = (&Unit, &Number)> {
         self.0.iter()
     }
+    pub fn unit_amount(&self, unit: &Unit) -> Option<&Number> {
+        self.0.get(unit)
+    }
 }
 impl<Unit, Number> fmt::Debug for Sum<Unit, Number>
 where
@@ -57,6 +60,15 @@ mod test {
         actual.set_amount_for_unit(3, unit);
         let expected = Sum(btreemap! { unit => 3 });
         assert_eq!(actual, expected);
+    }
+    #[test]
+    fn unit_amount() {
+        let unit = "USD";
+        let amount = 123;
+        let mut sum = Sum::default();
+        sum.set_amount_for_unit(amount, unit);
+        let actual = sum.unit_amount(&unit).unwrap();
+        assert_eq!(actual, &amount);
     }
     #[test]
     fn amounts() {
