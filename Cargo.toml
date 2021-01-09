@@ -1,6 +1,6 @@
 [package]
 name = "bookkeeping"
-version = "0.4.7"
+version = "0.5.0"
 authors = ["Shahar Or (mightyiam) <mightyiampresence@gmail.com>"]
 edition = "2018"
 description = "Minimalistic and unopinionated bookkeeping library."
