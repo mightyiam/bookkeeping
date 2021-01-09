@@ -175,6 +175,12 @@ mod test {
     use crate::test_utils::TestBalance;
     use maplit::btreemap;
     #[test]
+    fn default() {
+        let actual = TestBalance::default();
+        let expected = Balance(btreemap!());
+        assert_eq!(actual, expected);
+    }
+    #[test]
     fn apply_sum_operation() {
         use maplit::btreemap;
         let mut actual: TestBalance = Default::default();
