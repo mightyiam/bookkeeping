@@ -56,16 +56,17 @@ where
 #[cfg(test)]
 mod test {
     use super::{Move, Side};
+    use crate::test_utils::TestBook;
     #[test]
     #[should_panic(expected = "Debit and credit accounts are the same.")]
     fn new_panic_debit_and_credit_accounts_are_the_same() {
-        let mut book = test_book!("");
+        let mut book = TestBook::default();
         let account_key = book.insert_account("");
         Move::new(account_key, account_key, sum!(), ());
     }
     #[test]
     fn new() {
-        let mut book = test_book!("");
+        let mut book = TestBook::default();
         let debit_account_key = book.insert_account("");
         let credit_account_key = book.insert_account("");
         let sum = sum!();
@@ -77,7 +78,7 @@ mod test {
     }
     #[test]
     fn side() {
-        let mut book = test_book!("");
+        let mut book = TestBook::default();
         let debit_account_key = book.insert_account("");
         let credit_account_key = book.insert_account("");
         let move_ =
@@ -87,7 +88,7 @@ mod test {
     }
     #[test]
     fn sum() {
-        let mut book = test_book!("");
+        let mut book = TestBook::default();
         let debit_account_key = book.insert_account("");
         let credit_account_key = book.insert_account("");
         let thb = "THB";
@@ -99,7 +100,7 @@ mod test {
     }
     #[test]
     fn metadata() {
-        let mut book = test_book!("");
+        let mut book = TestBook::default();
         let debit_account_key = book.insert_account("");
         let credit_account_key = book.insert_account("");
         let move_ = Move::new(debit_account_key, credit_account_key, sum!(), 5);
