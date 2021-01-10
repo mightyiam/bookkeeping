@@ -1,18 +1,11 @@
-/// Creates a concrete book in order to de-duplicate test code.
 #[cfg(test)]
-macro_rules! test_book {
-    ($metadata:expr) => {{
-        type TestBook = crate::book::Book<
-            &'static str,
-            u64,
-            &'static str,
-            &'static str,
-            &'static str,
-            &'static str,
-        >;
-        TestBook::new($metadata)
-    }};
-}
+pub(crate) type TestBook = crate::book::Book<
+    &'static str,
+    u64,
+    &'static str,
+    &'static str,
+    &'static str,
+>;
 #[cfg(test)]
 macro_rules! sum {
     () => { crate::sum::Sum::<&'static str, u64>::default() };

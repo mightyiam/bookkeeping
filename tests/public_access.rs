@@ -8,10 +8,8 @@ fn balance() {
 }
 #[test]
 fn book() {
-    type TestBook = bookkeeping::Book<(), u8, (), (), (), ()>;
-    TestBook::new;
-    TestBook::metadata;
-    TestBook::set_book_metadata;
+    type TestBook = bookkeeping::Book<(), u8, (), (), ()>;
+    TestBook::default;
     TestBook::insert_account;
     TestBook::insert_transaction;
     TestBook::insert_move;

@@ -26,8 +26,6 @@ type MyBook = Book::<
     &'static str,
     // `SumNumber`: the number type used in the `Sum` type
     u64,
-    // `Meta`: the metadata type of a `Book`
-    &'static str,
     // `Account`: the type of an `Account`
     &'static str,
     // `TransactionMeta`: the metadata type of a `Transaction`
@@ -39,10 +37,7 @@ type MyBook = Book::<
 // Let's create a new `Book` in which we will then record some personal
 // financial transactions.
 //
-let mut book = MyBook::new("My personal finance");
-// In the above call, `"My personal finance"` is of the `Book`s generic
-// `Meta` type. 
-
+let mut book = MyBook::default();
 // So there exists an empty book. Let's add some accounts to it.
 // Some examples of what an account in this book may represent are:
 //
@@ -106,9 +101,9 @@ let salary_key = book.insert_account("Salary");
 let bank_account_key = book.insert_account("Bank account");
 // The type of the `&'static str` arguments is the one provided for the
 // `Book`s generic `Account` type. Even though the name of this generic
-// does not end with `Meta`, it is similar to the `Book`s `Meta` and
-// `TransactionMeta` generics in the sense that you may use whatever
-// type you see fit.
+// does not end with `Meta`, it is similar to `TransactionMeta` and
+// `MoveMeta` generics in the sense that you may use whatever type you
+// see fit.
 // 
 // Notice that by inserting new accounts, we have obtained keys. These
 // keys will be used to refer to these accounts when adding moves.
@@ -123,8 +118,7 @@ book.insert_transaction(
     // documented later in this document.
     TransactionIndex(0),
     // The type of this argument is the one provided for the `Book`s
-    // generic type `TransactionMeta`. As with the `Book`s `Meta`
-    // generic, this may be any type you find useful.
+    // generic type `TransactionMeta`. This may be any type you wish.
     "January 2021 salary"
 );
 // Finally, insert a single `Move` into the transaction.

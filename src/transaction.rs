@@ -33,10 +33,10 @@ where
 #[cfg(test)]
 mod test {
     use super::{MoveIndex, Transaction};
-    use crate::book::TransactionIndex;
+    use crate::{book::TransactionIndex, test_utils::TestBook};
     #[test]
     fn moves() {
-        let mut book = test_book!("");
+        let mut book = TestBook::default();
         book.insert_transaction(TransactionIndex(0), "");
         let debit_account_key = book.insert_account("");
         let credit_account_key = book.insert_account("");
