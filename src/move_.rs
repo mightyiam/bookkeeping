@@ -1,5 +1,4 @@
-use crate::book::AccountKey;
-use crate::sum::Sum;
+use crate::{book::AccountKey, sum::Sum};
 /// Represents a side of a [Move].
 pub enum Side {
     #[allow(missing_docs)]
