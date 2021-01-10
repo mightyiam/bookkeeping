@@ -1,7 +1,9 @@
-use crate::balance::Balance;
-use crate::move_::{Move, Side};
-use crate::sum::Sum;
-use crate::transaction::{MoveIndex, Transaction};
+use crate::{
+    balance::Balance,
+    move_::{Move, Side},
+    sum::Sum,
+    transaction::{MoveIndex, Transaction},
+};
 use slotmap::{new_key_type, DenseSlotMap};
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 new_key_type! {
@@ -303,8 +305,7 @@ mod test {
         Side::{Credit, Debit},
         TransactionIndex,
     };
-    use crate::test_utils::TestBalance;
-    use crate::transaction::MoveIndex;
+    use crate::{test_utils::TestBalance, transaction::MoveIndex};
     #[test]
     fn new() {
         let book = test_book!("");

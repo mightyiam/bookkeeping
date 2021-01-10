@@ -70,8 +70,10 @@ mod book;
 mod move_;
 mod sum;
 mod transaction;
-pub use balance::Balance;
-pub use book::{AccountKey, Book, TransactionIndex};
-pub use move_::{Move, Side};
-pub use sum::Sum;
-pub use transaction::{MoveIndex, Transaction};
+pub use crate::{
+    balance::Balance,
+    book::{AccountKey, Book, TransactionIndex},
+    move_::{Move, Side},
+    sum::Sum,
+    transaction::{MoveIndex, Transaction},
+};

@@ -1,7 +1,9 @@
 use crate::sum::Sum;
-use std::collections::BTreeMap;
-use std::fmt;
-use std::ops::{Add, AddAssign, Sub, SubAssign};
+use std::{
+    collections::BTreeMap,
+    fmt,
+    ops::{Add, AddAssign, Sub, SubAssign},
+};
 /// Represents a [balance](https://en.wikipedia.org/wiki/Balance_(accounting)), yet not necessarily the current balance.
 #[derive(PartialEq, Clone)]
 pub struct Balance<Unit, Number>(pub(crate) BTreeMap<Unit, Number>);
@@ -182,7 +184,6 @@ mod test {
     }
     #[test]
     fn apply_sum_operation() {
-        use maplit::btreemap;
         let mut actual: TestBalance = Default::default();
         let usd = "USD";
         let thb = "THB";
@@ -219,7 +220,6 @@ mod test {
     }
     #[test]
     fn sub_assign_sum() {
-        use maplit::btreemap;
         let usd = "USD";
         let mut actual: TestBalance = Default::default();
         actual -= &sum!(9, usd);
@@ -230,7 +230,6 @@ mod test {
     }
     #[test]
     fn sub_sum() {
-        use maplit::btreemap;
         let usd = "USD";
         let immutable: TestBalance = Default::default();
         let actual = immutable - &sum!(9, usd);
@@ -241,7 +240,6 @@ mod test {
     }
     #[test]
     fn add_assign_sum() {
-        use maplit::btreemap;
         let usd = "USD";
         let mut actual: TestBalance = Default::default();
         actual += &sum!(9, usd);
@@ -252,7 +250,6 @@ mod test {
     }
     #[test]
     fn add_sum() {
-        use maplit::btreemap;
         let usd = "USD";
         let immutable: TestBalance = Default::default();
         let actual = immutable + &sum!(9, usd);

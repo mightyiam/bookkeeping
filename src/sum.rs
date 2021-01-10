@@ -1,5 +1,4 @@
-use std::collections::BTreeMap;
-use std::fmt;
+use std::{collections::BTreeMap, fmt};
 /// Represents amounts of any number of units.
 #[derive(Clone, PartialEq, Default)]
 pub struct Sum<Unit, Number>(pub(crate) BTreeMap<Unit, Number>)
