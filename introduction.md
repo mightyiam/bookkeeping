@@ -136,12 +136,12 @@ use bookkeeping::Book;
 // type parameters. We will create a concrete type alias for `Book`
 // where primitive concrete types are provided for the generics.
 
-type MyBook = Book::<&'static str, u64, &'static str, &'static str, ()>;
+type MyBook = Book::<char, u64, &'static str, &'static str, ()>;
 
 // The generic type parameters of the book, in order:
 
-// 1. `Unit`: represents units in sums and balances. We will use static
-//    lifetime string slices, such as `"USD"` and `"EUR"`.
+// 1. `Unit`: represents units in sums and balances. We will use `char`,
+//    such as `'$'` and `'€'`.
 // 2. `SumNumber`: represents the number type in sums. Since the
 //    direction of a move is explicit, a number type that excludes
 //    negative values may be used. We will use `u64`.
@@ -206,8 +206,8 @@ book.insert_move(
     bank,
     {
         let mut sum = Sum::default();
-        sum.set_amount_for_unit(8000, "USD");
-        sum.set_amount_for_unit(1000, "EUR");
+        sum.set_amount_for_unit(8000, '$');
+        sum.set_amount_for_unit(1000, '€');
         sum
     },
     (),
@@ -226,7 +226,7 @@ book.insert_move(
 // book exists would result in a panic.
 
 // The fifth argument is the sum of the move. The numbers of the sum are
-// of the `Book`s generic `SumNumber` type and the `"USD"` and `"EUR"`
+// of the `Book`s generic `SumNumber` type and the `'$'` and `'€'`
 // values are of the `Book`s generic `Unit` type.
 
 // The type of the sixth argument is the `Book`s generic `MoveMeta`,
@@ -241,7 +241,7 @@ book.insert_move(
     wallet,
     {
         let mut sum = Sum::default();
-        sum.set_amount_for_unit(200, "USD");
+        sum.set_amount_for_unit(200, '$');
         sum
     },
     (),
@@ -261,7 +261,7 @@ book.insert_move(
     bank,
     {
         let mut sum = Sum::default();
-        sum.set_amount_for_unit(5900, "EUR");
+        sum.set_amount_for_unit(5900, '€');
         sum
     },
     (),
@@ -276,7 +276,7 @@ book.insert_move(
     expenses,
     {
         let mut sum = Sum::default();
-        sum.set_amount_for_unit(100, "EUR");
+        sum.set_amount_for_unit(100, '€');
         sum
     },
     (),
@@ -295,7 +295,7 @@ book.insert_move(
     expenses,
     {
         let mut sum = Sum::default();
-        sum.set_amount_for_unit(5000, "EUR");
+        sum.set_amount_for_unit(5000, '€');
         sum
     },
     (),
@@ -308,7 +308,7 @@ book.insert_move(
     expenses,
     {
         let mut sum = Sum::default();
-        sum.set_amount_for_unit(10, "EUR");
+        sum.set_amount_for_unit(10, '€');
         sum
     },
     (),
@@ -321,7 +321,7 @@ book.insert_move(
     bank,
     {
         let mut sum = Sum::default();
-        sum.set_amount_for_unit(6000, "USD");
+        sum.set_amount_for_unit(6000, '$');
         sum
     },
     (),
@@ -341,7 +341,7 @@ book.insert_move(
     expenses,
     {
         let mut sum = Sum::default();
-        sum.set_amount_for_unit(600, "USD");
+        sum.set_amount_for_unit(600, '$');
         sum
     },
     (),
@@ -356,7 +356,7 @@ book.insert_move(
     charley,
     {
         let mut sum = Sum::default();
-        sum.set_amount_for_unit(600, "USD");
+        sum.set_amount_for_unit(600, '$');
         sum
     },
     (),
@@ -375,7 +375,7 @@ book.insert_move(
     wallet,
     {
         let mut sum = Sum::default();
-        sum.set_amount_for_unit(600, "USD");
+        sum.set_amount_for_unit(600, '$');
         sum
     },
     (),
@@ -407,23 +407,23 @@ use bookkeeping::Balance;
 
 // The bank account balance at transaction index 0 includes 8,000 USD.
 
-let balance: Balance<&str, i128> = book
+let balance: Balance<char, i128> = book
     .account_balance_at_transaction(bank, TransactionIndex(0));
 
-assert_eq!(*balance.unit_amount("USD").unwrap(), 8000);
+assert_eq!(*balance.unit_amount('$').unwrap(), 8000);
 
 // The expenses account balance at transaction index 2 has 5,110 EUR.
 
-let balance: Balance<&str, i128> = book
+let balance: Balance<char, i128> = book
     .account_balance_at_transaction(expenses, TransactionIndex(2));
 
-assert_eq!(*balance.unit_amount("EUR").unwrap(), 5110);
+assert_eq!(*balance.unit_amount('€').unwrap(), 5110);
 
 // Assert some transaction metadata.
 
 use bookkeeping::Transaction;
 
-let (_, transaction): (_, &Transaction<&str, u64, &str, ()>) = book
+let (_, transaction): (_, &Transaction<char, u64, &str, ()>) = book
     .transactions()
     .nth(2)
     .unwrap();
@@ -432,13 +432,13 @@ assert_eq!(*transaction.metadata(), "Conversion",);
 
 // Assert some move properties
 
-let (_, move_): (_, &Move<&str, u64, ()>) = transaction.moves().nth(2).unwrap();
+let (_, move_): (_, &Move<char, u64, ()>) = transaction.moves().nth(2).unwrap();
 
 use bookkeeping::{ Move, Side::{ Credit, Debit } };
 
 assert_eq!(move_.side_key(Debit), income);
 assert_eq!(move_.side_key(Credit), bank);
-assert_eq!(*move_.sum().unit_amount(&"USD").unwrap(), 6000);
+assert_eq!(*move_.sum().unit_amount(&'$').unwrap(), 6000);
 ```
 
 ## Reference table of expectations
