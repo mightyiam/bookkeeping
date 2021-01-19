@@ -46,8 +46,8 @@ where
         self.0.iter()
     }
     /// Gets the amount of a provided unit.
-    pub fn unit_amount(&self, unit: Unit) -> Option<&Number> {
-        self.0.get(&unit)
+    pub fn unit_amount(&self, unit: &Unit) -> Option<&Number> {
+        self.0.get(unit)
     }
 }
 impl<Unit, Number> Default for Balance<Unit, Number>
@@ -277,8 +277,8 @@ mod test {
         let thb = "THB";
         let ils = "ILS";
         let balance = TestBalance::default() + &sum!(200, usd; 100, thb);
-        assert_eq!(balance.unit_amount(usd).unwrap(), &200);
-        assert_eq!(balance.unit_amount(thb).unwrap(), &100);
-        assert_eq!(balance.unit_amount(ils), None);
+        assert_eq!(balance.unit_amount(&usd).unwrap(), &200);
+        assert_eq!(balance.unit_amount(&thb).unwrap(), &100);
+        assert_eq!(balance.unit_amount(&ils), None);
     }
 }

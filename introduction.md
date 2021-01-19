@@ -410,14 +410,14 @@ use bookkeeping::Balance;
 let balance: Balance<char, i128> = book
     .account_balance_at_transaction(bank, TransactionIndex(0));
 
-assert_eq!(*balance.unit_amount('$').unwrap(), 8000);
+assert_eq!(*balance.unit_amount(&'$').unwrap(), 8000);
 
 // The expenses account balance at transaction index 2 has 5,110 EUR.
 
 let balance: Balance<char, i128> = book
     .account_balance_at_transaction(expenses, TransactionIndex(2));
 
-assert_eq!(*balance.unit_amount('€').unwrap(), 5110);
+assert_eq!(*balance.unit_amount(&'€').unwrap(), 5110);
 
 // Assert some transaction extra data.
 
