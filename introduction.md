@@ -145,8 +145,8 @@ type MyBook = Book::<char, u64, &'static str, &'static str, ()>;
 // 2. `SumNumber`: represents the number type in sums. Since the
 //    direction of a move is explicit, a number type that excludes
 //    negative values may be used. We will use `u64`.
-// 3. `AccountExtra`: represents the type of accounts. We will use static
-//    lifetime string slices, such as `"Bank"` and `"Income"`.
+// 3. `AccountExtra`: Arbitrary data attached to accounts. We will use
+//    static lifetime string slices, such as `"Bank"` and `"Income"`.
 // 4. `TransactionExtra`: arbitrary data attached to transactions. We
 //    will use static lifetime string slices, such as `"Rent payment"`.
 // 5. `MoveExtra`: arbitrary data attached to moves. For simplicity, we
