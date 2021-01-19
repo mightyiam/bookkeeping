@@ -11,18 +11,18 @@ new_key_type! {
     pub struct AccountKey;
 }
 /// Represents a book.
-pub struct Book<Unit, SumNumber, Account, TransactionMeta, MoveMeta>
+pub struct Book<Unit, SumNumber, AccountMeta, TransactionMeta, MoveMeta>
 where
     Unit: Ord,
 {
-    accounts: DenseSlotMap<AccountKey, Account>,
+    accounts: DenseSlotMap<AccountKey, AccountMeta>,
     transactions: Vec<Transaction<Unit, SumNumber, TransactionMeta, MoveMeta>>,
 }
 
 /// Used to index transactions in the book.
 pub struct TransactionIndex(pub usize);
-impl<Unit, SumNumber, Account, TransactionMeta, MoveMeta> Default
-    for Book<Unit, SumNumber, Account, TransactionMeta, MoveMeta>
+impl<Unit, SumNumber, AccountMeta, TransactionMeta, MoveMeta> Default
+    for Book<Unit, SumNumber, AccountMeta, TransactionMeta, MoveMeta>
 where
     Unit: Ord,
 {
@@ -33,14 +33,14 @@ where
         }
     }
 }
-impl<Unit, SumNumber, Account, TransactionMeta, MoveMeta>
-    Book<Unit, SumNumber, Account, TransactionMeta, MoveMeta>
+impl<Unit, SumNumber, AccountMeta, TransactionMeta, MoveMeta>
+    Book<Unit, SumNumber, AccountMeta, TransactionMeta, MoveMeta>
 where
     Unit: Ord,
 {
     /// Inserts an account.
-    pub fn insert_account(&mut self, account: Account) -> AccountKey {
-        self.accounts.insert(account)
+    pub fn insert_account(&mut self, metadata: AccountMeta) -> AccountKey {
+        self.accounts.insert(metadata)
     }
     /// Creates a transaction and inserts it at an index.
     ///
@@ -100,12 +100,12 @@ where
     /// ## Panics
     ///
     /// - `account_key` is not in the book.
-    pub fn get_account(&self, account_key: AccountKey) -> &Account {
+    pub fn get_account(&self, account_key: AccountKey) -> &AccountMeta {
         self.assert_has_account(account_key);
         self.accounts.get(account_key).unwrap()
     }
     /// Gets an iterator of existing accounts in order of creation.
-    pub fn accounts(&self) -> impl Iterator<Item = (AccountKey, &Account)> {
+    pub fn accounts(&self) -> impl Iterator<Item = (AccountKey, &AccountMeta)> {
         self.accounts.iter()
     }
     /// Gets an iterator of existing transactions in their order.
@@ -126,9 +126,13 @@ where
     ///
     /// ## Panics
     /// - `account_key` is not in the book.
-    pub fn set_account(&mut self, account_key: AccountKey, account: Account) {
+    pub fn set_account(
+        &mut self,
+        account_key: AccountKey,
+        metadata: AccountMeta,
+    ) {
         self.assert_has_account(account_key);
-        *self.accounts.get_mut(account_key).unwrap() = account;
+        *self.accounts.get_mut(account_key).unwrap() = metadata;
     }
     /// Sets the metadata for a transaction.
     ///
