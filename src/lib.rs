@@ -16,8 +16,8 @@
 //! - The book balance is guaranteed at compile time.
 //! - Explicit ordering of transactions
 //! - Strong support for multiple units (currencies)
-//! - Generic number types
-//! - Generic metadata types (store arbitrary metadata)
+//! - Use your own number types
+//! - Arbitrary extra data
 //! - A long [introduction][mod@introduction].
 //!
 //! ## Non-features

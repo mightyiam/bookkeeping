@@ -17,8 +17,8 @@ fn book() {
     TestBook::accounts;
     TestBook::transactions;
     TestBook::set_account;
-    TestBook::set_transaction_metadata;
-    TestBook::set_move_metadata;
+    TestBook::set_transaction_extra;
+    TestBook::set_move_extra;
     TestBook::account_balance_at_transaction::<i16>;
     TestBook::remove_move;
     TestBook::set_move_sum;
@@ -29,7 +29,7 @@ fn move_() {
     type TestMove = Move<(), (), ()>;
     TestMove::side_key;
     TestMove::sum;
-    TestMove::metadata;
+    TestMove::extra;
 }
 #[test]
 fn sum() {
@@ -42,5 +42,5 @@ fn sum() {
 fn transaction() {
     type TestTransaction = Transaction<(), (), (), ()>;
     TestTransaction::moves;
-    TestTransaction::metadata;
+    TestTransaction::extra;
 }
