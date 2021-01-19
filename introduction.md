@@ -145,7 +145,7 @@ type MyBook = Book::<char, u64, &'static str, &'static str, ()>;
 // 2. `SumNumber`: represents the number type in sums. Since the
 //    direction of a move is explicit, a number type that excludes
 //    negative values may be used. We will use `u64`.
-// 3. `Account`: represents the type of accounts. We will use static
+// 3. `AccountMeta`: represents the type of accounts. We will use static
 //    lifetime string slices, such as `"Bank"` and `"Income"`.
 // 4. `TransactionMeta`: arbitrary data attached to transactions. We
 //    will use static lifetime string slices, such as `"Rent payment"`.
@@ -169,7 +169,7 @@ use bookkeeping::AccountKey;
 let bank: AccountKey = book.insert_account("Bank");
 let wallet: AccountKey = book.insert_account("Wallet");
 
-// `"Bank"` and `"Wallet"` are of the `Book`'s generic `Account` type.
+// `"Bank"` and `"Wallet"` are of the `Book`'s generic `AccountMeta` type.
 
 // Notice that by inserting new accounts, we have obtained keys. These
 // keys will be used to refer to these accounts when adding moves.
@@ -391,7 +391,7 @@ book.insert_move(
 
 // Assert that some accounts exist in the book. For this we will use
 // the `Book::accounts` method, which returns an
-// `impl Iterator<Item=(AccountKey, &Account)>` that iterates in
+// `impl Iterator<Item=(AccountKey, &AccountMeta)>` that iterates in
 // _undefined_ order.
 
 let actual_accounts: Vec<(AccountKey, &&str)> = book
