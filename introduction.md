@@ -88,15 +88,15 @@ A balance can be defined as answering the following
 
 Similar to a _sum_ a balance is a mapping from _units_ to amounts.
 
-## Generics
-
-For a tighter integration into your system, the API includes some generic types:
+## Use your own unit and number types
 
 - The type used to represent units is generic 
 - The number types for both sums and balances are generic.
 For balance calculations, the sum number type must be convertible into the balance number type.
-- Metadata may be stored in accounts, transactions and moves.
-The types of those metadata are generic.
+
+## Extra data
+
+- Arbitrary extra data may be stored in accounts, transactions and moves.
 
 ## Why transactions and moves are explicitly ordered
 
@@ -108,7 +108,7 @@ user.
 Two alternative approaches were considered.
 The first alternative approach is that some date-time field is included in the transaction and is used to sort transactions by.
 This alternative was discarded because it was determined that this library should not make a decision regarding a date type, forcing the user to use some particular date type over another.
-The second alternative that was considered is binding the transaction metadata generic by the [std::cmp::Ord] trait and then sorting transactions by their metadata.
+The second alternative that was considered is binding the transaction extra data generic by the [std::cmp::Ord] trait and then sorting transactions by their extra data.
 This approach was discarded, because while `Ord` means "total order", that is not sufficient, due to [the possibility of values equaling each other][ord-equal].
 That may result
 in several transactions in an account having the same balance, or a
@@ -145,11 +145,11 @@ type MyBook = Book::<char, u64, &'static str, &'static str, ()>;
 // 2. `SumNumber`: represents the number type in sums. Since the
 //    direction of a move is explicit, a number type that excludes
 //    negative values may be used. We will use `u64`.
-// 3. `AccountMeta`: represents the type of accounts. We will use static
+// 3. `AccountExtra`: represents the type of accounts. We will use static
 //    lifetime string slices, such as `"Bank"` and `"Income"`.
-// 4. `TransactionMeta`: arbitrary data attached to transactions. We
+// 4. `TransactionExtra`: arbitrary data attached to transactions. We
 //    will use static lifetime string slices, such as `"Rent payment"`.
-// 5. `MoveMeta`: arbitrary data attached to moves. For simplicity, we
+// 5. `MoveExtra`: arbitrary data attached to moves. For simplicity, we
 //    won't be using this generic, setting it to `()`.
 
 // In real usage, more advanced types will probably be used.
@@ -169,7 +169,7 @@ use bookkeeping::AccountKey;
 let bank: AccountKey = book.insert_account("Bank");
 let wallet: AccountKey = book.insert_account("Wallet");
 
-// `"Bank"` and `"Wallet"` are of the `Book`'s generic `AccountMeta` type.
+// `"Bank"` and `"Wallet"` are of the `Book`'s generic `AccountExtra` type.
 
 // Notice that by inserting new accounts, we have obtained keys. These
 // keys will be used to refer to these accounts when adding moves.
@@ -193,7 +193,7 @@ book.insert_transaction(TransactionIndex(0), "Initial balances");
 // Since there are no transactions in the book, this is certainly 0.
 // An out-of-bounds value would result in a panic.
 
-// The second argument is of the `Book`s generic `TransactionMeta` type.
+// The second argument is of the `Book`s generic `TransactionExtra` type.
 
 // Here is the move from the income account to the bank account:
 
@@ -229,7 +229,7 @@ book.insert_move(
 // of the `Book`s generic `SumNumber` type and the `'$'` and `'€'`
 // values are of the `Book`s generic `Unit` type.
 
-// The type of the sixth argument is the `Book`s generic `MoveMeta`,
+// The type of the sixth argument is the `Book`s generic `MoveExtra`,
 // which we opted out of using.
 
 // And here is the move from the income account to the wallet account:
@@ -391,7 +391,7 @@ book.insert_move(
 
 // Assert that some accounts exist in the book. For this we will use
 // the `Book::accounts` method, which returns an
-// `impl Iterator<Item=(AccountKey, &AccountMeta)>` that iterates in
+// `impl Iterator<Item=(AccountKey, &AccountExtra)>` that iterates in
 // _undefined_ order.
 
 let actual_accounts: Vec<(AccountKey, &&str)> = book
@@ -419,7 +419,7 @@ let balance: Balance<char, i128> = book
 
 assert_eq!(*balance.unit_amount('€').unwrap(), 5110);
 
-// Assert some transaction metadata.
+// Assert some transaction extra data.
 
 use bookkeeping::Transaction;
 
@@ -428,7 +428,7 @@ let (_, transaction): (_, &Transaction<char, u64, &str, ()>) = book
     .nth(2)
     .unwrap();
 
-assert_eq!(*transaction.metadata(), "Conversion",);
+assert_eq!(*transaction.extra(), "Conversion",);
 
 // Assert some move properties
 

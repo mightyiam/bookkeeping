@@ -11,18 +11,19 @@ new_key_type! {
     pub struct AccountKey;
 }
 /// Represents a book.
-pub struct Book<Unit, SumNumber, AccountMeta, TransactionMeta, MoveMeta>
+pub struct Book<Unit, SumNumber, AccountExtra, TransactionExtra, MoveExtra>
 where
     Unit: Ord,
 {
-    accounts: DenseSlotMap<AccountKey, AccountMeta>,
-    transactions: Vec<Transaction<Unit, SumNumber, TransactionMeta, MoveMeta>>,
+    accounts: DenseSlotMap<AccountKey, AccountExtra>,
+    transactions:
+        Vec<Transaction<Unit, SumNumber, TransactionExtra, MoveExtra>>,
 }
 
 /// Used to index transactions in the book.
 pub struct TransactionIndex(pub usize);
-impl<Unit, SumNumber, AccountMeta, TransactionMeta, MoveMeta> Default
-    for Book<Unit, SumNumber, AccountMeta, TransactionMeta, MoveMeta>
+impl<Unit, SumNumber, AccountExtra, TransactionExtra, MoveExtra> Default
+    for Book<Unit, SumNumber, AccountExtra, TransactionExtra, MoveExtra>
 where
     Unit: Ord,
 {
@@ -33,14 +34,14 @@ where
         }
     }
 }
-impl<Unit, SumNumber, AccountMeta, TransactionMeta, MoveMeta>
-    Book<Unit, SumNumber, AccountMeta, TransactionMeta, MoveMeta>
+impl<Unit, SumNumber, AccountExtra, TransactionExtra, MoveExtra>
+    Book<Unit, SumNumber, AccountExtra, TransactionExtra, MoveExtra>
 where
     Unit: Ord,
 {
     /// Inserts an account.
-    pub fn insert_account(&mut self, metadata: AccountMeta) -> AccountKey {
-        self.accounts.insert(metadata)
+    pub fn insert_account(&mut self, extra: AccountExtra) -> AccountKey {
+        self.accounts.insert(extra)
     }
     /// Creates a transaction and inserts it at an index.
     ///
@@ -50,14 +51,14 @@ where
     pub fn insert_transaction(
         &mut self,
         transaction_index: TransactionIndex,
-        metadata: TransactionMeta,
+        extra: TransactionExtra,
     ) where
         Unit: Ord,
     {
         self.transactions.insert(
             transaction_index.0,
             Transaction {
-                metadata,
+                extra,
                 moves: Vec::new(),
             },
         )
@@ -78,7 +79,7 @@ where
         debit_account_key: AccountKey,
         credit_account_key: AccountKey,
         sum: Sum<Unit, SumNumber>,
-        metadata: MoveMeta,
+        extra: MoveExtra,
     ) where
         Unit: Ord,
     {
@@ -88,7 +89,7 @@ where
             },
         );
         let move_ =
-            Move::new(debit_account_key, credit_account_key, sum, metadata);
+            Move::new(debit_account_key, credit_account_key, sum, extra);
         let transaction = std::ops::IndexMut::index_mut(
             &mut self.transactions,
             transaction_index.0,
@@ -100,12 +101,14 @@ where
     /// ## Panics
     ///
     /// - `account_key` is not in the book.
-    pub fn get_account(&self, account_key: AccountKey) -> &AccountMeta {
+    pub fn get_account(&self, account_key: AccountKey) -> &AccountExtra {
         self.assert_has_account(account_key);
         self.accounts.get(account_key).unwrap()
     }
     /// Gets an iterator of existing accounts in order of creation.
-    pub fn accounts(&self) -> impl Iterator<Item = (AccountKey, &AccountMeta)> {
+    pub fn accounts(
+        &self,
+    ) -> impl Iterator<Item = (AccountKey, &AccountExtra)> {
         self.accounts.iter()
     }
     /// Gets an iterator of existing transactions in their order.
@@ -114,7 +117,7 @@ where
     ) -> impl Iterator<
         Item = (
             TransactionIndex,
-            &Transaction<Unit, SumNumber, TransactionMeta, MoveMeta>,
+            &Transaction<Unit, SumNumber, TransactionExtra, MoveExtra>,
         ),
     > {
         self.transactions
@@ -129,35 +132,35 @@ where
     pub fn set_account(
         &mut self,
         account_key: AccountKey,
-        metadata: AccountMeta,
+        extra: AccountExtra,
     ) {
         self.assert_has_account(account_key);
-        *self.accounts.get_mut(account_key).unwrap() = metadata;
+        *self.accounts.get_mut(account_key).unwrap() = extra;
     }
-    /// Sets the metadata for a transaction.
+    /// Sets extra data for a transaction.
     ///
     /// ## Panics
     /// - `transaction_index` out of bounds.
-    pub fn set_transaction_metadata(
+    pub fn set_transaction_extra(
         &mut self,
         transaction_index: TransactionIndex,
-        metadata: TransactionMeta,
+        extra: TransactionExtra,
     ) {
         self.transactions
             .get_mut(transaction_index.0)
             .unwrap()
-            .metadata = metadata;
+            .extra = extra;
     }
-    /// Sets the metadata for a move.
+    /// Sets extra data for a move.
     ///
     /// ## Panics
     /// - `transaction_index` out of bounds.
     /// - `move_index` out of bounds.
-    pub fn set_move_metadata(
+    pub fn set_move_extra(
         &mut self,
         transaction_index: TransactionIndex,
         move_index: MoveIndex,
-        metadata: MoveMeta,
+        extra: MoveExtra,
     ) where
         Unit: Ord,
     {
@@ -166,7 +169,7 @@ where
             transaction_index.0,
         );
         let move_ = &mut transaction.moves[move_index.0];
-        move_.metadata = metadata;
+        move_.extra = extra;
     }
     /// Calculates the balance of an account at a provided transaction.
     ///
@@ -336,7 +339,7 @@ mod test {
         assert_eq!(
             book.transactions
                 .iter()
-                .map(|transaction| transaction.metadata())
+                .map(|transaction| transaction.extra())
                 .collect::<Vec<_>>(),
             [&"c", &"a", &"d", &"b"],
         );
@@ -433,7 +436,7 @@ mod test {
             book.transactions[0]
                 .moves
                 .iter()
-                .map(|move_| move_.metadata)
+                .map(|move_| move_.extra)
                 .collect::<Vec<_>>(),
             vec!["b", "c", "d", "a"],
         );
@@ -612,19 +615,19 @@ mod test {
     }
     #[test]
     #[should_panic(expected = "index out of bounds")]
-    fn set_move_metadata_panic_transaction_index_out_of_bounds() {
+    fn set_move_extra_panic_transaction_index_out_of_bounds() {
         let mut book = TestBook::default();
-        book.set_move_metadata(TransactionIndex(0), MoveIndex(0), "");
+        book.set_move_extra(TransactionIndex(0), MoveIndex(0), "");
     }
     #[test]
     #[should_panic(expected = "index out of bounds")]
-    fn set_move_metadata_panic_move_index_out_of_bounds() {
+    fn set_move_extra_panic_move_index_out_of_bounds() {
         let mut book = TestBook::default();
         book.insert_transaction(TransactionIndex(0), "");
-        book.set_move_metadata(TransactionIndex(0), MoveIndex(1), "");
+        book.set_move_extra(TransactionIndex(0), MoveIndex(1), "");
     }
     #[test]
-    fn set_move_metadata() {
+    fn set_move_extra() {
         let mut book = TestBook::default();
         let debit_key = book.insert_account("");
         let credit_key = book.insert_account("");
@@ -637,8 +640,8 @@ mod test {
             sum!(),
             "",
         );
-        book.set_move_metadata(TransactionIndex(0), MoveIndex(0), "!");
-        assert_eq!(*book.transactions[0].moves[0].metadata(), "!");
+        book.set_move_extra(TransactionIndex(0), MoveIndex(0), "!");
+        assert_eq!(*book.transactions[0].moves[0].extra(), "!");
     }
     #[test]
     #[should_panic(expected = "removal index (is 0) should be < len (is 0)")]
@@ -652,7 +655,7 @@ mod test {
         book.insert_transaction(TransactionIndex(0), "a");
         book.insert_transaction(TransactionIndex(1), "b");
         book.remove_transaction(TransactionIndex(1));
-        assert_eq!(&book.transactions[0].metadata, &"a");
+        assert_eq!(&book.transactions[0].extra, &"a");
         book.remove_transaction(TransactionIndex(0));
         assert!(book.transactions.is_empty());
     }
@@ -694,7 +697,7 @@ mod test {
             "b",
         );
         book.remove_move(TransactionIndex(0), MoveIndex(1));
-        assert_eq!(&book.transactions[0].moves[0].metadata, &"a");
+        assert_eq!(&book.transactions[0].moves[0].extra, &"a");
         book.remove_move(TransactionIndex(0), MoveIndex(0));
         assert!(book.transactions[0].moves.is_empty());
     }

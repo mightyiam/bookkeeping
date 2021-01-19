@@ -7,16 +7,16 @@ pub enum Side {
     Credit,
 }
 /// Represents a move of a [Sum] from one account to another.
-pub struct Move<Unit, Number, Meta>
+pub struct Move<Unit, Number, Extra>
 where
     Unit: Ord,
 {
-    pub(crate) metadata: Meta,
+    pub(crate) extra: Extra,
     pub(crate) debit_account_key: AccountKey,
     pub(crate) credit_account_key: AccountKey,
     pub(crate) sum: Sum<Unit, Number>,
 }
-impl<Unit, Number, Meta> Move<Unit, Number, Meta>
+impl<Unit, Number, Extra> Move<Unit, Number, Extra>
 where
     Unit: Ord,
 {
@@ -24,14 +24,14 @@ where
         debit_account_key: AccountKey,
         credit_account_key: AccountKey,
         sum: Sum<Unit, Number>,
-        metadata: Meta,
+        extra: Extra,
     ) -> Self {
         assert!(
             debit_account_key != credit_account_key,
             "Debit and credit accounts are the same."
         );
         Self {
-            metadata,
+            extra,
             debit_account_key,
             credit_account_key,
             sum,
@@ -48,9 +48,9 @@ where
     pub fn sum(&self) -> &Sum<Unit, Number> {
         &self.sum
     }
-    /// Gets the metadata of the move.
-    pub fn metadata(&self) -> &Meta {
-        &self.metadata
+    /// Gets the extra data of the move.
+    pub fn extra(&self) -> &Extra {
+        &self.extra
     }
 }
 #[cfg(test)]
@@ -99,11 +99,11 @@ mod test {
         assert_eq!(*move_.sum(), sum);
     }
     #[test]
-    fn metadata() {
+    fn extra() {
         let mut book = TestBook::default();
         let debit_account_key = book.insert_account("");
         let credit_account_key = book.insert_account("");
         let move_ = Move::new(debit_account_key, credit_account_key, sum!(), 5);
-        assert_eq!(*move_.metadata(), 5);
+        assert_eq!(*move_.extra(), 5);
     }
 }

@@ -1,32 +1,32 @@
 use crate::move_::Move;
 /// Represents a transaction.
-pub struct Transaction<Unit, SumNumber, Meta, MoveMeta>
+pub struct Transaction<Unit, SumNumber, Extra, MoveExtra>
 where
     Unit: Ord,
 {
-    pub(crate) metadata: Meta,
-    pub(crate) moves: Vec<Move<Unit, SumNumber, MoveMeta>>,
+    pub(crate) extra: Extra,
+    pub(crate) moves: Vec<Move<Unit, SumNumber, MoveExtra>>,
 }
 /// Used to index moves in a transaction.
 pub struct MoveIndex(pub usize);
-impl<Unit, SumNumber, Meta, MoveMeta>
-    Transaction<Unit, SumNumber, Meta, MoveMeta>
+impl<Unit, SumNumber, Extra, MoveExtra>
+    Transaction<Unit, SumNumber, Extra, MoveExtra>
 where
     Unit: Ord,
 {
     /// Gets an iterator of existing moves in their order.
     pub fn moves(
         &self,
-    ) -> impl Iterator<Item = (MoveIndex, &Move<Unit, SumNumber, MoveMeta>)>
+    ) -> impl Iterator<Item = (MoveIndex, &Move<Unit, SumNumber, MoveExtra>)>
     {
         self.moves
             .iter()
             .enumerate()
             .map(|(index, move_)| (MoveIndex(index), move_))
     }
-    /// Gets the metadata of the transaction.
-    pub fn metadata(&self) -> &Meta {
-        &self.metadata
+    /// Gets the extra data of the transaction.
+    pub fn extra(&self) -> &Extra {
+        &self.extra
     }
 }
 
@@ -78,17 +78,17 @@ mod test {
                 .unwrap()
                 .1
                 .moves()
-                .map(|(_move_index, move_)| move_.metadata())
+                .map(|(_move_index, move_)| move_.extra())
                 .collect::<Vec<_>>(),
             vec![&"c", &"a", &"d", &"b"],
         );
     }
     #[test]
-    fn metadata() {
+    fn extra() {
         let transaction = Transaction::<&str, u8, &str, ()> {
-            metadata: "deposit",
+            extra: "deposit",
             moves: Vec::new(),
         };
-        assert_eq!(transaction.metadata(), &"deposit",);
+        assert_eq!(transaction.extra(), &"deposit",);
     }
 }
