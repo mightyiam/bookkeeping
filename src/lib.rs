@@ -9,7 +9,7 @@
 #![deny(clippy::all)]
 //! ![GitHub Workflow Status (branch)][ci]
 //!
-//! Minimal, safe and flexible [bookkeeping][bookkeeping] API
+//! Minimal, safe and flexible in-memory [bookkeeping][bookkeeping] API
 //!
 //! ## Features
 //!
@@ -18,7 +18,7 @@
 //! - Strong support for multiple units (currencies)
 //! - Use your own number types
 //! - Arbitrary extra data
-//! - A long [introduction][mod@introduction].
+//! - [Introduction documentation][mod@introduction].
 //!
 //! ## Non-features
 //!
