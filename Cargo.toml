@@ -1,6 +1,6 @@
 [package]
 name = "bookkeeping"
-version = "0.6.2"
+version = "0.6.3"
 authors = ["Shahar Or (mightyiam) <mightyiampresence@gmail.com>"]
 edition = "2018"
 description = "Minimal, safe and flexible in-memory bookkeeping API"
