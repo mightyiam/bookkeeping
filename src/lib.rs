@@ -18,7 +18,7 @@
 //! - Strong support for multiple units (currencies)
 //! - Use your own number types
 //! - Arbitrary extra data
-//! - [Introduction documentation][mod@introduction].
+//! - [Introduction documentation][mod@introduction]
 //!
 //! ## Non-features
 //!
