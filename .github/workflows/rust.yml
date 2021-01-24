@@ -10,18 +10,48 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  all:
+  toolchain:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v2
-      - name: Update toolchain
-        run: rustup update
-      - name: Test
-        run: cargo test --features=fail-on-warnings --verbose
-      - name: Clippy
-        run: cargo clippy
-      - name: Check formatting
-        run: cargo fmt -- --check
-      - name: Make documentation
-        run: cargo doc --verbose
+      - run: rustup update
+  build:
+    needs: toolchain
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: cargo build --verbose
+      - uses: actions/upload-artifact@v2
+        with:
+          name: target
+          path: target
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        name: target
+      - run: cargo test --features=fail-on-warnings --verbose
+  clippy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        name: target
+      - run: cargo clippy
+  fmt:
+    needs: toolchain
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: cargo fmt -- --check
+  doc:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        name: target
+      - run: cargo doc --verbose
