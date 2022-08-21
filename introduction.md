@@ -456,7 +456,7 @@ td:nth-child(4) { text-align: right; }
     <tbody>
         <tr><th colspan=5>Income account</th></tr>
         <tr><td rowspan=2>0: Initial balances</td><td>Bank</td><td>-$8,000, -€1,000</td><td rowspan=2>-$8,200<br>-€1,000</td></tr>
-        <tr><td>Wallet</td><td>$200</td>
+        <tr><td>Wallet</td><td>-$200</td>
         <tr><td rowspan=2>1: Salary</td><td>Bank</td><td>-€5,900</td><td rowspan=2>-$8,200<br>-€7,000</td></tr>
         <tr><td>Expenses</td><td>-€100</td></tr>
     </tbody>
